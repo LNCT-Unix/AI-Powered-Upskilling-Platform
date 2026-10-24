@@ -21,10 +21,9 @@ export default function Sidebar({ onClose }) {
             to={path}
             onClick={onClose}
             className={({ isActive }) =>
-              `flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${
-                isActive
-                  ? 'bg-green-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-green-50 hover:text-green-950'
+              `flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${isActive
+                ? 'bg-green-900 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-green-50 hover:text-green-950'
               }`
             }
           >

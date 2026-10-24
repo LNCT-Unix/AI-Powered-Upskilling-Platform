@@ -20,19 +20,17 @@ export default function MobileNav() {
           key={path}
           to={path}
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-semibold transition ${
-              isActive
-                ? 'text-emerald-800 font-bold'
-                : 'text-slate-500 hover:text-slate-900'
+            `flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-semibold transition ${isActive
+              ? 'text-emerald-800 font-bold'
+              : 'text-slate-500 hover:text-slate-900'
             }`
           }
         >
           {({ isActive }) => (
             <>
               <span
-                className={`grid h-7 w-7 place-items-center rounded-lg transition ${
-                  isActive ? 'bg-emerald-100 text-emerald-900' : 'bg-transparent text-slate-500'
-                }`}
+                className={`grid h-7 w-7 place-items-center rounded-lg transition ${isActive ? 'bg-emerald-100 text-emerald-900' : 'bg-transparent text-slate-500'
+                  }`}
               >
                 <Icon size={18} />
               </span>

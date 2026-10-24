@@ -154,13 +154,12 @@ export default function AssessmentPage() {
                     type="button"
                     onClick={() => setCurrentIndex(idx)}
                     aria-label={`Go to question ${idx + 1}`}
-                    className={`h-2 flex-1 rounded-full transition-all ${
-                      isCurrent
+                    className={`h-2 flex-1 rounded-full transition-all ${isCurrent
                         ? 'bg-emerald-800 ring-2 ring-emerald-300 ring-offset-1'
                         : isAnswered
-                        ? 'bg-emerald-400 hover:bg-emerald-500'
-                        : 'bg-slate-200 hover:bg-slate-300'
-                    }`}
+                          ? 'bg-emerald-400 hover:bg-emerald-500'
+                          : 'bg-slate-200 hover:bg-slate-300'
+                      }`}
                   />
                 );
               })}
@@ -191,19 +190,17 @@ export default function AssessmentPage() {
                     key={option}
                     type="button"
                     onClick={() => handleSelectOption(optIdx)}
-                    className={`flex w-full items-center justify-between rounded-xl border p-4 text-left text-sm font-medium transition ${
-                      isSelected
+                    className={`flex w-full items-center justify-between rounded-xl border p-4 text-left text-sm font-medium transition ${isSelected
                         ? 'border-emerald-700 bg-emerald-50/70 text-emerald-950 ring-1 ring-emerald-700'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
+                      }`}
                   >
                     <span className="flex items-center gap-3">
                       <span
-                        className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
-                          isSelected
+                        className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${isSelected
                             ? 'bg-emerald-700 text-white'
                             : 'border border-slate-300 bg-white text-slate-500'
-                        }`}
+                          }`}
                       >
                         {String.fromCharCode(65 + optIdx)}
                       </span>
@@ -258,7 +255,7 @@ export default function AssessmentPage() {
                   {getTier(overallPercentage)}
                 </h2>
                 <p className="mt-2 text-sm text-slate-600 max-w-lg">
-                  You scored <strong className="text-slate-900">{totalCorrect} of {totalQuestions}</strong> correct ({overallPercentage}%). 
+                  You scored <strong className="text-slate-900">{totalCorrect} of {totalQuestions}</strong> correct ({overallPercentage}%).
                   Your roadmap has been automatically customized to skip verified strengths and focus on identified gap areas.
                 </p>
               </div>
@@ -295,11 +292,10 @@ export default function AssessmentPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-800">{item.area}</span>
                     <span
-                      className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${
-                        item.percentage >= 80
+                      className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${item.percentage >= 80
                           ? 'bg-emerald-100 text-emerald-900'
                           : 'bg-amber-100 text-amber-900'
-                      }`}
+                        }`}
                     >
                       {item.percentage >= 80 ? (
                         <CheckCircle2 size={13} />
@@ -317,9 +313,8 @@ export default function AssessmentPage() {
 
                   <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
-                        item.percentage >= 80 ? 'bg-emerald-600' : 'bg-amber-500'
-                      }`}
+                      className={`h-full rounded-full ${item.percentage >= 80 ? 'bg-emerald-600' : 'bg-amber-500'
+                        }`}
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
@@ -386,18 +381,16 @@ export default function AssessmentPage() {
                 return (
                   <div
                     key={q.id}
-                    className={`rounded-xl border p-4 space-y-2 text-xs ${
-                      isCorrect ? 'border-emerald-100 bg-emerald-50/30' : 'border-amber-100 bg-amber-50/30'
-                    }`}
+                    className={`rounded-xl border p-4 space-y-2 text-xs ${isCorrect ? 'border-emerald-100 bg-emerald-50/30' : 'border-amber-100 bg-amber-50/30'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800">
                         Q{idx + 1}: {q.topic} ({q.area})
                       </span>
                       <span
-                        className={`font-semibold ${
-                          isCorrect ? 'text-emerald-800' : 'text-amber-800'
-                        }`}
+                        className={`font-semibold ${isCorrect ? 'text-emerald-800' : 'text-amber-800'
+                          }`}
                       >
                         {isCorrect ? '✓ Correct' : '✗ Incorrect'}
                       </span>

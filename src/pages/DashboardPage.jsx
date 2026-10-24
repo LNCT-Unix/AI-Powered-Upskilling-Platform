@@ -85,9 +85,8 @@ export default function DashboardPage() {
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
               <span
                 key={i}
-                className={`grid h-8 w-8 place-items-center rounded-full text-xs font-bold ${
-                  i < 5 ? 'bg-green-800 text-white' : 'bg-slate-100 text-slate-400'
-                }`}
+                className={`grid h-8 w-8 place-items-center rounded-full text-xs font-bold ${i < 5 ? 'bg-green-800 text-white' : 'bg-slate-100 text-slate-400'
+                  }`}
               >
                 {i < 5 ? <Check size={14} /> : d}
               </span>
@@ -116,9 +115,8 @@ export default function DashboardPage() {
                   role="tab"
                   aria-selected={filter === id}
                   onClick={() => setFilter(id)}
-                  className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                    filter === id ? 'bg-white text-green-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                  className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${filter === id ? 'bg-white text-green-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
                 >
                   {label}
                 </button>
@@ -140,9 +138,8 @@ export default function DashboardPage() {
             {filtered.map((a) => (
               <li key={a.id} className="flex items-center gap-3 py-4">
                 <span
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                    a.type === 'assessment' ? 'bg-yellow-100 text-green-900' : 'bg-green-50 text-green-800'
-                  }`}
+                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${a.type === 'assessment' ? 'bg-yellow-100 text-green-900' : 'bg-green-50 text-green-800'
+                    }`}
                 >
                   {a.type === 'assessment' ? <Target size={18} /> : <Check size={18} />}
                 </span>
