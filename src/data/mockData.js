@@ -3,7 +3,9 @@ import {
   Home, ClipboardCheck
 } from 'lucide-react';
 
-export const HERO_IMAGE = 'https://i.pinimg.com/736x/84/dd/e6/84dde6e4a1641f19a2f53577ec4b9f4c.jpg';
+import heroImage from '../assets/hero.png';
+
+export const HERO_IMAGE = heroImage;
 
 export const skills = [
   { name: 'JavaScript Fundamentals', score: 0, color: 'bg-green-700' },

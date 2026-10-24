@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Menu, Bell, GraduationCap } from 'lucide-react';
 import Sidebar from './Sidebar';
+import MobileNav from './MobileNav';
 import Logo from '../ui/Logo';
 import { navItems } from '../../data/mockData';
 
@@ -73,12 +74,15 @@ export default function DashboardShell({ children }) {
         </header>
 
         {/* Dynamic Route View */}
-        <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 flex-1 w-full">
+        <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 flex-1 w-full">
           {children || <Outlet />}
           <footer className="mt-10 border-t border-slate-200 pt-5 text-xs text-slate-400">
             AiUpskilling Platform · Learning progress preview · Sample data only
           </footer>
         </main>
+
+        {/* Mobile Thumb-Zone Navigation */}
+        <MobileNav />
       </div>
     </div>
   );
