@@ -1,12 +1,12 @@
-package com.unix.ai_upskilling_platform;
+package com.unix.aiupskilling;
 
-import com.unix.ai_upskilling_platform.authentication.dto.response.AuthTokens;
-import com.unix.ai_upskilling_platform.authentication.model.enums.AccountStatus;
-import com.unix.ai_upskilling_platform.authentication.model.enums.ClientPlatform;
-import com.unix.ai_upskilling_platform.authentication.service.AuthTokenService;
-import com.unix.ai_upskilling_platform.model.entity.User;
-import com.unix.ai_upskilling_platform.model.enums.Role;
-import com.unix.ai_upskilling_platform.repository.UserRepository;
+import com.unix.aiupskilling.authentication.dto.response.AuthTokens;
+import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
+import com.unix.aiupskilling.authentication.model.enums.ClientPlatform;
+import com.unix.aiupskilling.authentication.service.AuthTokenService;
+import com.unix.aiupskilling.user.User;
+import com.unix.aiupskilling.user.Role;
+import com.unix.aiupskilling.user.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
