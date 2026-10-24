@@ -10,7 +10,7 @@
 ## 1. Project Context & Boundaries
 
 1. **Dedicated Workspace:** Work exclusively within `C:\Users\ashut\EPAM\UNIX\AI-path-finder` and the currently checked-out `frontend` branch.
-2. **Project Isolation:** This project is strictly separated from any external applications (such as Agro-Aid AI). Never import, reference, or cross-contaminate code, configurations, or credentials.
+2. **Project Isolation:** This project is strictly separated from any external applications . Never import, reference, or cross-contaminate code, configurations, or credentials.
 3. **Authentication Boundary:** Teammates Riya (email auth) and Aadi (OAuth2 & tokens) own the Spring Boot backend authentication service (`gateway/ai-upskilling-platform`). The frontend must remain a consumer of `/oauth2/authorization/*`, `/api/auth/oauth2/exchange`, `/api/auth/me`, `/api/auth/refresh`, and `/api/auth/logout`. Do not build competing auth backends or overwrite teammate contracts.
 4. **Git Safety Directives:**
    - Never run `git reset --hard`, `git clean -fd`, or force-push.
