@@ -2,17 +2,20 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowRight, Check, ChevronRight, GraduationCap, Menu,
-  Sparkles, TrendingUp, X
+  Sparkles, TrendingUp, X, LogIn
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Logo from '../components/ui/Logo';
 import Card from '../components/ui/Card';
 import SkillBar from '../components/ui/SkillBar';
 import { HERO_IMAGE, skills, features, steps } from '../data/mockData';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { loginWithGoogle, loginWithGitHub, isAuthenticated } = useAuth();
 
   return (
     <div id="top" className="overflow-hidden bg-white text-slate-800">
@@ -25,9 +28,17 @@ export default function LandingPage() {
             <a className="text-sm font-medium text-slate-600 hover:text-green-800 transition" href="#features">Features</a>
             <a className="text-sm font-medium text-slate-600 hover:text-green-800 transition" href="#how">How it works</a>
             <a className="text-sm font-medium text-slate-600 hover:text-green-800 transition" href="#about">About</a>
-            <Link to="/dashboard">
-              <Button variant="ghost">Dashboard</Button>
-            </Link>
+
+            {isAuthenticated ? (
+              <Link to="/dashboard">
+                <Button variant="ghost">Dashboard</Button>
+              </Link>
+            ) : (
+              <Button variant="ghost" onClick={() => setAuthModalOpen(true)}>
+                <LogIn size={15} /> Sign in
+              </Button>
+            )}
+
             <Button onClick={() => navigate('/assessment')}>
               Try a diagnostic <ArrowRight size={16} />
             </Button>
@@ -52,6 +63,18 @@ export default function LandingPage() {
             <a onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2 text-sm" href="#how">
               How it works
             </a>
+            {!isAuthenticated && (
+              <Button
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setAuthModalOpen(true);
+                }}
+              >
+                <LogIn size={15} /> Sign in
+              </Button>
+            )}
             <Button className="mt-2 w-full" onClick={() => { setMobileOpen(false); navigate('/dashboard'); }}>
               Open dashboard <ArrowRight size={16} />
             </Button>
@@ -204,6 +227,61 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
+
+      {/* Sign-In Modal (Spring Boot Gateway Integration) */}
+      {authModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-green-950/40 backdrop-blur-xs">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-lg font-bold text-green-950">Sign In to SkillPath</h2>
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Sign in via your preferred identity provider to sync your adaptive roadmap across devices.
+            </p>
+
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2 border-slate-300 hover:bg-slate-50"
+                onClick={loginWithGoogle}
+              >
+                <span className="font-bold text-slate-700">Continue with Google</span>
+              </Button>
+
+              <Button
+                variant="primary"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white"
+                onClick={loginWithGitHub}
+              >
+                <span className="font-bold">Continue with GitHub</span>
+              </Button>
+
+              <div className="relative py-2 text-center text-xs text-slate-400">
+                <span className="bg-white px-2">or for local offline development</span>
+              </div>
+
+              <Button
+                variant="ghost"
+                className="w-full text-xs text-slate-600 hover:bg-slate-100"
+                onClick={() => {
+                  setAuthModalOpen(false);
+                  navigate('/dashboard');
+                }}
+              >
+                Continue as Guest (Offline Mode)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="border-t border-slate-100 px-5 py-7 text-center text-sm text-slate-500">
         © 2026 AiUpskillingPlatform. Learning progress preview · Sample data only.

@@ -3,10 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { useAuth } from '../hooks/useAuth';
 
 export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { handleOAuthCallback } = useAuth();
 
   const code = searchParams.get('code');
   const errorParam = searchParams.get('error');
@@ -19,22 +21,32 @@ export default function AuthCallbackPage() {
     : '';
 
   const [status, setStatus] = useState(initialStatus);
-  const [errorMessage] = useState(initialError);
+  const [errorMessage, setErrorMessage] = useState(initialError);
 
   useEffect(() => {
     if (status !== 'processing') return;
 
-    // In Phase 6, this exchanges the code via authService.exchangeLoginCode(code)
-    const timer = setTimeout(() => {
-      setStatus('success');
-      const navTimer = setTimeout(() => {
-        navigate('/dashboard');
-      }, 1200);
-      return () => clearTimeout(navTimer);
-    }, 1000);
+    let mounted = true;
+    async function exchange() {
+      const res = await handleOAuthCallback(code);
+      if (!mounted) return;
 
-    return () => clearTimeout(timer);
-  }, [status, navigate]);
+      if (res.success) {
+        setStatus('success');
+        setTimeout(() => {
+          if (mounted) navigate('/dashboard');
+        }, 1200);
+      } else {
+        setStatus('error');
+        setErrorMessage(res.error || 'Failed to exchange login code');
+      }
+    }
+
+    exchange();
+    return () => {
+      mounted = false;
+    };
+  }, [code, status, handleOAuthCallback, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">

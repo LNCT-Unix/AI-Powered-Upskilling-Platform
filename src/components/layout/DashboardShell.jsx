@@ -1,17 +1,25 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Menu, Bell, GraduationCap } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Bell, GraduationCap, LogOut } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import Logo from '../ui/Logo';
 import { navItems } from '../../data/mockData';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function DashboardShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const currentItem = navItems.find((n) => n.path === location.pathname);
   const activeTitle = currentItem?.label || 'Dashboard';
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 lg:flex">
@@ -63,13 +71,29 @@ export default function DashboardShell({ children }) {
             >
               <Bell size={19} />
             </button>
+
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-bold text-green-950">Student account</p>
-              <p className="text-xs text-slate-500">Sample profile</p>
+              <p className="text-sm font-bold text-green-950">
+                {user ? user.fullName : 'Student account'}
+              </p>
+              <p className="text-xs text-slate-500">
+                {user ? user.email : 'Sample profile'}
+              </p>
             </div>
+
             <span className="grid h-10 w-10 place-items-center rounded-full bg-yellow-300 text-sm font-extrabold text-green-950 ring-4 ring-yellow-50">
               <GraduationCap size={19} />
             </span>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Sign out"
+              aria-label="Sign out"
+              className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </header>
 
