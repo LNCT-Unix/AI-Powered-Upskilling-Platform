@@ -1,9 +1,9 @@
-package com.unix.ai_upskilling_platform.exception;
+package com.unix.aiupskilling.shared.exception;
 
-import com.unix.ai_upskilling_platform.authentication.dto.response.ErrorData;
-import com.unix.ai_upskilling_platform.authentication.dto.response.FieldErrorDto;
-import com.unix.ai_upskilling_platform.authentication.exception.*;
-import com.unix.ai_upskilling_platform.dto.response.ApiResponse;
+import com.unix.aiupskilling.authentication.dto.response.ErrorData;
+import com.unix.aiupskilling.authentication.dto.response.FieldErrorDto;
+import com.unix.aiupskilling.authentication.exception.*;
+import com.unix.aiupskilling.shared.dto.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -107,6 +107,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<ErrorData>> handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage(), ErrorData.of(ex.getCode())));
+    }
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<ErrorData>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
+        String reason = ex.getReason() != null ? ex.getReason() : ex.getMessage();
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(ApiResponse.error(reason, ErrorData.of(ex.getStatusCode().toString())));
     }
 
     @ExceptionHandler(Exception.class)

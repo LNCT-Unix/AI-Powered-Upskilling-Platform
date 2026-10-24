@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.exception;
+package com.unix.aiupskilling.shared.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {

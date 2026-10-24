@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.util;
+package com.unix.aiupskilling.shared.util;
 
 public final class AppConstants {
 

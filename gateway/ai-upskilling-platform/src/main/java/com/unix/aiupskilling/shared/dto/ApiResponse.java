@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.dto.response;
+package com.unix.aiupskilling.shared.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
