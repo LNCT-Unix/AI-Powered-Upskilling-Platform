@@ -141,3 +141,15 @@ When `VITE_USE_MOCK_AUTH=false`:
 | `npm run build` | Builds optimized production assets into `dist/`. |
 | `npm run lint` | Runs ESLint across all `.js` and `.jsx` files. |
 | `npm run preview` | Previews the production build locally. |
+
+---
+
+## 6. Mobile Application (Capacitor) & PWA Directives
+
+The web application is architected from day one for cross-platform delivery as an installable **PWA** and a native mobile container via **Capacitor**:
+- **Touch Targets:** Minimum 44x44px touch bounding boxes across all interactive chips, quiz choices, and buttons.
+- **Safe-Area Insets:** Layout shells adapt automatically to device notches and navigation bars using `env(safe-area-inset-top)` and `env(safe-area-inset-bottom)`.
+- **Mobile Navigation (`MobileNav.jsx`):** Fixed thumb-friendly bottom bar on viewports `< 768px`.
+- **Offline Resilience:** Active diagnostic and roadmap progress persist in client storage (`localStorage` / `sessionStorage`) to survive connectivity drops.
+- **Native Bridge Hooks:** Voice input (`useSpeechRecognition.js`) and OAuth deep-linking are abstracted behind custom hooks ready to connect to native Capacitor plugins on mobile.
+

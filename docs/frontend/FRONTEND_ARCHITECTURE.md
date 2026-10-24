@@ -1,8 +1,9 @@
 # Frontend Architecture Specification — AI-Powered Upskilling Platform
 
-**Document Status:** Architecture Plan & Verified Implementation (v2.0)  
+**Document Status:** Architecture Plan & Verified Implementation (v2.1)  
 **Role:** Senior Frontend Engineer & UX Architect  
 **Target Stack:** React 19, Vite 8, React Router DOM 7, Tailwind CSS v4, Lucide React  
+**Target Delivery:** Progressive Web App (PWA) + Cross-Platform Mobile Application (via Capacitor)  
 **Reference Specification:** 6-Phase Master Website Workflow Diagram  
 
 ---
@@ -16,9 +17,10 @@
    - *Phase 4:* In-Depth Learning, AI Doubt Solving & Remediation Loops
    - *Phase 5:* Practical Project Verification & Certification
    - *Phase 6:* Career Development (Resume, Mock Interview, Job Matches) & Skill Stacking Loop
-2. **Strict Gateway & Auth Boundary:** Network requests and tokens are isolated in `services/api.js` and `context/AuthContext.jsx`. The frontend remains an authorized consumer of Spring Boot Gateway endpoints (`/api/auth/*`, `/api/v1/*`), with resilient fallback to Mock Auth Mode (`VITE_USE_MOCK_AUTH=true`).
-3. **URL-First Navigation:** Deep linking and browser history are maintained across all 12 platform routes via `react-router-dom` v7.
-4. **Inclusive Accessibility:** Built-in multi-language localization (English, Hindi, Hinglish) and speech-to-text voice recognition for AI doubt solving.
+2. **Cross-Platform Delivery (PWA & Capacitor):** The web application is engineered from the ground up to wrap seamlessly into native iOS/Android shells via **Capacitor** and install as a **Progressive Web App (PWA)** with touch-first ergonomics and offline resilience.
+3. **Strict Gateway & Auth Boundary:** Network requests and tokens are isolated in `services/api.js` and `context/AuthContext.jsx`. The frontend remains an authorized consumer of Spring Boot Gateway endpoints (`/api/auth/*`, `/api/v1/*`), with resilient fallback to Mock Auth Mode (`VITE_USE_MOCK_AUTH=true`).
+4. **URL-First Navigation:** Deep linking and browser history are maintained across all 12 platform routes via `react-router-dom` v7.
+5. **Inclusive Accessibility:** Built-in multi-language localization (English, Hindi, Hinglish) and speech-to-text voice recognition for AI doubt solving.
 
 ---
 
@@ -148,3 +150,24 @@ web-app/src/
           |    Re-Test Learner    |
           +-----------------------+
 ```
+
+---
+
+## 6. Mobile (Capacitor) & PWA Architecture
+
+### 1. Capacitor Native Containerization
+The web application is structured for seamless wrapping using `@capacitor/core` and `@capacitor/cli` for iOS and Android:
+- **No Hard Page Reloads:** All in-app transitions utilize `react-router-dom` (`navigate()` / `<Link />`) to prevent webview reloads in Capacitor.
+- **Hardware Safe-Area Insets:** Layout shells implement CSS environment variables (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`) ensuring elements clear device notches, status bars, and gesture pill indicators.
+- **Touch Ergonomics:**
+  - Minimum 44x44px touch bounding boxes across all interactive buttons, topic nodes, and choice chips.
+  - Double-tap delay eliminated via `touch-action: manipulation`.
+  - Native-feeling momentum scrolling (`-webkit-overflow-scrolling: touch`).
+
+### 2. Progressive Web App (PWA) Standards
+- **Standalone Web App Manifest (`manifest.webmanifest`):** Configures display mode `standalone`, orientation lock capabilities, brand theme colors (`#0b0f17`), and SVG/PNG icon matrices.
+- **Offline & State Resilience:** Active assessment progress, roadmap states, and student session tokens are cached in `localStorage` / `sessionStorage` to ensure uninterrupted learning during flaky mobile connectivity.
+
+### 3. Capacitor Plugin Abstractions
+- **Voice Recognition:** `useSpeechRecognition.js` provides an abstraction hook utilizing browser Web Speech API on desktop web, designed to bind directly to `@capacitor-community/speech-recognition` when running within native iOS/Android containers.
+- **OAuth & Deep Linking:** Supports standard browser redirect flow on web, structured to intercept native custom URL schemes (`app://auth/callback`) on mobile.

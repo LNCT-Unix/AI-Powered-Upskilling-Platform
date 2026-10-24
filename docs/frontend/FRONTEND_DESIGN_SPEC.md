@@ -184,11 +184,18 @@ Our color system is built on high-contrast, accessible ratios (WCAG AAA for text
 
 ## 5. Accessibility, Responsiveness & State Specifications
 
-### 5.1 Mobile & Low-Bandwidth Considerations (PWA Alignment)
-- **Fluid Breakpoints:** Mobile (`< 640px`), Tablet (`640px - 1024px`), Desktop (`> 1024px`).
-- **Mobile Navigation:** Bottom navigation bar on mobile devices (`Dashboard`, `Roadmap`, `Assessment`, `Analytics`) providing thumb-zone access, transitioning to a fixed vertical sidebar on desktop (`lg:`).
+### 5.1 Mobile Application (Capacitor) & PWA Directives
+- **Cross-Platform Target:** Web + installable Progressive Web App (PWA) + iOS/Android native containerization via Capacitor.
+- **Hardware Safe-Area Insets:** Layout shells implement CSS environment variables (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`) so top bars and bottom navigation clear device notches, status bars, and home indicators.
+- **Touch-First Ergonomics:**
+  - Strict minimum 44x44px touch bounding boxes across all buttons, quiz choices, topic nodes, and filter chips.
+  - Double-tap zoom delays eliminated via `touch-action: manipulation`.
+  - Native-feeling momentum scrolling (`-webkit-overflow-scrolling: touch`).
+- **Mobile Navigation:** Dedicated thumb-friendly bottom bar (`MobileNav.jsx`) on viewports `< 768px` providing instant access to `/dashboard`, `/roadmap`, `/learn`, and `/career`.
+- **PWA Standalone Display:** Configured for `display: standalone` in `manifest.webmanifest` with brand theme color (`#0b0f17`).
+- **Offline State Persistence:** Diagnostic quiz state, roadmap milestones, and session tokens persist in `localStorage` / `sessionStorage` to survive connection drops and mobile app restarts.
 - **Reduced Motion Support:** Respects `prefers-reduced-motion: reduce` by disabling smooth scrolling and transitions.
-- **Lightweight Assets:** All SVG icons loaded inline via `lucide-react`. Zero heavy canvas dependencies.
+- **Lightweight Assets:** All SVG icons loaded inline via `lucide-react` (stroke width 2px). Zero heavy canvas dependencies.
 
 ### 5.2 Form States & Micro-Interactions
 - **Loading State:** Skeleton loaders matching exact card geometry (`animate-pulse bg-slate-200`) rather than generic spinning circles.

@@ -169,5 +169,5 @@ Based on `AI_Roadmap_Platform_Features (1).pptx` (Slide 12), features are strict
 | **Evaluation** | Topic completion quizzes with weak-subtopic identification and revision prompts | Full live in-browser multi-language code runner sandbox |
 | **Verification** | Manual GitHub repo link submission + static rubric verification | Automated GitHub Webhook commit parsing and automated PR test runners |
 | **Career Tools** | Basic ATS resume formatting & skill export | Real-time voice AI mock interview simulations & recruiter job board |
-| **Accessibility & Platform** | Responsive mobile layout, dark/light contrast compliance, semantic HTML | PWA offline video caching, full Hindi/Hinglish audio voice interface |
+| **Accessibility & Platform** | Responsive mobile layout, PWA installability, Capacitor mobile containerization, touch-first 44px ergonomics, multi-language (en/hi/hinglish), Web Speech voice input | Native iOS/Android app store deployment via Capacitor, background audio, full offline media caching |
 | **Institutional** | Single-user dashboard | Multi-tenant trainer batch dashboards, bulk CSV import, cohort alerts |
