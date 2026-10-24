@@ -88,4 +88,45 @@ export const authService = {
     }
     return apiClient('/api/auth/logout');
   },
+
+  // 6. Email & Password Login
+  async loginWithEmail(email, password) {
+    if (USE_MOCK_AUTH) {
+      const mockToken = 'mock-jwt-token-team-unix';
+      setAccessToken(mockToken);
+      return {
+        success: true,
+        data: {
+          accessToken: mockToken,
+          user: { ...MOCK_USER, email },
+        },
+      };
+    }
+    const response = await apiClient('/api/auth/login', {
+      body: { email, password },
+    });
+    if (response?.data?.accessToken) {
+      setAccessToken(response.data.accessToken);
+    }
+    return response;
+  },
+
+  // 7. Email & Password Registration
+  async registerWithEmail({ fullName, email, password }) {
+    if (USE_MOCK_AUTH) {
+      const mockToken = 'mock-jwt-token-team-unix';
+      setAccessToken(mockToken);
+      return {
+        success: true,
+        data: {
+          accessToken: mockToken,
+          user: { id: Date.now(), fullName: fullName || 'New Learner', email, role: 'USER' },
+        },
+      };
+    }
+    return apiClient('/api/auth/register', {
+      body: { fullName, email, password },
+    });
+  },
 };
+

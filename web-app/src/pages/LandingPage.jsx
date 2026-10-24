@@ -34,9 +34,11 @@ export default function LandingPage() {
                 <Button variant="ghost">Dashboard</Button>
               </Link>
             ) : (
-              <Button variant="ghost" onClick={() => setAuthModalOpen(true)}>
-                <LogIn size={15} /> Sign in
-              </Button>
+              <Link to="/login">
+                <Button variant="ghost">
+                  <LogIn size={15} /> Sign in
+                </Button>
+              </Link>
             )}
 
             <Button onClick={() => navigate('/assessment')}>

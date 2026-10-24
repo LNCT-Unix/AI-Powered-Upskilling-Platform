@@ -52,6 +52,39 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const login = useCallback(async (email, password) => {
+    setIsLoading(true);
+    try {
+      const result = await authService.loginWithEmail(email, password);
+      if (result?.data) {
+        setTokenState(result.data.accessToken);
+        setUser(result.data.user);
+        return { success: true };
+      }
+      return { success: false, error: 'Invalid response from server' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const register = useCallback(async (details) => {
+    setIsLoading(true);
+    try {
+      const result = await authService.registerWithEmail(details);
+      if (result?.data?.accessToken) {
+        setTokenState(result.data.accessToken);
+        setUser(result.data.user);
+      }
+      return { success: true, data: result?.data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -67,6 +100,8 @@ export function AuthProvider({ children }) {
     user,
     isAuthenticated: Boolean(user),
     isLoading,
+    login,
+    register,
     loginWithGoogle: authService.loginWithGoogle,
     loginWithGitHub: authService.loginWithGitHub,
     logout,
