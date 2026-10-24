@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.dto.response;
+package com.unix.aiupskilling.user;
 
-import com.unix.ai_upskilling_platform.model.enums.Role;
+import com.unix.aiupskilling.user.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

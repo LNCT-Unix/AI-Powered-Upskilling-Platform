@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.model.enums;
+package com.unix.aiupskilling.user;
 
 public enum Role {
     USER,

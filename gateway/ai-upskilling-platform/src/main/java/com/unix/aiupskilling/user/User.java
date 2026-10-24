@@ -1,7 +1,7 @@
-package com.unix.ai_upskilling_platform.model.entity;
+package com.unix.aiupskilling.user;
 
-import com.unix.ai_upskilling_platform.authentication.model.enums.AccountStatus;
-import com.unix.ai_upskilling_platform.model.enums.Role;
+import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
+import com.unix.aiupskilling.user.Role;
 import jakarta.persistence.*;
 import lombok.*;
 

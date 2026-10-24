@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.repository;
+package com.unix.aiupskilling.user;
 
-import com.unix.ai_upskilling_platform.model.entity.User;
+import com.unix.aiupskilling.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

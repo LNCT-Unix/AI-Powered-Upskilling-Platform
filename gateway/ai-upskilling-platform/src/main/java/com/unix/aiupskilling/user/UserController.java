@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.controller;
+package com.unix.aiupskilling.user;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.service;
+package com.unix.aiupskilling.user;
 
-import com.unix.ai_upskilling_platform.dto.response.UserResponse;
+import com.unix.aiupskilling.user.UserResponse;
 
 import java.util.List;
 

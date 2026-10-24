@@ -1,8 +1,8 @@
-package com.unix.ai_upskilling_platform.service.impl;
+package com.unix.aiupskilling.user;
 
-import com.unix.ai_upskilling_platform.dto.response.UserResponse;
-import com.unix.ai_upskilling_platform.repository.UserRepository;
-import com.unix.ai_upskilling_platform.service.UserService;
+import com.unix.aiupskilling.user.UserResponse;
+import com.unix.aiupskilling.user.UserRepository;
+import com.unix.aiupskilling.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
