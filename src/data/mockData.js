@@ -44,11 +44,129 @@ export const activities = [
   { id: 4, type: 'lesson', title: 'Started “Binary Trees Explained”', meta: 'Data Structures · 3 days ago' },
 ];
 
+export const knowledgeAreas = [
+  'Prerequisites & Foundations',
+  'Core Conceptual Understanding',
+  'Theory & Architecture',
+  'Syntax & Mechanics',
+  'Practical Problem-Solving',
+];
+
 export const questions = [
-  { topic: 'JavaScript', question: 'Which keyword declares a block-scoped variable that can be reassigned?', options: ['const', 'let', 'static', 'define'], answer: 1 },
-  { topic: 'SQL', question: 'Which SQL clause filters rows before grouping?', options: ['ORDER BY', 'HAVING', 'WHERE', 'JOIN'], answer: 2 },
-  { topic: 'React', question: 'Which hook is commonly used to manage local component state?', options: ['useState', 'useRoute', 'useStyle', 'useFetchOnly'], answer: 0 },
-  { topic: 'Data Structures', question: 'Which data structure follows FIFO order?', options: ['Stack', 'Queue', 'Tree', 'Graph'], answer: 1 },
+  // 1. Prerequisites & Foundations
+  {
+    id: 1,
+    topic: 'JavaScript Fundamentals',
+    area: 'Prerequisites & Foundations',
+    question: 'Which keyword declares a block-scoped variable that can be reassigned in modern JavaScript?',
+    options: ['const', 'let', 'var', 'static'],
+    answer: 1,
+    explanation: '`let` declares block-scoped variables that can be reassigned, whereas `const` cannot be reassigned and `var` is function-scoped.',
+  },
+  {
+    id: 2,
+    topic: 'Type Semantics',
+    area: 'Prerequisites & Foundations',
+    question: 'What is the evaluated output of `typeof null` in standard JavaScript?',
+    options: ['"null"', '"undefined"', '"object"', '"boolean"'],
+    answer: 2,
+    explanation: 'In JavaScript, `typeof null` historically evaluates to "object", a known language artifact from the initial 1995 implementation.',
+  },
+
+  // 2. Core Conceptual Understanding
+  {
+    id: 3,
+    topic: 'Execution Context',
+    area: 'Core Conceptual Understanding',
+    question: 'What mechanism allows an inner function to access variables from its enclosing outer scope even after the outer function has finished executing?',
+    options: ['Prototypal Inheritance', 'Lexical Closure', 'Event Delegation', 'Memory Buffering'],
+    answer: 1,
+    explanation: 'A closure is the combination of a function bundled together with references to its lexical environment, allowing it to remember variables from its parent scope.',
+  },
+  {
+    id: 4,
+    topic: 'Asynchronous Event Loop',
+    area: 'Core Conceptual Understanding',
+    question: 'In the JavaScript event loop, which queue has execution priority immediately when the call stack clears?',
+    options: ['Macrotask Queue (setTimeout)', 'Microtask Queue (Promises / queueMicrotask)', 'RequestAnimationFrame Queue', 'I/O Polling Queue'],
+    answer: 1,
+    explanation: 'The microtask queue (Promise callbacks, MutationObserver) is fully drained before the event loop picks the next macrotask.',
+  },
+
+  // 3. Theory & Architecture
+  {
+    id: 5,
+    topic: 'React Reconciler',
+    area: 'Theory & Architecture',
+    question: 'What is the primary architectural purpose of the Virtual DOM and Diffing Algorithm in React?',
+    options: [
+      'To directly accelerate browser GPU rendering',
+      'To compute minimal mutations in memory and batch updates to the real DOM',
+      'To eliminate JavaScript memory management',
+      'To enforce two-way data binding across all parent-child components',
+    ],
+    answer: 1,
+    explanation: 'The Virtual DOM allows React to compute minimal mutations in memory and reconcile differences before applying batch updates to the real DOM.',
+  },
+  {
+    id: 6,
+    topic: 'State Architecture',
+    area: 'Theory & Architecture',
+    question: 'Why does React require immutable state updates rather than direct in-place mutation?',
+    options: [
+      'Immutability is strictly required by the JavaScript V8 engine',
+      'Predictable shallow equality checks allow React to determine precisely when components need re-rendering',
+      'Direct mutation creates security vulnerabilities in browser storage',
+      'Mutable state increases memory usage tenfold',
+    ],
+    answer: 1,
+    explanation: 'React compares state references using shallow equality (Object.is). In-place mutations do not change object reference identity, causing missed re-renders.',
+  },
+
+  // 4. Syntax & Mechanics
+  {
+    id: 7,
+    topic: 'React Hooks',
+    area: 'Syntax & Mechanics',
+    question: 'What happens if a state variable used inside a `useEffect` callback is omitted from its dependency array?',
+    options: [
+      'The effect throws an unhandled syntax exception at compile time',
+      'The effect will create a stale closure, reading outdated variable values captured during initial render',
+      'React automatically infers and adds the dependency in production builds',
+      'The component switches to synchronous rendering mode',
+    ],
+    answer: 1,
+    explanation: 'Omitting a referenced variable from the dependency array locks the effect into a stale closure, causing it to read the variable value captured during its initial render.',
+  },
+  {
+    id: 8,
+    topic: 'Functional Programming',
+    area: 'Syntax & Mechanics',
+    question: 'Which array method transforms an array by applying an accumulator function and returns a single output value without mutating the original array?',
+    options: ['splice()', 'reduce()', 'forEach()', 'push()'],
+    answer: 1,
+    explanation: '`reduce()` executes a reducer callback over all elements, returning a single accumulated result without altering the source array.',
+  },
+
+  // 5. Practical Problem-Solving
+  {
+    id: 9,
+    topic: 'Databases & SQL',
+    area: 'Practical Problem-Solving',
+    question: 'Which SQL clause filters aggregated group records after a `GROUP BY` statement has executed?',
+    options: ['WHERE', 'ORDER BY', 'HAVING', 'JOIN'],
+    answer: 2,
+    explanation: '`WHERE` filters rows before any grouping occurs; `HAVING` filters aggregated records produced by `GROUP BY`.',
+  },
+  {
+    id: 10,
+    topic: 'Algorithms & Complexity',
+    area: 'Practical Problem-Solving',
+    question: 'What is the worst-case time complexity of searching for an element in a sorted array using Binary Search?',
+    options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+    answer: 1,
+    explanation: 'Binary Search halves the search space at each iteration, yielding logarithmic time complexity O(log n).',
+  },
 ];
 
 export const roadmapItems = [
