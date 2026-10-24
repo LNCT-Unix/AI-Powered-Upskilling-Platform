@@ -1,5 +1,6 @@
 package com.unix.ai_upskilling_platform.model.entity;
 
+import com.unix.ai_upskilling_platform.authentication.model.enums.AccountStatus;
 import com.unix.ai_upskilling_platform.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,9 +25,24 @@ public class User {
 
     private String fullName;
 
+    @Column(length = 255)
+    private String passwordHash;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    private LocalDateTime emailVerifiedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
+    @Builder.Default
+    private Role role = Role.USER;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AccountStatus status = AccountStatus.ACTIVE;
 
     private LocalDateTime createdAt;
 
@@ -38,6 +54,9 @@ public class User {
         updatedAt = LocalDateTime.now();
         if (role == null) {
             role = Role.USER;
+        }
+        if (status == null) {
+            status = AccountStatus.ACTIVE;
         }
     }
 
