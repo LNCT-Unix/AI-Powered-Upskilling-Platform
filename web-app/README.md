@@ -25,24 +25,31 @@ web-app/
     │   ├── layout/              # Shell frames (DashboardShell, Sidebar, MobileNav)
     │   └── auth/                # Interactive authentication forms (login.jsx, signup.jsx)
     │
-    ├── pages/                   # Application route views
-    │   ├── LandingPage.jsx      # Public product landing page with hero & feature grid
-    │   ├── LoginPage.jsx        # Login page wrapper connecting UI with useAuth()
-    │   ├── SignupPage.jsx       # Registration page wrapper connecting UI with useAuth()
-    │   ├── AuthCallbackPage.jsx # Receives gateway OAuth2 redirect code and handles exchange
-    │   ├── DashboardPage.jsx    # Learner overview with stats, next action, & skill rings
-    │   ├── AssessmentPage.jsx   # 10-question sequential adaptive diagnostic & gap report
-    │   ├── RoadmapPage.jsx      # Topological milestone graph with "Why this step" rationales
-    │   ├── SkillGraphPage.jsx   # Knowledge cluster prerequisite graph & cluster mastery
+    ├── pages/                   # Application route views across all 6 phases
+    │   ├── LandingPage.jsx      # [Phase 1] Public product landing page with hero & feature grid
+    │   ├── LoginPage.jsx        # [Phase 1] Login page wrapper connecting UI with useAuth()
+    │   ├── SignupPage.jsx       # [Phase 1] Registration page wrapper connecting UI with useAuth()
+    │   ├── AuthCallbackPage.jsx # [Phase 1] Receives gateway OAuth2 redirect code and handles exchange
+    │   ├── OnboardingPage.jsx   # [Phase 1] Multi-step wizard: Language/Persona -> Skill Track -> Background & Study Budget
+    │   ├── AssessmentPage.jsx   # [Phase 2] 10-question sequential adaptive diagnostic & Initial Skill Report
+    │   ├── DashboardPage.jsx    # [Phase 3/4] Student overview (Next best action, habit streak, stats)
+    │   ├── RoadmapPage.jsx      # [Phase 3/4] Visual topological roadmap with milestones, rationales, & revision loops
+    │   ├── LearnWorkspacePage.jsx # [Phase 4] Topic study workspace (Resource tabs, AI Doubt-Solver chat, Topic Quiz)
+    │   ├── ProjectVerifyPage.jsx # [Phase 5] GitHub repository submission, AI code review & certificate
+    │   ├── CareerHubPage.jsx    # [Phase 6] AI resume builder, mock interview simulator & job matches
+    │   ├── SkillGraphPage.jsx   # Interactive prerequisite tree and domain cluster progress
     │   ├── AnalyticsPage.jsx    # Weekly study hours, habit streak, & speed metrics
     │   └── NotFoundPage.jsx     # Graceful 404 handler with return home navigation
     │
     ├── context/                 # Application state providers
     │   ├── AuthContext.jsx      # Central auth provider (user, tokens, session hydration, login/logout)
-    │   └── authContextInstance.js # React createContext instance
+    │   ├── authContextInstance.js # React createContext instance
+    │   └── LanguageContext.jsx  # Multi-language localization (English, Hindi, Hinglish) & voice state
     │
     ├── hooks/                   # Custom React hooks
-    │   └── useAuth.js           # Lightweight hook consuming AuthContext
+    │   ├── useAuth.js           # Lightweight hook consuming AuthContext
+    │   ├── useSpeechRecognition.js # Web Speech API voice-to-text hook
+    │   └── useAdaptiveQuiz.js   # Adaptive diagnostic state machine hook
     │
     ├── services/                # Network & API client layer
     │   ├── api.js               # Centralized fetch wrapper with Bearer token & credential headers
@@ -54,20 +61,24 @@ web-app/
 
 ---
 
-## 2. Application Routes
+## 2. Application Route Map (6-Phase Lifecycle)
 
-| Path | View Component | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `/` | `LandingPage` | Public | Hero section, value propositions, feature preview, and CTA triggers. |
-| `/login` | `LoginPage` | Public | Email/password sign-in and Google/GitHub OAuth entry points. |
-| `/signup` | `SignupPage` | Public | Account registration form with live validation and OAuth triggers. |
-| `/auth/callback` | `AuthCallbackPage` | Public | Intercepts `?code=` from backend OAuth2 redirect and exchanges for JWT. |
-| `/dashboard` | `DashboardPage` | Authenticated | Next actionable learning step, active streak, skill score rings, and quick links. |
-| `/assessment` | `AssessmentPage` | Authenticated | 10-question adaptive assessment across 5 knowledge dimensions + gap report. |
-| `/roadmap` | `RoadmapPage` | Authenticated | Visual topological roadmap with milestones, rationales, and revision loops. |
-| `/graph` | `SkillGraphPage` | Authenticated | Interactive prerequisite tree and domain cluster progress. |
-| `/analytics` | `AnalyticsPage` | Authenticated | Learning velocity, hours logged, and streak analytics. |
-| `*` | `NotFoundPage` | Public | 404 fallback page. |
+| Path | View Component | Access | Workflow Phase | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `/` | `LandingPage` | Public | Phase 1 | Hero section, value propositions, feature preview, and CTA triggers. |
+| `/login` | `LoginPage` | Public | Phase 1 | Email/password sign-in and Google/GitHub OAuth entry points. |
+| `/signup` | `SignupPage` | Public | Phase 1 | Account registration form with live validation and OAuth triggers. |
+| `/auth/callback` | `AuthCallbackPage` | Public | Phase 1 | Intercepts `?code=` from backend OAuth2 redirect and exchanges for JWT. |
+| `/onboarding` | `OnboardingPage` | Authenticated | Phase 1 | 3-step wizard: Language & Persona -> Skill Track Selection -> Background & Study Budget. |
+| `/assessment` | `AssessmentPage` | Authenticated | Phase 2 | 10-question adaptive assessment across 5 knowledge dimensions + gap report. |
+| `/dashboard` | `DashboardPage` | Authenticated | Phase 3/4 | Next actionable learning step, active streak, skill score rings, and quick links. |
+| `/roadmap` | `RoadmapPage` | Authenticated | Phase 3/4 | Visual topological roadmap with milestones, rationales, and revision loops. |
+| `/learn/:topicSlug` | `LearnWorkspacePage` | Authenticated | Phase 4 | Dedicated study workspace with resource tabs, AI doubt-solving assistant, and quiz. |
+| `/projects` | `ProjectVerifyPage` | Authenticated | Phase 5 | GitHub capstone project submission, AI automated code review, and certificates. |
+| `/career` | `CareerHubPage` | Authenticated | Phase 6 | AI resume builder, technical mock interview simulator, and loop back to new skills. |
+| `/graph` | `SkillGraphPage` | Authenticated | Supporting | Interactive prerequisite tree and domain cluster progress. |
+| `/analytics` | `AnalyticsPage` | Authenticated | Supporting | Learning velocity, hours logged, and streak analytics. |
+| `*` | `NotFoundPage` | Public | Fallback | 404 fallback page. |
 
 ---
 
