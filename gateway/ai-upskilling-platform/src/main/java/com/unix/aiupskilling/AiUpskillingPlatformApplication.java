@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform;
+package com.unix.aiupskilling;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

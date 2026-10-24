@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform;
+package com.unix.aiupskilling;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
