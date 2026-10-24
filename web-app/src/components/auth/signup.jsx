@@ -11,7 +11,6 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import './auth.css';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 

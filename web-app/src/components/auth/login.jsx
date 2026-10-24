@@ -11,7 +11,6 @@ import {
   Sparkles,
   AlertCircle,
 } from "lucide-react";
-import "./auth.css";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 

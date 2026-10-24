@@ -1,59 +1,71 @@
 # Authentication UI Components & Pages
 
-Welcome! This directory contains the scaffolded authentication components initialized for Team Unix.
+This directory houses the reusable authentication UI forms for the web application, styled with Tailwind CSS v4 and designed to plug directly into [`AuthContext.jsx`](../../context/AuthContext.jsx).
 
-## Architecture & File Structure
+---
+
+## 1. Directory Structure
 
 ```
 web-app/src/
 ├── components/auth/
-│   ├── login.jsx          # Interactive Login UI (Email/Password, Google & GitHub OAuth)
-│   ├── signup.jsx         # Interactive Signup UI (Full Name, Email, Password, Confirm Password, OAuth)
-│   ├── auth.css           # Custom styles & animation extensions for auth
-│   └── README.md          # This developer guide
+│   ├── login.jsx          # Interactive Login form (Email/Password, Google & GitHub OAuth triggers)
+│   ├── signup.jsx         # Interactive Signup form (Full Name, Email, Password, Validation, OAuth)
+│   └── README.md          # This component specification
 │
 ├── pages/
-│   ├── LoginPage.jsx      # Page wrapper at route `/login` (handles state, useAuth & redirects)
-│   └── SignupPage.jsx     # Page wrapper at route `/signup` (handles registration & redirects)
+│   ├── LoginPage.jsx      # Page view at `/login` (handles state, useAuth & redirection)
+│   └── SignupPage.jsx     # Page view at `/signup` (handles registration & redirection)
 │
 ├── context/
-│   └── AuthContext.jsx    # Central authentication provider exposing `login`, `register`, `logout`, `user`
+│   └── AuthContext.jsx    # Central authentication provider (login, register, logout, user session)
 │
 └── services/
-    └── authService.js     # API client interacting with Spring Boot Gateway (`/api/auth/*`)
+    └── authService.js     # Client communicating with Spring Boot Gateway (`/api/auth/*`)
 ```
 
-## How to Test Locally
+---
 
-1. **Mock Mode (Default):**
-   In `.env` or `.env.example`:
-   ```env
-   VITE_USE_MOCK_AUTH=true
-   ```
-   In mock mode, submitting the login or signup forms will simulate successful authentication and route directly to `/dashboard`.
+## 2. Component API & Props
 
-2. **Live Spring Boot Gateway Mode:**
-   When running with Aadi and Riya's backend:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8080
-   VITE_USE_MOCK_AUTH=false
-   ```
-   - **Login Endpoint:** `POST /api/auth/login` (Body: `{ email, password }`)
-   - **Register Endpoint:** `POST /api/auth/register` (Body: `{ fullName, email, password }`)
-   - **OAuth Google:** Redirects to `http://localhost:8080/oauth2/authorization/google`
-   - **OAuth GitHub:** Redirects to `http://localhost:8080/oauth2/authorization/github`
-   - **Callback handler:** Handled automatically at `/auth/callback`
+### `<Login />` (`login.jsx`)
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `onSubmit` | `Function: ({ email, password, remember }) => Promise<void>` | Required | Async submission callback. Throws an error to show an in-form alert. |
+| `onGoogleSignIn` | `Function: () => void` | Required | Triggers Google OAuth authorization redirect. |
+| `onGitHubSignIn` | `Function: () => void` | Required | Triggers GitHub OAuth authorization redirect. |
+| `userName` | `string` | `"Learner"` | Greeting displayed in the header. |
+| `signUpHref` | `string` | `"/signup"` | Link destination for the sign-up callout. |
+| `forgotPasswordHref` | `string` | `"/forgot-password"` | Link destination for password reset. |
 
-## Customizing Props & Logic
+### `<Signup />` (`signup.jsx`)
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `onSubmit` | `Function: ({ fullName, email, password }) => Promise<void>` | Required | Async submission callback. Throws an error to show an in-form alert. |
+| `onGoogleSignIn` | `Function: () => void` | Required | Triggers Google OAuth authorization redirect. |
+| `onGitHubSignIn` | `Function: () => void` | Required | Triggers GitHub OAuth authorization redirect. |
+| `loginHref` | `string` | `"/login"` | Link destination for returning users to log in. |
 
-### `<Login />`
-- `onSubmit`: Async callback `({ email, password, remember }) => Promise<void>`
-- `onGoogleSignIn`: Triggers Google OAuth redirect
-- `onGitHubSignIn`: Triggers GitHub OAuth redirect
-- `signUpHref`: Link to registration page (default `"/signup"`)
+---
 
-### `<Signup />`
-- `onSubmit`: Async callback `({ fullName, email, password }) => Promise<void>`
-- `onGoogleSignIn`: Triggers Google OAuth redirect
-- `onGitHubSignIn`: Triggers GitHub OAuth redirect
-- `loginHref`: Link to login page (default `"/login"`)
+## 3. How to Test Authentication Locally
+
+### 1. Mock Mode (Default)
+In `.env` or `.env.example`:
+```env
+VITE_USE_MOCK_AUTH=true
+```
+- Submitting either form logs in immediately using simulated credentials and redirects to `/dashboard`.
+- No backend setup or database is needed.
+
+### 2. Live Spring Boot Gateway Mode
+When running alongside Aadi & Riya's backend on port `8080`:
+```env
+VITE_API_BASE_URL=http://localhost:8080
+VITE_USE_MOCK_AUTH=false
+```
+- **Login Endpoint:** `POST /api/auth/login` (Body: `{ email, password }`)
+- **Register Endpoint:** `POST /api/auth/register` (Body: `{ fullName, email, password }`)
+- **OAuth Google:** Redirects to `http://localhost:8080/oauth2/authorization/google`
+- **OAuth GitHub:** Redirects to `http://localhost:8080/oauth2/authorization/github`
+- **OAuth Callback:** Handled automatically at `/auth/callback` via `POST /api/auth/oauth2/exchange`
