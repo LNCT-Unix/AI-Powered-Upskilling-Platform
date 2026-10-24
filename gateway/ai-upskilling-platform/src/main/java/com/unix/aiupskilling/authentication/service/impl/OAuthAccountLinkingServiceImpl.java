@@ -1,5 +1,6 @@
 package com.unix.aiupskilling.authentication.service.impl;
 
+<<<<<<< Updated upstream:gateway/ai-upskilling-platform/src/main/java/com/unix/aiupskilling/authentication/service/impl/OAuthAccountLinkingServiceImpl.java
 import com.unix.aiupskilling.authentication.exception.OAuthLoginException;
 import com.unix.aiupskilling.authentication.model.OAuthIdentity;
 import com.unix.aiupskilling.authentication.model.entity.OAuthAccount;
@@ -12,9 +13,25 @@ import com.unix.aiupskilling.authentication.service.UserProvisioningService;
 import com.unix.aiupskilling.shared.exception.ResourceNotFoundException;
 import com.unix.aiupskilling.user.User;
 import com.unix.aiupskilling.user.UserRepository;
+=======
+import com.unix.ai_upskilling_platform.authentication.exception.OAuthLoginException;
+import com.unix.ai_upskilling_platform.authentication.model.OAuthIdentity;
+import com.unix.ai_upskilling_platform.authentication.model.entity.OAuthAccount;
+import com.unix.ai_upskilling_platform.authentication.model.enums.AccountStatus;
+import com.unix.ai_upskilling_platform.authentication.repository.EmailVerificationTokenRepository;
+import com.unix.ai_upskilling_platform.authentication.repository.OAuthAccountRepository;
+import com.unix.ai_upskilling_platform.authentication.repository.RefreshTokenRepository;
+import com.unix.ai_upskilling_platform.authentication.service.AccountEligibilityService;
+import com.unix.ai_upskilling_platform.authentication.service.OAuthAccountLinkingService;
+import com.unix.ai_upskilling_platform.authentication.service.UserProvisioningService;
+import com.unix.ai_upskilling_platform.exception.ResourceNotFoundException;
+import com.unix.ai_upskilling_platform.model.entity.User;
+import com.unix.ai_upskilling_platform.repository.UserRepository;
+>>>>>>> Stashed changes:gateway/ai-upskilling-platform/src/main/java/com/unix/ai_upskilling_platform/authentication/service/impl/OAuthAccountLinkingServiceImpl.java
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +49,10 @@ public class OAuthAccountLinkingServiceImpl implements OAuthAccountLinkingServic
     private final UserProvisioningService userProvisioningService;
     private final AccountEligibilityService accountEligibilityService;
     private final RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired(required = false)
+    private EmailVerificationTokenRepository emailVerificationTokenRepository;
+
 
     @Override
     @Transactional
@@ -143,6 +164,11 @@ public class OAuthAccountLinkingServiceImpl implements OAuthAccountLinkingServic
                 t.setRevokedAt(LocalDateTime.now());
                 refreshTokenRepository.save(t);
             });
+
+            if (emailVerificationTokenRepository != null) {
+                emailVerificationTokenRepository.invalidateAllForUser(existingUser.getId(), LocalDateTime.now());
+            }
+
 
             OAuthAccount newAccount = OAuthAccount.builder()
                     .user(existingUser)

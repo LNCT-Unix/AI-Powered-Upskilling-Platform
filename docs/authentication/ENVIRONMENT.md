@@ -230,3 +230,112 @@ curl -X POST http://localhost:8080/api/auth/logout \
   -H "Origin: http://localhost:5173" \
   --cookie "refresh_token=<REFRESH_TOKEN>"
 ```
+
+---
+
+## 8. Email/Password Authentication Flows
+
+### 1. Register a New Account
+Submit user registration details. A generic `202 Accepted` is returned regardless of whether the email is new or already exists (preventing email enumeration):
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "riya.dev@example.com",
+    "password": "MyStrongPassword123!",
+    "fullName": "Riya Dev"
+  }'
+```
+Response (`202 Accepted`):
+```json
+{
+  "success": true,
+  "message": "If the email is eligible, a verification link has been sent.",
+  "data": {
+    "email": "riya.dev@example.com",
+    "verificationRequired": true
+  }
+}
+```
+
+### 2. Confirm Email Verification Token
+When running locally with Mailpit/mail-catcher, open `http://localhost:8025` to find the email containing the verification link (`http://localhost:5173/verify-email#token=<RAW_TOKEN>`).
+The frontend extracts `<RAW_TOKEN>` from the fragment and calls the confirmation endpoint:
+```bash
+curl -X POST http://localhost:8080/api/auth/email-verification/confirm \
+  -H "Content-Type: application/json" \
+  -d '{"token":"<RAW_TOKEN>"}'
+```
+Response (`200 OK`):
+```json
+{
+  "success": true,
+  "message": "Email verified successfully",
+  "data": {
+    "emailVerified": true
+  }
+}
+```
+
+### 3. Resend Verification Link
+If the link expired or was missed, request a resend (subject to 60-second cooldown and max 5/hour per account, plus 20/hour per IP):
+```bash
+curl -X POST http://localhost:8080/api/auth/email-verification/resend \
+  -H "Content-Type: application/json" \
+  -d '{"email":"riya.dev@example.com"}'
+```
+Response (`202 Accepted`):
+```json
+{
+  "success": true,
+  "message": "If the email is eligible, a verification link has been sent.",
+  "data": {
+    "email": "riya.dev@example.com",
+    "verificationRequired": true
+  }
+}
+```
+
+### 4. Password Login
+Authenticate using email and password:
+
+#### Web Client (Refresh Token in HttpOnly Cookie):
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "riya.dev@example.com",
+    "password": "MyStrongPassword123!"
+  }'
+```
+Response (`200 OK` + `Set-Cookie: refresh_token=...`):
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1Ni...",
+    "tokenType": "Bearer",
+    "expiresInSeconds": 900,
+    "refreshToken": null,
+    "user": {
+      "id": 1,
+      "email": "riya.dev@example.com",
+      "fullName": "Riya Dev",
+      "role": "USER"
+    }
+  }
+}
+```
+
+#### Mobile Client (Refresh Token in JSON Body):
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Client-Platform: mobile" \
+  -d '{
+    "email": "riya.dev@example.com",
+    "password": "MyStrongPassword123!"
+  }'
+```
+
