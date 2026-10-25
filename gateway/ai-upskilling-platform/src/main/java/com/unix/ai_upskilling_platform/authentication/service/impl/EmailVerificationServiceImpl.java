@@ -1,15 +1,15 @@
-package com.unix.ai_upskilling_platform.authentication.service.impl;
+package com.unix.aiupskilling.authentication.service.impl;
 
-import com.unix.ai_upskilling_platform.authentication.config.AuthProperties;
-import com.unix.ai_upskilling_platform.authentication.exception.AccountNotEligibleException;
-import com.unix.ai_upskilling_platform.authentication.exception.VerificationTokenException;
-import com.unix.ai_upskilling_platform.authentication.model.entity.EmailVerificationToken;
-import com.unix.ai_upskilling_platform.authentication.model.enums.AccountStatus;
-import com.unix.ai_upskilling_platform.authentication.repository.EmailVerificationTokenRepository;
-import com.unix.ai_upskilling_platform.authentication.service.EmailVerificationService;
-import com.unix.ai_upskilling_platform.authentication.util.TokenHashUtil;
-import com.unix.ai_upskilling_platform.model.entity.User;
-import com.unix.ai_upskilling_platform.repository.UserRepository;
+import com.unix.aiupskilling.authentication.config.AuthProperties;
+import com.unix.aiupskilling.authentication.exception.AccountNotEligibleException;
+import com.unix.aiupskilling.authentication.exception.VerificationTokenException;
+import com.unix.aiupskilling.authentication.model.entity.EmailVerificationToken;
+import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
+import com.unix.aiupskilling.authentication.repository.EmailVerificationTokenRepository;
+import com.unix.aiupskilling.authentication.service.EmailVerificationService;
+import com.unix.aiupskilling.authentication.util.TokenHashUtil;
+import com.unix.aiupskilling.user.User;
+import com.unix.aiupskilling.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

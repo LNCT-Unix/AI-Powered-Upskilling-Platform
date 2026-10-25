@@ -1,7 +1,7 @@
-package com.unix.ai_upskilling_platform.authentication.service.impl;
+package com.unix.aiupskilling.authentication.service.impl;
 
-import com.unix.ai_upskilling_platform.authentication.config.AuthProperties;
-import com.unix.ai_upskilling_platform.authentication.service.EmailSender;
+import com.unix.aiupskilling.authentication.config.AuthProperties;
+import com.unix.aiupskilling.authentication.service.EmailSender;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

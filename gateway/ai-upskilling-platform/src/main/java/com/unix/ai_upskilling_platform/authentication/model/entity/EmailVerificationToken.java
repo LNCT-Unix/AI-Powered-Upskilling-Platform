@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.authentication.model.entity;
+package com.unix.aiupskilling.authentication.model.entity;
 
-import com.unix.ai_upskilling_platform.model.entity.User;
+import com.unix.aiupskilling.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 

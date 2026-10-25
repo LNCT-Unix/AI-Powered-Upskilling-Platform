@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.authentication.repository;
+package com.unix.aiupskilling.authentication.repository;
 
-import com.unix.ai_upskilling_platform.authentication.model.entity.EmailVerificationToken;
+import com.unix.aiupskilling.authentication.model.entity.EmailVerificationToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.authentication.event;
+package com.unix.aiupskilling.authentication.event;
 
-import com.unix.ai_upskilling_platform.authentication.service.EmailSender;
+import com.unix.aiupskilling.authentication.service.EmailSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

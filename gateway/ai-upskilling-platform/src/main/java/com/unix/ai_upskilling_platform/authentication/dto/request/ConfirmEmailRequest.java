@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.authentication.dto.request;
+package com.unix.aiupskilling.authentication.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

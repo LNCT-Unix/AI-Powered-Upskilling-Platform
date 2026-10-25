@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.authentication.dto.request;
+package com.unix.aiupskilling.authentication.dto.request;
 
-import com.unix.ai_upskilling_platform.authentication.validation.ValidPasswordLength;
+import com.unix.aiupskilling.authentication.validation.ValidPasswordLength;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.authentication.service;
+package com.unix.aiupskilling.authentication.service;
 
 public interface EmailSender {
 

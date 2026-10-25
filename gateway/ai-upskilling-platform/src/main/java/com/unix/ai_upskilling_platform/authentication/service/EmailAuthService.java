@@ -1,12 +1,12 @@
-package com.unix.ai_upskilling_platform.authentication.service;
+package com.unix.aiupskilling.authentication.service;
 
-import com.unix.ai_upskilling_platform.authentication.dto.request.ConfirmEmailRequest;
-import com.unix.ai_upskilling_platform.authentication.dto.request.LoginRequest;
-import com.unix.ai_upskilling_platform.authentication.dto.request.RegisterRequest;
-import com.unix.ai_upskilling_platform.authentication.dto.request.ResendVerificationRequest;
-import com.unix.ai_upskilling_platform.authentication.dto.response.AuthTokens;
-import com.unix.ai_upskilling_platform.authentication.dto.response.RegistrationAcceptedResponse;
-import com.unix.ai_upskilling_platform.authentication.model.enums.ClientPlatform;
+import com.unix.aiupskilling.authentication.dto.request.ConfirmEmailRequest;
+import com.unix.aiupskilling.authentication.dto.request.LoginRequest;
+import com.unix.aiupskilling.authentication.dto.request.RegisterRequest;
+import com.unix.aiupskilling.authentication.dto.request.ResendVerificationRequest;
+import com.unix.aiupskilling.authentication.dto.response.AuthTokens;
+import com.unix.aiupskilling.authentication.dto.response.RegistrationAcceptedResponse;
+import com.unix.aiupskilling.authentication.model.enums.ClientPlatform;
 
 public interface EmailAuthService {
 

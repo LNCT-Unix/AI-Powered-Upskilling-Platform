@@ -1,6 +1,6 @@
-package com.unix.ai_upskilling_platform.authentication.service;
+package com.unix.aiupskilling.authentication.service;
 
-import com.unix.ai_upskilling_platform.model.entity.User;
+import com.unix.aiupskilling.user.User;
 
 public interface EmailVerificationService {
 

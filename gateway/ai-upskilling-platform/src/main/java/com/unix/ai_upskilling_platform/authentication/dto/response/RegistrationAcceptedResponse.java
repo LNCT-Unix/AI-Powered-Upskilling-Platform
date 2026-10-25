@@ -1,4 +1,4 @@
-package com.unix.ai_upskilling_platform.authentication.dto.response;
+package com.unix.aiupskilling.authentication.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

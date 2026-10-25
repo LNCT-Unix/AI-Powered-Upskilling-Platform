@@ -1,7 +1,7 @@
-package com.unix.ai_upskilling_platform.authentication.service;
+package com.unix.aiupskilling.authentication.service;
 
-import com.unix.ai_upskilling_platform.authentication.config.AuthProperties;
-import com.unix.ai_upskilling_platform.authentication.exception.RateLimitExceededException;
+import com.unix.aiupskilling.authentication.config.AuthProperties;
+import com.unix.aiupskilling.authentication.exception.RateLimitExceededException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
