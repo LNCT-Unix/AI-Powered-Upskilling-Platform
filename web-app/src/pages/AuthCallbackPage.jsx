@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Logo from '../components/ui/Logo';
 import { useAuth } from '../hooks/useAuth';
 
 export default function AuthCallbackPage() {
@@ -50,33 +51,41 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <Card className="max-w-md w-full text-center py-10">
+      <Card className="max-w-md w-full text-center py-10 px-6 sm:px-8 space-y-6">
+        <div className="flex justify-center">
+          <Logo asLink={false} />
+        </div>
+
         {status === 'processing' && (
-          <div className="space-y-4">
-            <Loader2 size={36} className="mx-auto animate-spin text-green-700" />
-            <h1 className="text-xl font-bold text-green-950">Verifying credentials...</h1>
-            <p className="text-sm text-slate-500">
-              Completing secure login handshake with Spring Boot gateway.
+          <div className="space-y-3 pt-2">
+            <Loader2 size={36} className="mx-auto animate-spin text-indigo-600" />
+            <h1 className="text-lg font-bold text-slate-900">Verifying session handshake...</h1>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              Exchanging single-use OAuth authorization code with secure Spring Boot gateway.
             </p>
           </div>
         )}
 
         {status === 'success' && (
-          <div className="space-y-4">
-            <CheckCircle2 size={36} className="mx-auto text-green-700" />
-            <h1 className="text-xl font-bold text-green-950">Login successful!</h1>
-            <p className="text-sm text-slate-500">Redirecting to your personalized dashboard...</p>
+          <div className="space-y-3 pt-2">
+            <CheckCircle2 size={36} className="mx-auto text-emerald-600" />
+            <h1 className="text-lg font-bold text-slate-900">Handshake verified!</h1>
+            <p className="text-xs text-slate-500">Redirecting to your personalized learning dashboard...</p>
           </div>
         )}
 
         {status === 'error' && (
-          <div className="space-y-4">
-            <AlertCircle size={36} className="mx-auto text-amber-700" />
-            <h1 className="text-xl font-bold text-green-950">Authentication Issue</h1>
-            <p className="text-sm text-slate-600">{errorMessage}</p>
-            <Button className="mt-4" onClick={() => navigate('/')}>
-              Return to Homepage
-            </Button>
+          <div className="space-y-4 pt-2">
+            <AlertCircle size={36} className="mx-auto text-rose-600" />
+            <h1 className="text-lg font-bold text-slate-900">Authentication Error</h1>
+            <p className="text-xs text-slate-600 bg-rose-50 p-3 rounded-lg border border-rose-100">
+              {errorMessage}
+            </p>
+            <div className="pt-2">
+              <Button variant="primary" onClick={() => navigate('/login')}>
+                Return to Sign In
+              </Button>
+            </div>
           </div>
         )}
       </Card>

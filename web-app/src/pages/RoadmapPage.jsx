@@ -1,10 +1,19 @@
 import { useState } from 'react';
 import {
-  CircleCheck, PlayCircle, Clock3, AlertCircle, Sparkles,
-  Layers, Calendar, ChevronDown, ChevronUp, RotateCcw
+  CircleCheck,
+  PlayCircle,
+  Clock3,
+  AlertCircle,
+  Sparkles,
+  Layers,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
 import { roadmapItems } from '../data/mockData';
 
 export default function RoadmapPage() {
@@ -60,58 +69,67 @@ export default function RoadmapPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center border-b border-slate-200/80 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">
-              <Sparkles size={13} /> TAILORED CURRICULUM
-            </span>
-            <span className="text-xs font-semibold text-slate-500">Topologically Ordered Path</span>
+            <Badge variant="indigo" icon={Sparkles}>
+              TAILORED CURRICULUM
+            </Badge>
+            <span className="text-xs font-medium text-slate-500">Topological Milestone Graph</span>
           </div>
-          <h1 className="mt-2 text-2xl font-extrabold text-green-950 sm:text-3xl">
-            Your Personalized Learning Roadmap
+          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Personalized Learning Roadmap
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            A goal-aligned sequence designed to eliminate identified gaps and build verified proof of work.
+          <p className="mt-1 text-sm text-slate-500 max-w-2xl">
+            A dependency-ordered sequence of milestones designed to eliminate identified gaps and build verified proof of work.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setDone(roadmapItems.map((i) => i.id))}>
-            Mark All Done
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDone(roadmapItems.map((i) => i.id))}
+          >
+            Mark All Completed
           </Button>
-          <Button variant="ghost" onClick={() => setDone([])}>
-            Reset
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDone([])}
+          >
+            Reset Progress
           </Button>
         </div>
       </div>
 
-      {/* Progress & Smart Study Planner Ribbon */}
+      {/* Progress & Smart Study Planner Grid */}
       <div className="grid gap-4 md:grid-cols-3">
+        {/* Progress Card (2 cols) */}
         <Card className="md:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-                ROADMAP PROGRESS
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
+                ROADMAP COMPLETION
               </span>
-              <p className="text-xl font-bold text-green-950 mt-1">
+              <p className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
                 {done.length} of {roadmapItems.length} Milestones Mastered ({completionPercentage}%)
               </p>
             </div>
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-900 font-extrabold text-sm">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-sm border border-indigo-100">
               {completionPercentage}%
             </span>
           </div>
 
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full bg-emerald-700 transition-all duration-500 rounded-full"
+              className="h-full bg-indigo-600 transition-all duration-500 rounded-full"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
 
           {/* Filter Pills */}
-          <div className="flex flex-wrap gap-2 pt-1 text-xs">
+          <div className="flex flex-wrap gap-1.5 pt-1 text-xs">
             {[
               ['all', 'All Topics'],
               ['in-progress', 'In Progress'],
@@ -122,9 +140,9 @@ export default function RoadmapPage() {
                 key={id}
                 type="button"
                 onClick={() => setActiveFilter(id)}
-                className={`rounded-lg px-3 py-1.5 font-semibold transition ${
+                className={`rounded-lg px-3 py-1.5 font-medium transition cursor-pointer ${
                   activeFilter === id
-                    ? 'bg-emerald-900 text-white shadow-xs'
+                    ? 'bg-slate-900 text-white shadow-2xs font-semibold'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -135,24 +153,24 @@ export default function RoadmapPage() {
         </Card>
 
         {/* Smart Study Planner Card */}
-        <Card className="space-y-3 bg-gradient-to-br from-yellow-50/60 to-white border-yellow-200">
-          <div className="flex items-center gap-2 text-yellow-900 text-xs font-bold uppercase tracking-wider">
+        <Card className="space-y-3 border-indigo-100 bg-slate-50/50">
+          <div className="flex items-center gap-1.5 text-indigo-700 text-xs font-bold uppercase tracking-wider">
             <Calendar size={14} /> Smart Study Planner
           </div>
           <p className="text-xs text-slate-600">
             Based on {remainingMinutes} mins of pending study time:
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {[30, 45, 60].map((mins) => (
               <button
                 key={mins}
                 type="button"
                 onClick={() => setDailyMinutes(mins)}
-                className={`flex-1 rounded-xl py-1.5 text-xs font-bold transition border ${
+                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition border cursor-pointer ${
                   dailyMinutes === mins
-                    ? 'border-yellow-400 bg-yellow-300 text-green-950 shadow-xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 {mins}m/day
@@ -160,9 +178,9 @@ export default function RoadmapPage() {
             ))}
           </div>
 
-          <div className="rounded-xl bg-white p-3 border border-yellow-100 space-y-1">
-            <p className="text-[11px] font-semibold text-slate-500">Estimated Target Finish Date</p>
-            <p className="text-sm font-extrabold text-green-950">{formattedDate}</p>
+          <div className="rounded-lg bg-white p-3 border border-slate-200/80 space-y-1">
+            <p className="text-[11px] font-semibold text-slate-500">Projected Target Completion</p>
+            <p className="text-sm font-bold text-slate-900">{formattedDate}</p>
             <p className="text-[10px] text-slate-400">~{daysToFinish} days at current commitment</p>
           </div>
         </Card>
@@ -179,14 +197,14 @@ export default function RoadmapPage() {
           return (
             <div key={mName} className="space-y-3">
               {/* Milestone Header */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 text-emerald-800">
-                    <Layers size={16} />
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                    <Layers size={15} />
                   </span>
-                  <h2 className="text-base font-bold text-green-950">{mName}</h2>
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900">{mName}</h2>
                 </div>
-                <span className="text-xs font-semibold text-slate-400">
+                <span className="text-xs font-medium text-slate-500">
                   {mCompleted} of {mItems.length} completed
                 </span>
               </div>
@@ -201,12 +219,12 @@ export default function RoadmapPage() {
                   return (
                     <Card
                       key={item.id}
-                      className={`transition-all duration-200 ${
+                      className={`transition-all duration-150 ${
                         isRevisionActive
-                          ? 'border-amber-300 bg-amber-50/30'
+                          ? 'border-amber-300 bg-amber-50/20'
                           : isDone
-                          ? 'border-slate-200 bg-white opacity-95'
-                          : 'border-slate-200 bg-white hover:border-emerald-300'
+                          ? 'border-slate-200 bg-white'
+                          : 'border-slate-200/90 bg-white hover:border-slate-300'
                       }`}
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start justify-between">
@@ -214,35 +232,36 @@ export default function RoadmapPage() {
                           <button
                             type="button"
                             onClick={() => toggleDone(item.id)}
-                            className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition ${
+                            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition cursor-pointer ${
                               isDone
-                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200 hover:text-slate-600'
                             }`}
                             aria-label={isDone ? 'Mark as incomplete' : 'Mark as complete'}
                           >
-                            {isDone ? <CircleCheck size={22} /> : <PlayCircle size={22} />}
+                            {isDone ? <CircleCheck size={20} /> : <PlayCircle size={20} />}
                           </button>
 
                           <div className="space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                 {item.topic}
                               </span>
                               <span className="text-slate-300">·</span>
                               <span className="text-xs text-slate-500">{item.type}</span>
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  item.difficulty === 'Advanced'
-                                    ? 'bg-purple-100 text-purple-900'
-                                    : 'bg-blue-100 text-blue-900'
-                                }`}
+                              <Badge
+                                variant={item.difficulty === 'Advanced' ? 'indigo' : 'neutral'}
+                                size="sm"
                               >
                                 {item.difficulty}
-                              </span>
+                              </Badge>
                             </div>
 
-                            <h3 className={`text-base font-bold ${isDone ? 'text-slate-600 line-through' : 'text-green-950'}`}>
+                            <h3
+                              className={`text-sm sm:text-base font-bold ${
+                                isDone ? 'text-slate-400 line-through' : 'text-slate-900'
+                              }`}
+                            >
                               {item.title}
                             </h3>
 
@@ -253,20 +272,24 @@ export default function RoadmapPage() {
                               <button
                                 type="button"
                                 onClick={() => toggleRationale(item.id)}
-                                className="inline-flex items-center gap-1 font-semibold text-emerald-800 hover:text-emerald-950"
+                                className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
                               >
                                 {isRationaleOpen ? 'Hide rationale' : 'Why this step?'}
-                                {isRationaleOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                {isRationaleOpen ? (
+                                  <ChevronUp size={13} />
+                                ) : (
+                                  <ChevronDown size={13} />
+                                )}
                               </button>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 sm:self-center">
+                        <div className="flex items-center gap-2 sm:self-center shrink-0">
                           <Button
-                            variant={isDone ? 'outline' : 'primary'}
+                            variant={isDone ? 'outline' : 'secondary'}
+                            size="sm"
                             onClick={() => toggleDone(item.id)}
-                            className="text-xs py-2 px-3.5"
                           >
                             {isDone ? 'Mark incomplete' : 'Mark complete'}
                           </Button>
@@ -275,17 +298,17 @@ export default function RoadmapPage() {
 
                       {/* Transparent Rationale Box ("Why this step") */}
                       {isRationaleOpen && (
-                        <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs text-emerald-950 space-y-1">
-                          <p className="font-bold flex items-center gap-1.5 text-emerald-900">
-                            <Sparkles size={13} /> Transparent Learning Rationale
+                        <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3.5 text-xs text-slate-700 space-y-1">
+                          <p className="font-bold flex items-center gap-1.5 text-indigo-900">
+                            <Sparkles size={13} /> Transparent Curriculum Rationale
                           </p>
-                          <p className="text-slate-700 leading-relaxed">{item.whyThisStep}</p>
+                          <p className="leading-relaxed">{item.whyThisStep}</p>
                         </div>
                       )}
 
                       {/* Remediation Loop Alert & Revision Module */}
                       {isRevisionActive && (
-                        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+                        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4 space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
                               <AlertCircle size={15} /> Remediation Loop Active (Weak Subtopic Detected)
@@ -294,15 +317,16 @@ export default function RoadmapPage() {
                               Retest Pending
                             </span>
                           </div>
-                          <p className="text-xs text-amber-950">
+                          <p className="text-xs text-amber-950 leading-relaxed">
                             Your last diagnostic quiz showed uncertainty in microtask vs macrotask execution order. 
-                            An interactive revision visualizer has been inserted to clarify this concept before proceeding.
+                            An interactive revision module has been attached to clarify this concept before proceeding.
                           </p>
                           <div className="flex items-center gap-2 pt-1">
                             <Button
                               variant="outline"
+                              size="sm"
                               onClick={() => resolveRevision(item.id)}
-                              className="text-xs py-1.5 px-3 bg-white border-amber-300 text-amber-950 hover:bg-amber-100"
+                              className="border-amber-300 text-amber-950 bg-white hover:bg-amber-50"
                             >
                               <RotateCcw size={13} /> Complete Revision & Retest
                             </Button>

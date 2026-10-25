@@ -1,66 +1,91 @@
 import { NavLink, Link } from 'react-router-dom';
-import { ChevronRight, CircleHelp } from 'lucide-react';
+import { ArrowUpRight, ArrowLeft } from 'lucide-react';
 import Logo from '../ui/Logo';
 import { navItems } from '../../data/mockData';
 
 export default function Sidebar({ onClose }) {
+  // Read active track title if available
+  let trackName = 'Full-Stack Web Development';
+  try {
+    const profile = JSON.parse(localStorage.getItem('skillpath_onboarding_profile') || '{}');
+    if (profile.trackId === 'backend') trackName = 'Backend Systems & Arch';
+    if (profile.trackId === 'devops') trackName = 'Cloud & DevOps Systems';
+    if (profile.trackId === 'ai-data') trackName = 'AI & Applied ML';
+  } catch {
+    // Fallback
+  }
+
   return (
-    <div className="flex h-full flex-col p-4">
-      <div className="mb-8 px-2 pt-2">
-        <Logo onClick={onClose} />
-      </div>
-
-      <p className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
-        Workspace
-      </p>
-
-      <nav className="space-y-1" aria-label="Dashboard navigation">
-        {navItems.map(({ path, label, icon: Icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${isActive
-                ? 'bg-green-900 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-green-50 hover:text-green-950'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Icon size={18} />
-                <span>{label}</span>
-                {isActive && <ChevronRight size={15} className="ml-auto" />}
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="mt-auto">
-        <div className="mb-4 rounded-2xl bg-yellow-50 p-4 border border-yellow-100">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-green-800 shadow-sm">
-            <CircleHelp size={18} />
-          </span>
-          <p className="mt-3 text-sm font-bold text-green-950">Keep learning</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">One skill at a time adds up.</p>
+    <div className="flex h-full flex-col justify-between p-4 bg-white select-none">
+      <div>
+        {/* Brand Header */}
+        <div className="mb-6 px-2 pt-1">
+          <Logo onClick={onClose} />
         </div>
 
-        <Link
-          to="/onboarding"
-          onClick={onClose}
-          className="mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-emerald-800 hover:bg-emerald-50 transition"
-        >
-          <span>🎯</span> Recalibrate Track / Goals
-        </Link>
+        {/* Current Active Track Card */}
+        <div className="mb-6 rounded-lg border border-slate-200/80 bg-slate-50 p-3">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span>Enrolled Track</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          </div>
+          <p className="mt-1 text-xs font-bold text-slate-800 line-clamp-1">{trackName}</p>
+          <Link
+            to="/onboarding"
+            onClick={onClose}
+            className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <span>Change Track</span>
+            <ArrowUpRight size={12} />
+          </Link>
+        </div>
 
+        {/* Navigation Category Label */}
+        <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          Learning Workspace
+        </p>
+
+        {/* Navigation links */}
+        <nav className="space-y-1" aria-label="Dashboard navigation">
+          {navItems.map(({ path, label, icon: Icon }) => (
+            <NavLink
+              key={path}
+              to={path}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-slate-100 text-slate-900 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    size={18}
+                    className={isActive ? 'text-indigo-600 shrink-0' : 'text-slate-400 shrink-0'}
+                  />
+                  <span className="flex-1 text-left">{label}</span>
+                  {isActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 shrink-0" />
+                  )}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+
+      {/* Footer Area */}
+      <div className="border-t border-slate-200 pt-3 space-y-1">
         <Link
           to="/"
           onClick={onClose}
-          className="flex w-full items-center rounded-xl px-3 py-2 text-left text-xs font-medium text-slate-500 hover:bg-slate-100 transition"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors"
         >
-          ← Back to website
+          <ArrowLeft size={14} />
+          <span>Back to Landing Page</span>
         </Link>
       </div>
     </div>

@@ -1,247 +1,416 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowRight, Check, ChevronRight, GraduationCap, Menu,
-  Sparkles, TrendingUp, X, LogIn
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Menu,
+  X,
+  LogIn,
+  Sparkles,
+  Layers,
+  Map,
+  ChartNoAxesColumnIncreasing,
+  Code2,
+  Server,
+  Cloud,
+  Cpu,
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Logo from '../components/ui/Logo';
 import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import ScoreRing from '../components/ui/ScoreRing';
 import SkillBar from '../components/ui/SkillBar';
-import { HERO_IMAGE, skills, features, steps } from '../data/mockData';
 import { useAuth } from '../hooks/useAuth';
 
-// Nav link with a gradient underline that grows on hover
-const navLink =
-  'relative text-sm font-medium text-slate-700 transition hover:text-green-800 after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:rounded-full after:bg-gradient-to-r after:from-yellow-400 after:to-green-600 after:transition-all after:duration-300 hover:after:w-full';
-
-// One gradient per feature card ("!" overrides Card's default gradient)
-const featureTints = [
+const TRACKS_PREVIEW = [
   {
-    card: '!from-lime-200 !via-green-200 !to-emerald-300 !border-green-400/70 hover:!border-green-700',
-    badge: 'bg-green-800 text-white shadow-green-900/30',
-    ink: 'text-green-950', sub: 'text-green-900/80', link: 'text-green-900',
+    id: 'fullstack',
+    title: 'Full-Stack Web Development',
+    tagline: 'Modern React 19, TypeScript, Distributed State & Fullstack Cloud',
+    icon: Code2,
+    badge: 'Popular Track',
+    duration: '6-8 Weeks',
+    topicsCount: 18,
   },
   {
-    card: '!from-yellow-100 !via-yellow-200 !to-amber-300 !border-yellow-400/70 hover:!border-amber-600',
-    badge: 'bg-yellow-300 text-green-950 shadow-amber-500/40',
-    ink: 'text-amber-950', sub: 'text-amber-900/80', link: 'text-amber-950',
+    id: 'backend',
+    title: 'Backend Systems & Architecture',
+    tagline: 'Spring Boot, High-Throughput APIs, Kafka Queues & SQL Optimization',
+    icon: Server,
+    badge: 'Enterprise Demand',
+    duration: '8-10 Weeks',
+    topicsCount: 22,
   },
   {
-    card: '!from-sky-100 !via-sky-200 !to-indigo-300 !border-sky-400/70 hover:!border-indigo-600',
-    badge: 'bg-indigo-600 text-white shadow-indigo-700/30',
-    ink: 'text-indigo-950', sub: 'text-indigo-900/80', link: 'text-indigo-950',
+    id: 'devops',
+    title: 'Cloud Engineering & DevOps',
+    tagline: 'Docker, Kubernetes, AWS/GCP Infrastructures & Production CI/CD',
+    icon: Cloud,
+    badge: 'Infrastructure',
+    duration: '6-8 Weeks',
+    topicsCount: 16,
   },
   {
-    card: '!from-orange-100 !via-orange-200 !to-rose-300 !border-orange-400/70 hover:!border-rose-600',
-    badge: 'bg-rose-500 text-white shadow-rose-600/30',
-    ink: 'text-rose-950', sub: 'text-rose-900/80', link: 'text-rose-950',
+    id: 'ai-data',
+    title: 'AI Engineering & Applied ML',
+    tagline: 'Python, LLMs, Vector Databases, RAG Pipelines & Agent Orchestration',
+    icon: Cpu,
+    badge: 'Advanced AI',
+    duration: '8-10 Weeks',
+    topicsCount: 20,
   },
 ];
 
-// One gradient badge per step
-const stepBadges = [
-  'from-yellow-300 to-amber-400 text-green-950 shadow-amber-500/40',
-  'from-lime-300 to-green-500 text-green-950 shadow-green-600/40',
-  'from-emerald-400 to-teal-600 text-white shadow-teal-700/40',
-  'from-sky-400 to-indigo-500 text-white shadow-indigo-600/40',
+const PLATFORM_FEATURES = [
+  {
+    icon: Sparkles,
+    title: 'Adaptive Diagnostic Assessment',
+    text: 'Evaluate your proficiency across 5 engineering dimensions to establish an honest baseline ability score.',
+    route: '/assessment',
+  },
+  {
+    icon: Map,
+    title: 'Topological Learning Roadmap',
+    text: 'A structured, dependency-ordered sequence of milestones designed to close gaps with zero redundant study.',
+    route: '/roadmap',
+  },
+  {
+    icon: Layers,
+    title: 'Interactive Skill Graph',
+    text: 'Visualize prerequisites and knowledge relationships before progressing into high-complexity architecture.',
+    route: '/graph',
+  },
+  {
+    icon: ChartNoAxesColumnIncreasing,
+    title: 'Analytics & Verification',
+    text: 'Track real learning velocity, habit streaks, and preparation for verifiable capstone credentials.',
+    route: '/analytics',
+  },
+];
+
+const WORKFLOW_STEPS = [
+  {
+    num: '01',
+    title: 'Diagnose Baseline',
+    desc: 'Take an adaptive 10-question evaluation that analyzes core prerequisites, theory, syntax, and problem-solving.',
+  },
+  {
+    num: '02',
+    title: 'Generate Roadmap',
+    desc: 'The AI engine eliminates mastered topics and compiles a topological milestone path calibrated to your schedule.',
+  },
+  {
+    num: '03',
+    title: 'Learn & Remediate',
+    desc: 'Follow curated modules and exercises. If a quiz score is below threshold, automated revision loops bridge the gap.',
+  },
+  {
+    num: '04',
+    title: 'Verify & Credential',
+    desc: 'Build capstone projects, undergo AI code evaluation, and earn verifiable proof-of-competency credentials.',
+  },
 ];
 
 export default function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const navigate = useNavigate();
-  const { loginWithGoogle, loginWithGitHub, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
-    // overflow-x-clip (not overflow-hidden) so the sticky header keeps working
-    <div id="top" className="overflow-x-clip bg-white text-slate-800">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 shadow-sm shadow-green-900/5 backdrop-blur">
-        <div className="h-1 bg-gradient-to-r from-yellow-300 via-lime-400 to-green-600" />
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 lg:px-8" aria-label="Main navigation">
+    <div id="top" className="min-h-screen bg-white text-slate-900 select-none">
+      {/* Top Header */}
+      <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur">
+        <nav
+          className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8"
+          aria-label="Main navigation"
+        >
           <Logo onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} asLink={false} />
 
-          <div className="hidden items-center gap-6 md:flex">
-            <a className={navLink} href="#features">Features</a>
-            <a className={navLink} href="#how">How it works</a>
-            <a className={navLink} href="#about">About</a>
+          {/* Desktop Navigation Links */}
+          <div className="hidden items-center gap-7 md:flex text-sm font-medium text-slate-600">
+            <a href="#tracks" className="hover:text-slate-900 transition-colors">
+              Tracks
+            </a>
+            <a href="#features" className="hover:text-slate-900 transition-colors">
+              Platform
+            </a>
+            <a href="#how" className="hover:text-slate-900 transition-colors">
+              Methodology
+            </a>
 
             {isAuthenticated ? (
-              <Link to="/dashboard">
-                <Button variant="ghost">Dashboard</Button>
-              </Link>
+              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+                Open Dashboard
+              </Button>
             ) : (
-              <Link to="/login">
-                <Button variant="ghost">
-                  <LogIn size={15} /> Sign in
-                </Button>
-              </Link>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
+                <LogIn size={15} /> Sign in
+              </Button>
             )}
 
-            <Button onClick={() => navigate('/onboarding')} className="group">
-              Start Free Assessment
-              <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
+            <Button
+              variant="indigo"
+              size="sm"
+              onClick={() => navigate('/onboarding')}
+              className="gap-1.5"
+            >
+              Start Diagnostic
+              <ArrowRight size={15} />
             </Button>
           </div>
 
+          {/* Mobile hamburger button */}
           <button
             type="button"
-            className="rounded-xl p-2 transition hover:bg-green-100 active:scale-95 md:hidden"
+            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
           >
-            {mobileOpen ? <X /> : <Menu />}
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </nav>
 
+        {/* Mobile menu dropdown */}
         {mobileOpen && (
-          <div className="space-y-1 border-t border-green-100 bg-gradient-to-b from-yellow-50 to-white px-5 py-4 md:hidden">
-            <a onClick={() => setMobileOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-green-100" href="#features">
-              Features
+          <div className="border-t border-slate-200 bg-white px-4 py-4 space-y-3 md:hidden shadow-lg">
+            <a
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              href="#tracks"
+            >
+              Curriculum Tracks
             </a>
-            <a onClick={() => setMobileOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-green-100" href="#how">
-              How it works
+            <a
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              href="#features"
+            >
+              Platform Capabilities
             </a>
-            {!isAuthenticated && (
+            <a
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              href="#how"
+            >
+              How It Works
+            </a>
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
               <Button
                 variant="outline"
-                className="mt-2 w-full"
+                className="w-full justify-center"
                 onClick={() => {
                   setMobileOpen(false);
-                  setAuthModalOpen(true);
+                  navigate('/login');
                 }}
               >
-                <LogIn size={15} /> Sign in
+                Sign in
               </Button>
-            )}
-            <Button className="mt-2 w-full" onClick={() => { setMobileOpen(false); navigate('/dashboard'); }}>
-              Open dashboard <ArrowRight size={16} />
-            </Button>
+              <Button
+                variant="indigo"
+                className="w-full justify-center"
+                onClick={() => {
+                  setMobileOpen(false);
+                  navigate('/onboarding');
+                }}
+              >
+                Start Diagnostic & Onboarding
+              </Button>
+            </div>
           </div>
         )}
       </header>
 
       <main>
-        {/* Hero */}
-        <section className="relative bg-gradient-to-b from-yellow-50 via-lime-50/60 to-white">
-          {/* soft colour blobs */}
-          <span aria-hidden="true" className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-yellow-200/50 blur-3xl" />
-          <span aria-hidden="true" className="pointer-events-none absolute -right-24 top-40 h-80 w-80 rounded-full bg-green-300/40 blur-3xl" />
+        {/* Hero Section */}
+        <section className="relative border-b border-slate-200/80 bg-slate-50/50 py-16 sm:py-24 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-12 lg:grid-cols-12">
+              {/* Left Column: Value Proposition */}
+              <div className="lg:col-span-7 space-y-6 text-left">
+                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-800">
+                  <Sparkles size={13} /> ADAPTIVE LEARNING & VERIFICATION
+                </div>
 
-          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-14 sm:py-20 md:grid-cols-2 lg:px-8 lg:py-24">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-yellow-300 bg-gradient-to-r from-yellow-100 to-lime-100 px-3.5 py-2 text-xs font-bold text-green-900 shadow-sm">
-                <Sparkles size={14} /> YOUR SKILLS, YOUR NEXT STEP
-              </div>
-              <h1 className="mt-6 max-w-2xl text-4xl font-extrabold leading-[1.12] tracking-tight text-green-950 sm:text-5xl lg:text-6xl">
-                Know what to learn next,{' '}
-                <span className="bg-gradient-to-r from-green-700 via-emerald-500 to-lime-500 bg-clip-text text-transparent">
-                  not just what to study.
-                </span>
-              </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-slate-700 sm:text-lg">
-                Turn your learning goals into a clear plan. Discover skill gaps, get a personalized roadmap, and see your progress grow — one step at a time.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button onClick={() => navigate('/onboarding')} className="group">
-                  Start Free Diagnostic & Onboarding
-                  <ArrowRight size={17} className="transition-transform duration-200 group-hover:translate-x-1" />
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                  Explore dashboard
-                </Button>
-              </div>
-              <div className="mt-8 flex flex-wrap gap-3 text-xs font-semibold text-green-900">
-                {['Personalized learning', 'Track your growth', 'Learn at your pace'].map((t) => (
-                  <span
-                    key={t}
-                    className="flex cursor-default items-center gap-2 rounded-full border border-green-200 bg-white/80 px-3 py-1.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-green-500 hover:bg-green-100"
+                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem] leading-[1.12]">
+                  Know what to learn next.{' '}
+                  <span className="text-indigo-600 block sm:inline">Eliminate skill gaps.</span>
+                </h1>
+
+                <p className="max-w-2xl text-base sm:text-lg text-slate-600 leading-relaxed">
+                  Engineered for college students, job seekers, and working professionals. Take an adaptive diagnostic assessment, follow a personalized milestone roadmap, and verify mastery with structured proof of work.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                  <Button
+                    variant="indigo"
+                    size="lg"
+                    onClick={() => navigate('/onboarding')}
+                    className="justify-center"
                   >
-                    <Check size={15} className="text-green-700" /> {t}
+                    Start Free Diagnostic
+                    <ArrowRight size={17} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => navigate('/dashboard')}
+                    className="justify-center"
+                  >
+                    Explore Dashboard Demo
+                  </Button>
+                </div>
+
+                {/* Trust Badges */}
+                <div className="pt-4 flex flex-wrap items-center gap-5 text-xs font-medium text-slate-500">
+                  <span className="flex items-center gap-1.5">
+                    <Check size={15} className="text-emerald-600" /> 10-Question Diagnostic
                   </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="group/hero relative mx-auto w-full max-w-xl pb-7 pl-3 sm:pl-5">
-              <div className="relative">
-                {/* gradient frame that shifts on hover */}
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-0 translate-x-3 translate-y-3 rounded-3xl bg-gradient-to-br from-yellow-300 via-lime-300 to-green-500 transition-transform duration-500 group-hover/hero:translate-x-5 group-hover/hero:translate-y-5"
-                />
-                <img
-                  src={HERO_IMAGE}
-                  alt="Students learning and collaborating on a project"
-                  className="relative h-[330px] w-full rounded-3xl object-cover shadow-xl shadow-green-950/10 sm:h-[420px]"
-                />
-              </div>
-
-              <div className="absolute left-0 top-5 flex items-center gap-3 rounded-2xl border border-yellow-200 bg-gradient-to-r from-yellow-50 to-white p-3 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-safe:hover:-rotate-2">
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-yellow-300 text-green-950">
-                  <GraduationCap size={21} />
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-green-950">Learn with direction</p>
-                  <p className="mt-1 text-xs text-slate-600">Small steps, real progress</p>
+                  <span className="flex items-center gap-1.5">
+                    <Check size={15} className="text-emerald-600" /> Automated Revision Loops
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Check size={15} className="text-emerald-600" /> Verifiable Proof of Work
+                  </span>
                 </div>
               </div>
 
-              <div className="absolute -bottom-1 right-0 w-[min(330px,90%)] rounded-2xl border border-green-200 bg-gradient-to-br from-white to-green-50 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-green-500 hover:shadow-2xl hover:shadow-green-700/20">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold text-slate-600">YOUR SKILL SNAPSHOT</p>
-                    <h2 className="mt-1 text-lg font-extrabold text-green-950">A little better every day</h2>
+              {/* Right Column: Live Product Preview Card */}
+              <div className="lg:col-span-5">
+                <Card className="border border-slate-200/90 shadow-md bg-white p-5 sm:p-6 space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Live Learning Snapshot
+                      </span>
+                    </div>
+                    <Badge variant="indigo">Full-Stack Track</Badge>
                   </div>
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-green-800 text-white shadow-md shadow-green-900/25">
-                    <TrendingUp />
-                  </span>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {skills.slice(0, 3).map((s) => (
-                    <SkillBar key={s.name} {...s} />
-                  ))}
-                </div>
-                <p className="mt-3 text-center text-[10px] text-slate-500">Illustrative preview · sample data</p>
+
+                  <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <ScoreRing score={78} size={80} strokeWidth={6} color="#4f46e5" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Readiness Score
+                      </p>
+                      <p className="text-lg font-bold text-slate-900">78 / 100 Benchmarked</p>
+                      <p className="text-xs text-emerald-700 font-medium mt-0.5">
+                        Top 20% in Core Concepts
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Knowledge Frontier
+                    </p>
+                    <SkillBar name="JavaScript Mechanics" score={85} level="Mastered" />
+                    <SkillBar name="React State & Fiber" score={72} level="Proficient" />
+                    <SkillBar name="Relational DB & SQL" score={45} level="Revision Loop" />
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span>Next milestone: Relational Queries</span>
+                    <span className="font-semibold text-indigo-600">30 min</span>
+                  </div>
+                </Card>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features */}
-        <section id="features" className="scroll-mt-24 bg-gradient-to-br from-green-50 via-lime-50 to-yellow-50 py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-green-800">A smarter way to grow</p>
-              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
-                Everything you need to close the gap
+        {/* Tracks Section */}
+        <section id="tracks" className="scroll-mt-20 py-16 sm:py-20 lg:py-24 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl text-left">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                Curated Engineering Tracks
+              </span>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                Industry-Calibrated Curriculums
               </h2>
-              <p className="mt-4 leading-7 text-slate-700">
-                A clear path from knowing where you are to knowing what to do next.
+              <p className="mt-2 text-sm sm:text-base text-slate-600">
+                Choose a technology track to generate your personalized topological roadmap.
               </p>
             </div>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {features.map(({ icon: Icon, title, text }, i) => {
-                const targetRoutes = ['/assessment', '/graph', '/roadmap', '/analytics'];
-                const t = featureTints[i % featureTints.length];
+
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {TRACKS_PREVIEW.map((t) => {
+                const Icon = t.icon;
                 return (
-                  <Card key={title} className={t.card}>
-                    <span
-                      className={`grid h-12 w-12 place-items-center rounded-2xl shadow-md transition-all duration-300 motion-safe:group-hover:-rotate-12 motion-safe:group-hover:scale-110 ${t.badge}`}
-                    >
-                      <Icon size={23} />
+                  <Card
+                    key={t.id}
+                    interactive
+                    onClick={() => navigate('/onboarding')}
+                    className="flex flex-col justify-between group border-slate-200/90 hover:border-indigo-300"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="grid h-10 w-10 place-items-center rounded-lg bg-slate-100 text-slate-700 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                          <Icon size={20} />
+                        </span>
+                        <Badge variant="neutral">{t.badge}</Badge>
+                      </div>
+
+                      <h3 className="mt-4 text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        {t.title}
+                      </h3>
+                      <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                        {t.tagline}
+                      </p>
+                    </div>
+
+                    <div className="mt-6 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Clock size={13} /> {t.duration}
+                      </span>
+                      <span className="font-semibold text-indigo-600 flex items-center gap-0.5">
+                        Start <ChevronRight size={13} />
+                      </span>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Platform Capabilities */}
+        <section id="features" className="scroll-mt-20 py-16 sm:py-20 lg:py-24 bg-slate-50/60 border-y border-slate-200/80">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-2xl mx-auto">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                Architecture & Methodology
+              </span>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                Engineered for Measurable Competency
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Move beyond passive video tutorials with active diagnostic evaluation and automated remediation.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {PLATFORM_FEATURES.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <Card key={f.title} className="p-5 space-y-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
+                      <Icon size={20} />
                     </span>
-                    <h3 className={`mt-5 font-bold ${t.ink}`}>{title}</h3>
-                    <p className={`mt-2 text-sm leading-6 ${t.sub}`}>{text}</p>
+                    <h3 className="text-base font-bold text-slate-900">{f.title}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">{f.text}</p>
                     <button
                       type="button"
-                      onClick={() => navigate(targetRoutes[i])}
-                      className={`group/link mt-5 inline-flex items-center gap-1 text-sm font-bold ${t.link}`}
+                      onClick={() => navigate(f.route)}
+                      className="pt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 cursor-pointer"
                     >
-                      Explore
-                      <ChevronRight size={15} className="transition-transform duration-200 group-hover/link:translate-x-1.5" />
+                      Explore capability <ChevronRight size={13} />
                     </button>
                   </Card>
                 );
@@ -250,108 +419,77 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* How It Works */}
-        <section id="how" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-16 sm:py-20 lg:px-8">
-          <div className="text-center">
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-green-800">Simple by design</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
-              Your growth, in four steps
-            </h2>
-          </div>
-          <ol className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map(([title, text], i) => (
-              <li
-                key={title}
-                className="group rounded-3xl border border-transparent p-5 transition-all duration-300 hover:border-green-200 hover:bg-gradient-to-br hover:from-white hover:to-green-50 hover:shadow-lg hover:shadow-green-900/10 motion-safe:hover:-translate-y-1"
-              >
-                <span
-                  className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br text-sm font-extrabold shadow-md transition-all duration-300 motion-safe:group-hover:-rotate-12 motion-safe:group-hover:scale-110 ${stepBadges[i % stepBadges.length]}`}
+        {/* 4-Step Methodology */}
+        <section id="how" className="scroll-mt-20 py-16 sm:py-20 lg:py-24 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-2xl mx-auto">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                End-to-End Workflow
+              </span>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                The 4-Phase Learning Lifecycle
+              </h2>
+            </div>
+
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {WORKFLOW_STEPS.map((step) => (
+                <div
+                  key={step.num}
+                  className="rounded-xl border border-slate-200/90 bg-white p-5 space-y-3 shadow-2xs"
                 >
-                  0{i + 1}
-                </span>
-                <h3 className="mt-4 text-lg font-bold text-green-950">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-700">{text}</p>
-              </li>
-            ))}
-          </ol>
+                  <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                    PHASE {step.num}
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900">{step.title}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
-        {/* CTA */}
-        <section id="about" className="mx-auto max-w-7xl px-5 pb-16 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-green-950 via-green-900 to-emerald-700 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
-            <span aria-hidden="true" className="pointer-events-none absolute -left-10 -top-10 h-44 w-44 rounded-full bg-yellow-300/25 blur-2xl" />
-            <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-10 h-52 w-52 rounded-full bg-lime-300/20 blur-2xl" />
-            <div className="relative">
-              <GraduationCap className="mx-auto mb-4 text-yellow-300" size={36} />
-              <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Ready to find your next step?</h2>
-              <p className="mx-auto mt-4 max-w-lg leading-7 text-green-100">
-                Start with what you know today. Build the skills you need for tomorrow.
+        {/* Bottom CTA Card */}
+        <section className="py-16 sm:py-20 bg-slate-50 border-t border-slate-200/80">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="rounded-2xl bg-slate-900 p-8 sm:p-12 text-center text-white shadow-md space-y-5">
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-slate-800 text-indigo-400 mx-auto">
+                <ShieldCheck size={24} />
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                Ready to accelerate your technical skills?
+              </h2>
+              <p className="max-w-xl mx-auto text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Take the 10-minute adaptive assessment to pinpoint knowledge gaps and establish your customized starting milestone.
               </p>
-              <Button variant="yellow" className="group mt-7" onClick={() => navigate('/dashboard')}>
-                Explore your dashboard
-                <ArrowRight size={17} className="transition-transform duration-200 group-hover:translate-x-1" />
-              </Button>
+              <div className="pt-2 flex justify-center">
+                <Button
+                  variant="indigo"
+                  size="lg"
+                  onClick={() => navigate('/onboarding')}
+                >
+                  Start Adaptive Diagnostic
+                  <ArrowRight size={17} />
+                </Button>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Sign-In Modal (Spring Boot Gateway Integration) */}
-      {authModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-green-950/40 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md space-y-6 overflow-hidden rounded-3xl bg-white p-6 shadow-2xl">
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-yellow-300 via-lime-400 to-green-600" />
-            <div className="flex items-center justify-between border-b border-green-100 pb-3 pt-1">
-              <h2 className="text-lg font-bold text-green-950">Sign In to SkillPath</h2>
-              <button
-                type="button"
-                aria-label="Close sign in"
-                onClick={() => setAuthModalOpen(false)}
-                className="rounded-lg p-1 text-slate-500 transition hover:bg-green-100 hover:text-green-900"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600">
-              Sign in via your preferred identity provider to sync your adaptive roadmap across devices.
-            </p>
-
-            <div className="space-y-3">
-              <Button variant="outline" className="w-full" onClick={loginWithGoogle}>
-                Continue with Google
-              </Button>
-
-              {/* !bg-none removes Button's green gradient so the dark colour shows */}
-              <Button
-                variant="primary"
-                className="w-full !bg-none bg-slate-900 text-white shadow-slate-900/30 hover:bg-black"
-                onClick={loginWithGitHub}
-              >
-                Continue with GitHub
-              </Button>
-
-              <div className="relative py-2 text-center text-xs text-slate-500">
-                <span className="bg-white px-2">or for local offline development</span>
-              </div>
-
-              <Button
-                variant="ghost"
-                className="w-full text-xs"
-                onClick={() => {
-                  setAuthModalOpen(false);
-                  navigate('/dashboard');
-                }}
-              >
-                Continue as Guest (Offline Mode)
-              </Button>
-            </div>
-          </div>
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white px-4 py-8 text-center text-xs text-slate-500 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto gap-4">
+        <span>© 2026 AI Upskilling Platform. All rights reserved.</span>
+        <div className="flex items-center gap-5">
+          <Link to="/login" className="hover:text-slate-900 transition">
+            Sign In
+          </Link>
+          <Link to="/onboarding" className="hover:text-slate-900 transition">
+            Start Diagnostic
+          </Link>
+          <Link to="/dashboard" className="hover:text-slate-900 transition">
+            Dashboard
+          </Link>
         </div>
-      )}
-
-      <footer className="border-t-4 border-lime-300 bg-gradient-to-b from-white to-green-50 px-5 py-7 text-center text-sm text-slate-600">
-        © 2026 AiUpskillingPlatform. Learning progress preview · Sample data only.
       </footer>
     </div>
   );

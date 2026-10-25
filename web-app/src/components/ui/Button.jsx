@@ -1,39 +1,55 @@
+import { Loader2 } from 'lucide-react';
+
 export default function Button({
   children,
   variant = 'primary',
-  shape = 'pill',
+  size = 'md',
+  loading = false,
+  disabled = false,
   className = '',
+  type = 'button',
   ...props
 }) {
+  // Support standard variants with graceful fallback for legacy props
   const variants = {
     primary:
-      'bg-gradient-to-br from-green-700 to-green-900 text-white shadow-md shadow-green-900/20 hover:from-green-600 hover:to-green-800 hover:shadow-lg focus-visible:ring-green-700',
+      'bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 shadow-xs focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
+    indigo:
+      'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-xs focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
+    secondary:
+      'bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2',
     outline:
-      'border-2 border-green-800 bg-white text-green-900 hover:bg-green-800 hover:text-white focus-visible:ring-green-700',
+      'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
     ghost:
-      'text-green-900 hover:bg-green-100 focus-visible:ring-green-700',
+      'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2',
+    danger:
+      'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 shadow-xs focus-visible:ring-2 focus-visible:ring-rose-600 focus-visible:ring-offset-2',
+    // Fallbacks for older call sites
     yellow:
-      'bg-gradient-to-br from-yellow-300 to-amber-400 text-green-950 shadow-md shadow-amber-500/30 hover:from-yellow-200 hover:to-amber-300 hover:shadow-lg focus-visible:ring-yellow-600',
+      'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-xs focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
     coral:
-      'bg-gradient-to-br from-orange-400 to-rose-500 text-white shadow-md shadow-rose-500/30 hover:from-orange-300 hover:to-rose-400 hover:shadow-lg focus-visible:ring-rose-500',
+      'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 shadow-xs focus-visible:ring-2 focus-visible:ring-rose-600 focus-visible:ring-offset-2',
     sky:
-      'bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-md shadow-indigo-500/30 hover:from-sky-300 hover:to-indigo-400 hover:shadow-lg focus-visible:ring-indigo-500',
+      'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-xs focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
   };
 
-  // Change `shape` to switch the silhouette:
-  // pill = fully round, leaf = opposite corners round, squircle = soft square, sharp = small radius
-  const shapes = {
-    pill: 'rounded-full',
-    leaf: 'rounded-tl-2xl rounded-br-2xl rounded-tr-sm rounded-bl-sm',
-    squircle: 'rounded-3xl',
-    sharp: 'rounded-md',
+  const sizes = {
+    sm: 'px-3 py-1.5 text-xs font-medium rounded-md gap-1.5 min-h-[36px]',
+    md: 'px-4 py-2 text-sm font-semibold rounded-lg gap-2 min-h-[42px]',
+    lg: 'px-5 py-2.5 text-sm sm:text-base font-semibold rounded-lg gap-2.5 min-h-[46px]',
   };
+
+  const selectedVariant = variants[variant] || variants.primary;
+  const selectedSize = sizes[size] || sizes.md;
 
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold transition-all duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 ${shapes[shape]} ${variants[variant]} ${className}`}
+      type={type}
+      disabled={disabled || loading}
+      className={`inline-flex items-center justify-center font-medium transition-colors duration-150 select-none disabled:cursor-not-allowed disabled:opacity-50 ${selectedSize} ${selectedVariant} ${className}`}
       {...props}
     >
+      {loading && <Loader2 size={16} className="animate-spin shrink-0" />}
       {children}
     </button>
   );
