@@ -9,6 +9,8 @@ Welcome to the central documentation hub for the **AI-Powered Upskilling Platfor
 | Document | Purpose | Audience | Status |
 | :--- | :--- | :--- | :--- |
 | **[`PRODUCT_OVERVIEW.md`](./PRODUCT_OVERVIEW.md)** | Product vision, 5 core user personas, value proposition, and key feature roadmap. | Everyone / Product | Baseline Spec |
+| **[`api/GATEWAY_API_REFERENCE.md`](./api/GATEWAY_API_REFERENCE.md)** | Complete Gateway REST API documentation: OAuth2, session hydration, refresh, and adaptive assessment endpoints with sample fetch calls and JSON payloads. | Frontend & Backend Teams | Active Contract |
+| **[`frontend/ASSESSMENT_INTEGRATION_GUIDE.md`](./frontend/ASSESSMENT_INTEGRATION_GUIDE.md)** | Step-by-step guide for wiring React assessment pages, adaptive engine state transitions, and custom hooks. | Frontend Engineers | Active Guide |
 | **[`frontend/FRONTEND_ARCHITECTURE.md`](./frontend/FRONTEND_ARCHITECTURE.md)** | Modular frontend architecture, directory hierarchy, state boundaries, and tech stack. | Frontend Engineers | Implemented |
 | **[`frontend/FRONTEND_DESIGN_SPEC.md`](./frontend/FRONTEND_DESIGN_SPEC.md)** | *Deep Craft Learning* design system tokens, color palettes, typography, and UI rules. | Frontend / Designers | Active System |
 | **[`frontend/OAUTH_INTEGRATION.md`](./frontend/OAUTH_INTEGRATION.md)** | OAuth2 authorization flow, code exchange handshake, and token interceptor boundaries. | Frontend & Gateway | Active Contract |
