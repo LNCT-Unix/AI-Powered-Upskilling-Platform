@@ -128,5 +128,33 @@ export const authService = {
       body: { fullName, email, password },
     });
   },
+
+  // 8. Confirm Email Verification Token
+  async confirmEmailVerification(token) {
+    if (USE_MOCK_AUTH) {
+      return {
+        success: true,
+        message: 'Email verified successfully (mock mode)',
+        data: { emailVerified: true },
+      };
+    }
+    return apiClient('/api/auth/email-verification/confirm', {
+      body: { token },
+    });
+  },
+
+  // 9. Resend Verification Email
+  async resendEmailVerification(email) {
+    if (USE_MOCK_AUTH) {
+      return {
+        success: true,
+        message: 'Verification link resent (mock mode)',
+        data: { email, verificationRequired: true },
+      };
+    }
+    return apiClient('/api/auth/email-verification/resend', {
+      body: { email },
+    });
+  },
 };
 

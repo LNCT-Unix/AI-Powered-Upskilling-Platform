@@ -106,6 +106,8 @@ export function AuthProvider({ children }) {
     loginWithGitHub: authService.loginWithGitHub,
     logout,
     handleOAuthCallback,
+    confirmEmailVerification: authService.confirmEmailVerification,
+    resendEmailVerification: authService.resendEmailVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
