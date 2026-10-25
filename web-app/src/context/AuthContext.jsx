@@ -108,6 +108,7 @@ export function AuthProvider({ children }) {
     handleOAuthCallback,
     confirmEmailVerification: authService.confirmEmailVerification,
     resendEmailVerification: authService.resendEmailVerification,
+    createOAuthLinkIntent: authService.createOAuthLinkIntent,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

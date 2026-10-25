@@ -10,6 +10,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import OnboardingPage from './pages/OnboardingPage';
+import LearnWorkspacePage from './pages/LearnWorkspacePage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardShell from './components/layout/DashboardShell';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -65,6 +66,10 @@ export const router = createBrowserRouter([
       {
         path: '/roadmap',
         element: <RoadmapPage />,
+      },
+      {
+        path: '/learn/:topicSlug',
+        element: <LearnWorkspacePage />,
       },
       {
         path: '/analytics',

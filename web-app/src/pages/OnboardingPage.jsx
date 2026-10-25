@@ -22,6 +22,7 @@ import Button from '../components/ui/Button';
 import Logo from '../components/ui/Logo';
 import Badge from '../components/ui/Badge';
 import { useLanguage } from '../hooks/useLanguage';
+import { getTrackUuid } from '../services/assessmentService';
 
 const TRACKS = [
   {
@@ -127,6 +128,7 @@ export default function OnboardingPage() {
       language,
       persona,
       trackId: selectedTrack,
+      trackUuid: getTrackUuid(selectedTrack),
       studyBudgetMinutes: studyBudget,
       priorExperience,
       completedAt: new Date().toISOString(),

@@ -156,5 +156,23 @@ export const authService = {
       body: { email },
     });
   },
+
+  // 10. Create OAuth Link Intent (Link Google or GitHub to existing account)
+  async createOAuthLinkIntent(provider, currentPassword = null) {
+    if (USE_MOCK_AUTH) {
+      return {
+        success: true,
+        data: {
+          authorizationPath: `/oauth2/authorization/${provider}`,
+          expiresInSeconds: 300,
+        },
+      };
+    }
+    return apiClient(`/api/auth/oauth-links/${provider}/intent`, {
+      method: 'POST',
+      body: currentPassword ? { currentPassword } : {},
+    });
+  },
 };
+
 
