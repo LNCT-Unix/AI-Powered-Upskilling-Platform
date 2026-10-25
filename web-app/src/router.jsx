@@ -14,6 +14,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardShell from './components/layout/DashboardShell';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import ForgotPass from './components/auth/forgotPass';
 
 export const router = createBrowserRouter([
   {
@@ -24,6 +25,9 @@ export const router = createBrowserRouter([
     path: '/login',
     element: <LoginPage />,
   },
+  { 
+    path: '/forgot-password', 
+    element: <ForgotPass /> },
   {
     path: '/signup',
     element: <SignupPage />,
