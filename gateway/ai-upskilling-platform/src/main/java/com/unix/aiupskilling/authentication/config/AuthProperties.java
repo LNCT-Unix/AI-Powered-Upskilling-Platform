@@ -15,6 +15,7 @@ public class AuthProperties {
     private JwtProperties jwt = new JwtProperties();
     private FrontendProperties frontend = new FrontendProperties();
     private CorsProperties cors = new CorsProperties();
+    private VerificationProperties verification = new VerificationProperties();
 
     @Data
     public static class JwtProperties {
@@ -32,10 +33,20 @@ public class AuthProperties {
         private String mobileCallbackUrl = "myapp://auth/callback";
         private String webErrorUrl = "http://localhost:5173/auth/error";
         private String mobileErrorUrl = "myapp://auth/error";
+        private String verificationUrl = "http://localhost:5173/verify-email";
     }
 
     @Data
     public static class CorsProperties {
         private List<String> allowedOrigins = new ArrayList<>(List.of("http://localhost:5173", "http://localhost:3000"));
     }
+
+    @Data
+    public static class VerificationProperties {
+        private long ttlSeconds = 86400;
+        private int cooldownSeconds = 60;
+        private int maxPerHour = 5;
+        private int ipMaxPerHour = 20;
+    }
 }
+

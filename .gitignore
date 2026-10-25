@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+gateway/ai-upskilling-platform/src/main/resources/application.properties
