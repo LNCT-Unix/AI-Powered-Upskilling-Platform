@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
@@ -55,7 +55,15 @@ export default function AnalyticsPage() {
     }
   }, []);
 
-  const completedMilestones = roadmapItems.filter((i) => i.done).length;
+  const [completedMilestones] = useState(() => {
+    try {
+      const saved = localStorage.getItem('skillpath_roadmap_done');
+      if (saved) return JSON.parse(saved).length;
+    } catch {
+      // fallback
+    }
+    return roadmapItems.filter((i) => i.done).length;
+  });
   const totalMilestones = roadmapItems.length;
 
   return (

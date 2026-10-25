@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CircleCheck,
   PlayCircle,
@@ -16,8 +16,26 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import { roadmapItems } from '../data/mockData';
 
+const STORAGE_ROADMAP_DONE = 'skillpath_roadmap_done';
+
 export default function RoadmapPage() {
-  const [done, setDone] = useState(roadmapItems.filter((x) => x.done).map((x) => x.id));
+  const [done, setDone] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_ROADMAP_DONE);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return roadmapItems.filter((x) => x.done).map((x) => x.id);
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_ROADMAP_DONE, JSON.stringify(done));
+    } catch {
+      // ignore
+    }
+  }, [done]);
   const [activeFilter, setActiveFilter] = useState('all');
   const [dailyMinutes, setDailyMinutes] = useState(45);
   const [expandedRationales, setExpandedRationales] = useState({});

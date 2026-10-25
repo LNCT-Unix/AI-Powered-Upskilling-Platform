@@ -83,18 +83,27 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // 3. Compute roadmap progress
-  const completedMilestones = useMemo(
-    () => roadmapItems.filter((item) => item.done).length,
-    []
-  );
+  // 3. Compute roadmap progress from persisted state
+  const [completedMilestoneIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('skillpath_roadmap_done');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return roadmapItems.filter((item) => item.done).map((i) => i.id);
+  });
+
+  const completedMilestones = completedMilestoneIds.length;
   const totalMilestones = roadmapItems.length;
   const roadmapPct = Math.round((completedMilestones / totalMilestones) * 100);
 
   // Next actionable milestone
   const nextMilestone = useMemo(
-    () => roadmapItems.find((item) => !item.done) || roadmapItems[0],
-    []
+    () =>
+      roadmapItems.find((item) => !completedMilestoneIds.includes(item.id)) ||
+      roadmapItems[0],
+    [completedMilestoneIds]
   );
 
   // Track naming
