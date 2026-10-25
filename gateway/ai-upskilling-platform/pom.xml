@@ -18,10 +18,7 @@
 
 	<properties>
 		<java.version>21</java.version>
-<<<<<<< Updated upstream
-=======
 		<lombok.version>1.18.48</lombok.version>
->>>>>>> Stashed changes
 	</properties>
 
 	<dependencies>
