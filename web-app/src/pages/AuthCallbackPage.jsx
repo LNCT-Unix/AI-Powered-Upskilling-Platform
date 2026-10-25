@@ -34,8 +34,10 @@ export default function AuthCallbackPage() {
 
       if (res.success) {
         setStatus('success');
+        const hasCompletedOnboarding = Boolean(localStorage.getItem('skillpath_onboarding_profile'));
+        const destination = hasCompletedOnboarding ? '/dashboard' : '/onboarding';
         setTimeout(() => {
-          if (mounted) navigate('/dashboard');
+          if (mounted) navigate(destination);
         }, 1200);
       } else {
         setStatus('error');

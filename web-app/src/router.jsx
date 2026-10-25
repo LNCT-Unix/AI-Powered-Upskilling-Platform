@@ -12,6 +12,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import OnboardingPage from './pages/OnboardingPage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardShell from './components/layout/DashboardShell';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
@@ -36,10 +37,18 @@ export const router = createBrowserRouter([
   },
   {
     path: '/onboarding',
-    element: <OnboardingPage />,
+    element: (
+      <ProtectedRoute>
+        <OnboardingPage />
+      </ProtectedRoute>
+    ),
   },
   {
-    element: <DashboardShell />,
+    element: (
+      <ProtectedRoute>
+        <DashboardShell />
+      </ProtectedRoute>
+    ),
     children: [
       {
         path: '/dashboard',

@@ -120,6 +120,22 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
+  const handleStartDiagnostic = () => {
+    if (isAuthenticated) {
+      navigate('/onboarding');
+    } else {
+      navigate('/login', { state: { from: { pathname: '/onboarding' } } });
+    }
+  };
+
+  const handleOpenDashboard = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login', { state: { from: { pathname: '/dashboard' } } });
+    }
+  };
+
   return (
     <div id="top" className="min-h-screen bg-white text-slate-900 select-none">
       {/* Top Header */}
@@ -155,7 +171,7 @@ export default function LandingPage() {
             <Button
               variant="indigo"
               size="sm"
-              onClick={() => navigate('/onboarding')}
+              onClick={handleStartDiagnostic}
               className="gap-1.5"
             >
               Start Diagnostic
@@ -215,7 +231,7 @@ export default function LandingPage() {
                 className="w-full justify-center"
                 onClick={() => {
                   setMobileOpen(false);
-                  navigate('/onboarding');
+                  handleStartDiagnostic();
                 }}
               >
                 Start Diagnostic & Onboarding
@@ -249,7 +265,7 @@ export default function LandingPage() {
                   <Button
                     variant="indigo"
                     size="lg"
-                    onClick={() => navigate('/onboarding')}
+                    onClick={handleStartDiagnostic}
                     className="justify-center"
                   >
                     Start Free Diagnostic
@@ -258,7 +274,7 @@ export default function LandingPage() {
                   <Button
                     variant="outline"
                     size="lg"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={handleOpenDashboard}
                     className="justify-center"
                   >
                     Explore Dashboard Demo
@@ -346,7 +362,7 @@ export default function LandingPage() {
                   <Card
                     key={t.id}
                     interactive
-                    onClick={() => navigate('/onboarding')}
+                    onClick={handleStartDiagnostic}
                     className="flex flex-col justify-between group border-slate-200/90 hover:border-indigo-300"
                   >
                     <div>
@@ -465,7 +481,7 @@ export default function LandingPage() {
                 <Button
                   variant="indigo"
                   size="lg"
-                  onClick={() => navigate('/onboarding')}
+                  onClick={handleStartDiagnostic}
                 >
                   Start Adaptive Diagnostic
                   <ArrowRight size={17} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react';
 import Signup from '../components/auth/signup';
 import Logo from '../components/ui/Logo';
@@ -7,16 +7,19 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, resendEmailVerification, loginWithGoogle, loginWithGitHub, isAuthenticated } = useAuth();
   const [verificationPending, setVerificationPending] = useState(null);
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState('');
 
+  const destination = location.state?.from?.pathname || '/onboarding';
+
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, destination]);
 
   const handleEmailSignup = async ({ fullName, email, password }) => {
     const res = await register({ fullName, email, password });
@@ -24,7 +27,7 @@ export default function SignupPage() {
       if (res.data?.verificationRequired || !res.data?.accessToken) {
         setVerificationPending(email);
       } else {
-        navigate('/onboarding');
+        navigate(destination);
       }
     } else {
       throw new Error(res.error || 'Registration failed. Please try again.');
