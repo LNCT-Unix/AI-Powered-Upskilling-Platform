@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Executive Light Palette Tokens */
+  --color-canvas-bg: #f8fafc;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #f1f5f9;
+  --color-border-subtle: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+
+  --color-brand-navy: #0f172a;
+  --color-brand-indigo: #4f46e5;
+  --color-brand-indigo-hover: #4338ca;
+
+  --color-status-mastered: #059669;
+  --color-status-in-progress: #4f46e5;
+  --color-status-revision: #d97706;
+  --color-status-locked: #94a3b8;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas-bg);
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessible focus styling */
+:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* Touch manipulation optimization for mobile */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Custom scrollbar for data tables and code blocks */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
