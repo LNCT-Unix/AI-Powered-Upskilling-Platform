@@ -341,15 +341,21 @@ AI-Powered-Upskilling-Platform/
    cd AI-Powered-Upskilling-Platform
    ```
 
-2. **Configure environment variables:**
+2. **Start the web application (from its directory):**
    ```bash
-   cp .env.example .env
+   cd web-app
+   npm install
+   copy .env.example .env
+   npm run dev
    ```
+   Open [http://localhost:5173](http://localhost:5173). The frontend is configured for mock authentication by default, so it can run without the backend.
 
-3. **Launch the platform via Docker Compose:**
+3. **Start the gateway (optional, in a second terminal):**
    ```bash
-   docker compose up --build
+   cd gateway\ai-upskilling-platform
+   .\mvnw.cmd spring-boot:run
    ```
+   To use the gateway from the frontend, set `VITE_USE_MOCK_AUTH=false` in `web-app/.env`. The gateway's PostgreSQL container can be started with `docker compose up -d` from `gateway/ai-upskilling-platform`.
 
 ### Core Environment Configuration
 

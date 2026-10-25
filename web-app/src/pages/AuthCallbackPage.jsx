@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import Card from '../components/ui/Card';
@@ -10,46 +10,58 @@ export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { handleOAuthCallback } = useAuth();
+  const exchangeAttempted = useRef(false);
 
   const code = searchParams.get('code');
   const errorParam = searchParams.get('error');
 
-  const initialStatus = errorParam ? 'error' : !code ? 'error' : 'processing';
-  const initialError = errorParam
-    ? `Authentication failed with code: ${errorParam}`
-    : !code
-    ? 'No authorization code was found in the callback URL.'
-    : '';
+  const [status, setStatus] = useState(() => {
+    if (errorParam || !code) return 'error';
+    return 'processing';
+  });
 
-  const [status, setStatus] = useState(initialStatus);
-  const [errorMessage, setErrorMessage] = useState(initialError);
+  const [errorMessage, setErrorMessage] = useState(() => {
+    if (errorParam) return `Authentication failed with code: ${errorParam}`;
+    if (!code) return 'No authorization code was found in the callback URL.';
+    return '';
+  });
 
   useEffect(() => {
-    if (status !== 'processing') return;
+    if (errorParam) {
+      navigate(`/auth/error?error=${encodeURIComponent(errorParam)}`, { replace: true });
+      return;
+    }
 
-    let mounted = true;
-    async function exchange() {
-      const res = await handleOAuthCallback(code);
-      if (!mounted) return;
+    if (!code) {
+      navigate('/auth/error?error=MISSING_CODE', { replace: true });
+      return;
+    }
 
-      if (res.success) {
-        setStatus('success');
-        const hasCompletedOnboarding = Boolean(localStorage.getItem('skillpath_onboarding_profile'));
-        const destination = hasCompletedOnboarding ? '/dashboard' : '/onboarding';
-        setTimeout(() => {
-          if (mounted) navigate(destination);
-        }, 1200);
-      } else {
+    // Prevent duplicate exchange in React StrictMode
+    if (exchangeAttempted.current) return;
+    exchangeAttempted.current = true;
+
+    async function performExchange() {
+      try {
+        const res = await handleOAuthCallback(code);
+
+        if (res.success) {
+          setStatus('success');
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 800);
+        } else {
+          setStatus('error');
+          setErrorMessage(res.error || 'Failed to exchange login code');
+        }
+      } catch (err) {
         setStatus('error');
-        setErrorMessage(res.error || 'Failed to exchange login code');
+        setErrorMessage(err.message || 'An unexpected error occurred during code exchange');
       }
     }
 
-    exchange();
-    return () => {
-      mounted = false;
-    };
-  }, [code, status, handleOAuthCallback, navigate]);
+    performExchange();
+  }, [code, errorParam, handleOAuthCallback, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">

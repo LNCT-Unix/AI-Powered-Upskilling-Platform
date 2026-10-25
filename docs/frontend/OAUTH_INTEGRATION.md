@@ -5,6 +5,7 @@
 **Backend Service:** `gateway/ai-upskilling-platform/` (Spring Boot Gateway on port `8080`)  
 **Frontend Role:** Client-side consumer & callback handler only (Strictly non-competing boundary)  
 **Contract Source Documentation:**
+- `docs/authentication/OAUTH_INTEGRATION_GUIDE.md` (Full Stack Architecture & Troubleshooting Guide)
 - `docs/authentication/AUTHENTICATION_TEAM_CONTRACT.md`
 - `docs/authentication/ENVIRONMENT.md`
 

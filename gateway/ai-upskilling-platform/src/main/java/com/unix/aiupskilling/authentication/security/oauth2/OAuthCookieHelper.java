@@ -33,7 +33,7 @@ public final class OAuthCookieHelper {
                 .path(path)
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -44,7 +44,7 @@ public final class OAuthCookieHelper {
                 .path(path)
                 .maxAge(maxAgeSeconds)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

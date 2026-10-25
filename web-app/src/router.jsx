@@ -8,6 +8,7 @@ import SkillGraphPage from './pages/SkillGraphPage';
 import RoadmapPage from './pages/RoadmapPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import AuthErrorPage from './pages/AuthErrorPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import OnboardingPage from './pages/OnboardingPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
   {
     path: '/auth/callback',
     element: <AuthCallbackPage />,
+  },
+  {
+    path: '/auth/error',
+    element: <AuthErrorPage />,
   },
   {
     path: '/verify-email',
