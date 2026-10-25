@@ -79,8 +79,8 @@ export default function LandingPage() {
               </Link>
             )}
 
-            <Button onClick={() => navigate('/assessment')} className="group">
-              Try a diagnostic
+            <Button onClick={() => navigate('/onboarding')} className="group">
+              Start Free Assessment
               <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
             </Button>
           </div>
@@ -145,8 +145,8 @@ export default function LandingPage() {
                 Turn your learning goals into a clear plan. Discover skill gaps, get a personalized roadmap, and see your progress grow — one step at a time.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button onClick={() => navigate('/assessment')} className="group">
-                  Start free diagnostic
+                <Button onClick={() => navigate('/onboarding')} className="group">
+                  Start Free Diagnostic & Onboarding
                   <ArrowRight size={17} className="transition-transform duration-200 group-hover:translate-x-1" />
                 </Button>
                 <Button variant="outline" onClick={() => navigate('/dashboard')}>

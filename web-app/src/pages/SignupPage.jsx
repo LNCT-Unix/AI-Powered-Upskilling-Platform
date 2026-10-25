@@ -16,7 +16,7 @@ export default function SignupPage() {
   const handleEmailSignup = async ({ fullName, email, password }) => {
     const res = await register({ fullName, email, password });
     if (res.success) {
-      navigate('/dashboard');
+      navigate('/onboarding');
     } else {
       throw new Error(res.error || 'Registration failed. Please try again.');
     }

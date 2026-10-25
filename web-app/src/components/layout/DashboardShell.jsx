@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Bell, GraduationCap, LogOut } from 'lucide-react';
+import { Menu, Bell, GraduationCap, LogOut, Globe } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import Logo from '../ui/Logo';
 import { navItems } from '../../data/mockData';
 import { useAuth } from '../../hooks/useAuth';
+import { useLanguage } from '../../hooks/useLanguage';
 
 export default function DashboardShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
 
   const currentItem = navItems.find((n) => n.path === location.pathname);
   const activeTitle = currentItem?.label || 'Dashboard';
@@ -63,6 +65,21 @@ export default function DashboardShell({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Multilingual Switcher */}
+            <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 shadow-xs">
+              <Globe size={14} className="mr-1.5 text-emerald-600" />
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                aria-label="Choose platform language"
+                className="bg-transparent font-bold text-slate-700 outline-none cursor-pointer"
+              >
+                <option value="en">English (EN)</option>
+                <option value="hi">हिन्दी (HI)</option>
+                <option value="hinglish">Hinglish</option>
+              </select>
+            </div>
+
             <button
               type="button"
               onClick={() => window.alert('You’re all caught up! This is a sample notification.')}

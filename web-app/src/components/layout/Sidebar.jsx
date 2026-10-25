@@ -48,9 +48,17 @@ export default function Sidebar({ onClose }) {
         </div>
 
         <Link
+          to="/onboarding"
+          onClick={onClose}
+          className="mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-emerald-800 hover:bg-emerald-50 transition"
+        >
+          <span>🎯</span> Recalibrate Track / Goals
+        </Link>
+
+        <Link
           to="/"
           onClick={onClose}
-          className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-500 hover:bg-slate-100 transition"
+          className="flex w-full items-center rounded-xl px-3 py-2 text-left text-xs font-medium text-slate-500 hover:bg-slate-100 transition"
         >
           ← Back to website
         </Link>

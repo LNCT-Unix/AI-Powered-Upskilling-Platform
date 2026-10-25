@@ -8,6 +8,7 @@ import SkillGraphPage from './pages/SkillGraphPage';
 import RoadmapPage from './pages/RoadmapPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import OnboardingPage from './pages/OnboardingPage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardShell from './components/layout/DashboardShell';
 
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
   {
     path: '/auth/callback',
     element: <AuthCallbackPage />,
+  },
+  {
+    path: '/onboarding',
+    element: <OnboardingPage />,
   },
   {
     element: <DashboardShell />,

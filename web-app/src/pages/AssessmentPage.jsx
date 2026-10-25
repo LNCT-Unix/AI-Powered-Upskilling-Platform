@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, CheckCircle2, AlertCircle,
-  RotateCcw, Sparkles, Layers
+  RotateCcw, Sparkles, Layers, Loader2
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -41,6 +41,21 @@ export default function AssessmentPage() {
       return false;
     }
   });
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
+
+  const startRoadmapGeneration = () => {
+    setIsGenerating(true);
+    setGenerationStep(0);
+    setTimeout(() => setGenerationStep(1), 600);
+    setTimeout(() => setGenerationStep(2), 1300);
+    setTimeout(() => setGenerationStep(3), 2000);
+    setTimeout(() => {
+      setGenerationStep(4);
+      setTimeout(() => navigate('/roadmap'), 800);
+    }, 2800);
+  };
 
   // Sync state to sessionStorage
   useEffect(() => {
@@ -267,8 +282,8 @@ export default function AssessmentPage() {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button onClick={() => navigate('/roadmap')}>
-                View Personalized Roadmap <ArrowRight size={16} />
+              <Button onClick={startRoadmapGeneration} className="bg-emerald-700 hover:bg-emerald-800 text-white shadow-md">
+                Generate My Personalized Roadmap <Sparkles size={16} />
               </Button>
               <Button variant="outline" onClick={handleReset}>
                 <RotateCcw size={16} /> Retest Diagnostic
@@ -415,6 +430,92 @@ export default function AssessmentPage() {
               })}
             </div>
           </Card>
+        </div>
+      )}
+
+      {/* Animated AI Roadmap Generation Screen */}
+      {isGenerating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md px-4 py-6">
+          <div className="w-full max-w-lg rounded-3xl border border-emerald-500/40 bg-gradient-to-b from-slate-900 to-slate-950 p-6 sm:p-8 text-slate-100 shadow-2xl space-y-6 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
+                <Sparkles size={14} className="animate-pulse" /> AI CURRICULUM SYNTHESIZER
+              </span>
+              <span className="text-xs font-mono text-emerald-400 font-bold tabular-nums">
+                {generationStep >= 4 ? '100%' : `${Math.min(95, generationStep * 25 + 15)}%`}
+              </span>
+            </div>
+
+            <div>
+              <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+                {generationStep >= 4 ? 'Roadmap Synthesized!' : 'Generating Personalized Milestone Graph'}
+              </h3>
+              <p className="mt-1 text-xs text-slate-400">
+                Analyzing diagnostic strengths, pruning redundant topics, and injecting targeted revision nodes.
+              </p>
+            </div>
+
+            {/* Live Step Progression */}
+            <div className="space-y-3 pt-2">
+              {[
+                { title: 'Evaluating 10 diagnostic responses across 5 engineering dimensions', desc: 'Determined baseline ability and verified competency bounds.' },
+                { title: 'Pruning verified strengths (Closures, SQL Filters)', desc: 'Accelerates roadmap by skipping already mastered topics.' },
+                { title: 'Injecting targeted Revision Modules for identified gaps', desc: 'Adding microtask vs macrotask visualizer before async milestones.' },
+                { title: 'Calibrating topological milestones to study budget', desc: 'Organizing prerequisite DAG sequence with ~45 min daily blocks.' },
+              ].map((st, idx) => {
+                const isDone = generationStep > idx;
+                const isCurrent = generationStep === idx;
+                return (
+                  <div
+                    key={st.title}
+                    className={`flex items-start gap-3 rounded-xl p-3 border text-xs transition-all duration-300 ${
+                      isDone
+                        ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-200'
+                        : isCurrent
+                        ? 'border-emerald-500 bg-emerald-950/50 text-white ring-1 ring-emerald-500/30'
+                        : 'border-slate-800 bg-slate-900/50 text-slate-500'
+                    }`}
+                  >
+                    <span className="mt-0.5 shrink-0">
+                      {isDone ? (
+                        <CheckCircle2 size={16} className="text-emerald-400" />
+                      ) : isCurrent ? (
+                        <Loader2 size={16} className="text-emerald-400 animate-spin" />
+                      ) : (
+                        <span className="grid h-4 w-4 place-items-center rounded-full border border-slate-700 text-[10px]">
+                          {idx + 1}
+                        </span>
+                      )}
+                    </span>
+                    <div>
+                      <p className={`font-bold ${isCurrent ? 'text-white' : isDone ? 'text-emerald-300' : 'text-slate-400'}`}>
+                        {st.title}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{st.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Progress bar and skip button */}
+            <div className="pt-2 flex items-center justify-between gap-4">
+              <div className="h-2 flex-1 rounded-full bg-slate-800 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500"
+                  style={{ width: `${generationStep >= 4 ? 100 : Math.min(95, generationStep * 25 + 15)}%` }}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate('/roadmap')}
+                className="text-xs text-slate-400 hover:text-white font-medium shrink-0 transition"
+              >
+                Skip to Roadmap →
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
