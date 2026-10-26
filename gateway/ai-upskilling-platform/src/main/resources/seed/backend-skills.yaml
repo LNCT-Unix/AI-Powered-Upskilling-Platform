@@ -1,0 +1,420 @@
+# Backend Engineering skill graph (seed file)
+# Track: backend-engineering. Authored by Dev Sharma, Team Unix.
+# difficulty is on the same scale as learner ability (theta), roughly -3 to 3.
+# prerequisites list skills that must be learned first. The graph is validated as a DAG on load.
+# All difficulty values are expert estimates and should be reviewed by the team and mentors.
+track:
+  slug: backend-engineering
+  name: Backend Engineering
+  description: 'Language-agnostic backend track: web APIs, databases, security, architecture, performance, async systems,
+    quality and deployment.'
+  status: ACTIVE
+skills:
+- slug: programming-basics
+  name: Programming basics
+  cluster: foundations
+  difficulty: -2.5
+  description: Variables, conditions, loops and functions
+  prerequisites: []
+- slug: core-data-structures
+  name: Core data structures
+  cluster: foundations
+  difficulty: -2.0
+  description: Lists, maps, sets, stacks, queues and basic Big-O
+  prerequisites:
+  - programming-basics
+- slug: git-basics
+  name: Git and version control
+  cluster: foundations
+  difficulty: -2.0
+  description: Commits, branches, merging and pull requests
+  prerequisites: []
+- slug: linux-cli-basics
+  name: Linux and command line
+  cluster: foundations
+  difficulty: -1.8
+  description: Shell navigation, files, permissions and processes
+  prerequisites: []
+- slug: error-handling
+  name: Error handling and debugging
+  cluster: foundations
+  difficulty: -1.5
+  description: Exceptions, reading stack traces and debugging
+  prerequisites:
+  - programming-basics
+- slug: oop-modular-design
+  name: Object-oriented and modular design
+  cluster: foundations
+  difficulty: -1.0
+  description: Classes, interfaces, modules and encapsulation
+  prerequisites:
+  - programming-basics
+- slug: networking-basics
+  name: Networking basics
+  cluster: web-apis
+  difficulty: -1.8
+  description: IP, DNS, TCP and how a request travels
+  prerequisites: []
+- slug: http-basics
+  name: HTTP methods, headers and status codes
+  cluster: web-apis
+  difficulty: -1.5
+  description: Request and response structure, verbs, status codes, headers
+  prerequisites:
+  - networking-basics
+- slug: json-serialization
+  name: JSON and data serialization
+  cluster: web-apis
+  difficulty: -1.5
+  description: Encoding and decoding data between services
+  prerequisites:
+  - programming-basics
+- slug: rest-api-design
+  name: REST API design
+  cluster: web-apis
+  difficulty: -0.8
+  description: Resources, endpoints, verbs and idempotent design
+  prerequisites:
+  - http-basics
+  - json-serialization
+- slug: input-validation-errors
+  name: Input validation and API error responses
+  cluster: web-apis
+  difficulty: -0.5
+  description: Validating input and returning consistent errors
+  prerequisites:
+  - rest-api-design
+  - error-handling
+- slug: api-docs-openapi
+  name: API documentation (OpenAPI)
+  cluster: web-apis
+  difficulty: 0.0
+  description: Describing APIs with OpenAPI and Swagger
+  prerequisites:
+  - rest-api-design
+- slug: pagination-versioning
+  name: Pagination, filtering and API versioning
+  cluster: web-apis
+  difficulty: 0.2
+  description: Paging large results, filters, and evolving APIs safely
+  prerequisites:
+  - rest-api-design
+- slug: realtime-communication
+  name: Real-time communication
+  cluster: web-apis
+  difficulty: 1.0
+  description: WebSockets and server-sent events
+  prerequisites:
+  - rest-api-design
+- slug: sql-basics
+  name: SQL basics
+  cluster: databases
+  difficulty: -1.3
+  description: SELECT, INSERT, UPDATE, DELETE and filtering
+  prerequisites: []
+- slug: sql-joins-aggregation
+  name: SQL joins and aggregation
+  cluster: databases
+  difficulty: -0.3
+  description: Joins, GROUP BY, subqueries and views
+  prerequisites:
+  - sql-basics
+- slug: relational-modeling
+  name: Relational modeling and normalization
+  cluster: databases
+  difficulty: -0.5
+  description: Tables, keys, relationships and normal forms
+  prerequisites:
+  - sql-basics
+- slug: orm-data-access
+  name: ORMs and data access layers
+  cluster: databases
+  difficulty: -0.2
+  description: Mapping objects to tables, repositories, N+1 problem
+  prerequisites:
+  - sql-basics
+  - oop-modular-design
+- slug: nosql-basics
+  name: NoSQL basics
+  cluster: databases
+  difficulty: 0.3
+  description: Document, key-value and wide-column stores and when to use them
+  prerequisites:
+  - sql-basics
+  - json-serialization
+- slug: schema-migrations
+  name: Schema migrations
+  cluster: databases
+  difficulty: 0.4
+  description: Versioned, repeatable database changes
+  prerequisites:
+  - relational-modeling
+- slug: indexing-query-performance
+  name: Indexing and query performance
+  cluster: databases
+  difficulty: 0.6
+  description: Indexes, query plans and slow query fixes
+  prerequisites:
+  - relational-modeling
+  - sql-joins-aggregation
+- slug: transactions-acid
+  name: Transactions and ACID
+  cluster: databases
+  difficulty: 0.7
+  description: Atomicity, consistency, isolation, durability
+  prerequisites:
+  - sql-joins-aggregation
+- slug: isolation-concurrency
+  name: Isolation levels and locking
+  cluster: databases
+  difficulty: 1.5
+  description: Dirty reads, phantom reads, optimistic and pessimistic locking
+  prerequisites:
+  - transactions-acid
+- slug: replication-sharding
+  name: Replication and sharding
+  cluster: databases
+  difficulty: 1.8
+  description: Scaling databases with replicas and partitions
+  prerequisites:
+  - indexing-query-performance
+  - transactions-acid
+- slug: password-hashing
+  name: Password storage and hashing
+  cluster: security
+  difficulty: -0.2
+  description: Salting, hashing and why never to store plain passwords
+  prerequisites:
+  - http-basics
+- slug: sessions-cookies
+  name: Sessions and cookies
+  cluster: security
+  difficulty: 0.0
+  description: Session-based login and cookie flags
+  prerequisites:
+  - http-basics
+  - password-hashing
+- slug: jwt-auth
+  name: Token-based auth (JWT)
+  cluster: security
+  difficulty: 0.3
+  description: Access and refresh tokens, signing and expiry
+  prerequisites:
+  - sessions-cookies
+  - json-serialization
+- slug: authorization-rbac
+  name: Authorization and role-based access
+  cluster: security
+  difficulty: 0.5
+  description: Roles, permissions and ownership checks
+  prerequisites:
+  - jwt-auth
+- slug: secrets-management
+  name: Secrets and configuration management
+  cluster: security
+  difficulty: 0.2
+  description: Keeping keys out of code, environment config
+  prerequisites:
+  - git-basics
+- slug: web-security-owasp
+  name: Common web vulnerabilities
+  cluster: security
+  difficulty: 0.8
+  description: Injection, XSS, CSRF and the OWASP Top 10
+  prerequisites:
+  - rest-api-design
+  - sql-basics
+- slug: rate-limiting
+  name: Rate limiting and abuse protection
+  cluster: security
+  difficulty: 0.9
+  description: Throttling, quotas and brute-force defence
+  prerequisites:
+  - rest-api-design
+- slug: oauth2-oidc
+  name: OAuth 2.0 and OpenID Connect
+  cluster: security
+  difficulty: 1.2
+  description: Delegated login and third-party identity
+  prerequisites:
+  - jwt-auth
+- slug: layered-architecture
+  name: Layered architecture
+  cluster: architecture
+  difficulty: 0.0
+  description: Controller, service and repository separation
+  prerequisites:
+  - oop-modular-design
+  - rest-api-design
+- slug: dependency-injection
+  name: Dependency injection
+  cluster: architecture
+  difficulty: 0.2
+  description: Inversion of control and wiring components
+  prerequisites:
+  - oop-modular-design
+- slug: solid-principles
+  name: SOLID and clean design
+  cluster: architecture
+  difficulty: 0.2
+  description: Single responsibility, open-closed and related principles
+  prerequisites:
+  - oop-modular-design
+- slug: design-patterns
+  name: Common design patterns
+  cluster: architecture
+  difficulty: 0.8
+  description: Factory, strategy, observer, adapter and similar
+  prerequisites:
+  - solid-principles
+- slug: monolith-vs-microservices
+  name: Monolith vs microservices
+  cluster: architecture
+  difficulty: 1.2
+  description: Trade-offs, service boundaries and communication
+  prerequisites:
+  - layered-architecture
+- slug: system-design-scalability
+  name: System design and scalability
+  cluster: architecture
+  difficulty: 2.0
+  description: Designing systems for load, failure and growth
+  prerequisites:
+  - monolith-vs-microservices
+  - replication-sharding
+  - load-balancing
+- slug: caching-basics
+  name: Caching basics
+  cluster: performance
+  difficulty: 0.6
+  description: Cache aside, TTL and invalidation
+  prerequisites:
+  - core-data-structures
+  - rest-api-design
+- slug: redis-in-memory
+  name: In-memory stores
+  cluster: performance
+  difficulty: 0.9
+  description: Redis data types, expiry and typical uses
+  prerequisites:
+  - caching-basics
+  - nosql-basics
+- slug: load-balancing
+  name: Load balancing and horizontal scaling
+  cluster: performance
+  difficulty: 1.3
+  description: Spreading traffic and stateless services
+  prerequisites:
+  - http-basics
+  - caching-basics
+- slug: concurrency-basics
+  name: Concurrency basics
+  cluster: async-distributed
+  difficulty: 0.4
+  description: Threads, race conditions and synchronization
+  prerequisites:
+  - programming-basics
+- slug: async-programming
+  name: Asynchronous programming
+  cluster: async-distributed
+  difficulty: 0.6
+  description: Event loop, promises, futures and non-blocking I/O
+  prerequisites:
+  - concurrency-basics
+- slug: background-jobs
+  name: Background jobs and task queues
+  cluster: async-distributed
+  difficulty: 0.9
+  description: Moving slow work off the request path
+  prerequisites:
+  - async-programming
+- slug: message-queues
+  name: Message queues and event streaming
+  cluster: async-distributed
+  difficulty: 1.1
+  description: Producers, consumers, brokers and delivery guarantees
+  prerequisites:
+  - background-jobs
+- slug: idempotency-retries
+  name: Idempotency and retries
+  cluster: async-distributed
+  difficulty: 1.4
+  description: Safe retries, deduplication and backoff
+  prerequisites:
+  - message-queues
+  - rest-api-design
+- slug: distributed-consistency
+  name: Distributed consistency
+  cluster: async-distributed
+  difficulty: 2.2
+  description: CAP theorem, eventual consistency and sagas
+  prerequisites:
+  - replication-sharding
+  - message-queues
+- slug: unit-testing
+  name: Unit testing
+  cluster: quality-observability
+  difficulty: -0.6
+  description: Writing small, isolated, repeatable tests
+  prerequisites:
+  - programming-basics
+- slug: test-doubles
+  name: Mocking and test doubles
+  cluster: quality-observability
+  difficulty: 0.0
+  description: Mocks, stubs and fakes
+  prerequisites:
+  - unit-testing
+- slug: api-integration-testing
+  name: API and integration testing
+  cluster: quality-observability
+  difficulty: 0.4
+  description: Testing endpoints and components together
+  prerequisites:
+  - unit-testing
+  - rest-api-design
+- slug: logging-monitoring
+  name: Logging and monitoring
+  cluster: quality-observability
+  difficulty: 0.5
+  description: Structured logs, health checks and alerts
+  prerequisites:
+  - error-handling
+- slug: observability-tracing
+  name: Metrics and distributed tracing
+  cluster: quality-observability
+  difficulty: 1.4
+  description: Metrics, traces and finding failures across services
+  prerequisites:
+  - logging-monitoring
+- slug: docker-basics
+  name: Docker and containers
+  cluster: devops
+  difficulty: 0.2
+  description: Images, containers and docker compose
+  prerequisites:
+  - linux-cli-basics
+- slug: ci-cd-basics
+  name: CI/CD pipelines
+  cluster: devops
+  difficulty: 0.5
+  description: Automated build, test and deploy
+  prerequisites:
+  - git-basics
+  - unit-testing
+- slug: cloud-deployment
+  name: Cloud deployment basics
+  cluster: devops
+  difficulty: 0.9
+  description: Deploying and running services on a cloud platform
+  prerequisites:
+  - docker-basics
+  - networking-basics
+- slug: container-orchestration
+  name: Container orchestration
+  cluster: devops
+  difficulty: 1.8
+  description: 'Kubernetes basics: pods, services and scaling'
+  prerequisites:
+  - docker-basics
+  - load-balancing

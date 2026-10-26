@@ -1,6 +1,6 @@
-package com.unix.aiupskilling.assessment;
+package com.unix.aiupskilling.assessment.repository;
 
-import com.unix.aiupskilling.assessment.Assessment;
+import com.unix.aiupskilling.assessment.model.entity.Assessment;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;

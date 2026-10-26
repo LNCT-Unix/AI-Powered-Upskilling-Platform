@@ -1,4 +1,4 @@
-package com.unix.aiupskilling.assessment;
+package com.unix.aiupskilling.assessment.model.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

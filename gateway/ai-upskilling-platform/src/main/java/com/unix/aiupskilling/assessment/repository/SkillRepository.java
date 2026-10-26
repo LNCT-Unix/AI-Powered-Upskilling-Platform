@@ -1,6 +1,6 @@
-package com.unix.aiupskilling.assessment;
+package com.unix.aiupskilling.assessment.repository;
 
-import com.unix.aiupskilling.assessment.Skill;
+import com.unix.aiupskilling.assessment.model.entity.Skill;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,12 +1,12 @@
 package com.unix.aiupskilling.assessment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.unix.aiupskilling.assessment.AssessmentDtos.AnswerRequest;
-import com.unix.aiupskilling.assessment.AssessmentDtos.StartRequest;
-import com.unix.aiupskilling.assessment.AssessmentItem;
-import com.unix.aiupskilling.assessment.Skill;
-import com.unix.aiupskilling.assessment.Track;
-import com.unix.aiupskilling.assessment.*;
+import com.unix.aiupskilling.assessment.dto.AssessmentDtos;
+import com.unix.aiupskilling.assessment.dto.AssessmentDtos.AnswerRequest;
+import com.unix.aiupskilling.assessment.dto.AssessmentDtos.StartRequest;
+import com.unix.aiupskilling.assessment.model.entity.*;
+import com.unix.aiupskilling.assessment.repository.*;
+import com.unix.aiupskilling.assessment.service.AssessmentService;
 import com.unix.aiupskilling.authentication.dto.response.AuthTokens;
 import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
 import com.unix.aiupskilling.authentication.model.enums.ClientPlatform;

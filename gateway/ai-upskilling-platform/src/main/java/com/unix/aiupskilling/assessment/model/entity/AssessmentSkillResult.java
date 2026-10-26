@@ -1,4 +1,4 @@
-package com.unix.aiupskilling.assessment;
+package com.unix.aiupskilling.assessment.model.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

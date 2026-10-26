@@ -1,6 +1,7 @@
-package com.unix.aiupskilling.assessment;
+package com.unix.aiupskilling.assessment.controller;
 
-import com.unix.aiupskilling.assessment.AssessmentDtos.*;
+import com.unix.aiupskilling.assessment.dto.AssessmentDtos.*;
+import com.unix.aiupskilling.assessment.service.AssessmentService;
 import com.unix.aiupskilling.user.User;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;

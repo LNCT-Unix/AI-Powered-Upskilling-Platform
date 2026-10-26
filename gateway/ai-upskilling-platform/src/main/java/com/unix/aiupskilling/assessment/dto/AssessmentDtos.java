@@ -1,4 +1,4 @@
-package com.unix.aiupskilling.assessment;
+package com.unix.aiupskilling.assessment.dto;
 
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
