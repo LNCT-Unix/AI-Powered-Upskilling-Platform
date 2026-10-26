@@ -121,8 +121,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+        // Use allowedOriginPatterns so wildcards work alongside exact origins.
+        // The *.trycloudflare.com pattern covers all quick-tunnel URLs so you don't
+        // need to update config every time cloudflared restarts with a new subdomain.
         List<String> allowedOrigins = authProperties.getCors().getAllowedOrigins();
-        config.setAllowedOrigins(allowedOrigins);
+        List<String> patterns = new java.util.ArrayList<>(allowedOrigins);
+        patterns.add("https://*.trycloudflare.com");
+        config.setAllowedOriginPatterns(patterns);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Client-Platform", "Origin", "Accept"));
         config.setAllowCredentials(true);
