@@ -62,4 +62,38 @@ public class SmtpEmailSender implements EmailSender {
             log.error("Failed to send verification email: {}", e.getMessage());
         }
     }
+
+    @Override
+    public void sendPasswordResetOtpEmail(String toEmail, String fullName, String otp) {
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            log.warn("JavaMailSender is not configured. Password reset OTP email was not sent via SMTP.");
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject("Password Reset OTP - AI Upskilling Platform");
+
+            String greeting = (fullName != null && !fullName.isBlank()) ? "Hello " + fullName + "," : "Hello,";
+            String body = greeting + "\n\n"
+                    + "We received a request to reset your password.\n"
+                    + "Your 6-digit one-time verification code is:\n\n"
+                    + "    " + otp + "\n\n"
+                    + "This code is valid for 10 minutes.\n"
+                    + "If you did not request a password reset, please ignore this email and your password will remain unchanged.\n\n"
+                    + "Best regards,\nAI Upskilling Platform Team";
+
+            helper.setText(body, false);
+            mailSender.send(message);
+
+            log.info("Password reset OTP email sent successfully.");
+        } catch (Exception e) {
+            log.error("Failed to send password reset OTP email: {}", e.getMessage());
+        }
+    }
 }

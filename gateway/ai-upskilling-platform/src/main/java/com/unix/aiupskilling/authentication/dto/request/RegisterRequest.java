@@ -1,6 +1,6 @@
 package com.unix.aiupskilling.authentication.dto.request;
 
-import com.unix.aiupskilling.authentication.validation.ValidPasswordLength;
+import com.unix.aiupskilling.authentication.ValidPasswordLength;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -14,7 +14,7 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequest {
+public class RegisterRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
@@ -22,7 +22,11 @@ public class LoginRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @ValidPasswordLength(min = 1, max = 72, message = "Password cannot exceed 72 UTF-8 bytes")
+    @ValidPasswordLength(min = 8, max = 72, message = "Password must be between 8 and 72 UTF-8 bytes")
     @ToString.Exclude
     private String password;
+
+    @NotBlank(message = "Full name is required")
+    @Size(max = 100, message = "Full name cannot exceed 100 characters")
+    private String fullName;
 }

@@ -1,4 +1,4 @@
-package com.unix.aiupskilling.authentication.validation;
+package com.unix.aiupskilling.authentication;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

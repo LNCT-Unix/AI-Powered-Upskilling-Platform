@@ -1,6 +1,5 @@
 package com.unix.aiupskilling.authentication.model.entity;
 
-import com.unix.aiupskilling.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
