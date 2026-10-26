@@ -173,6 +173,7 @@ export const roadmapItems = [
   // Milestone 1: Language Mechanics & Core Foundations
   {
     id: 1,
+    slug: 'lexical-scope-closures',
     milestone: 'Milestone 1: Core JavaScript Mechanics',
     title: 'Lexical Scope & Advanced Closures',
     topic: 'JavaScript Fundamentals',
@@ -185,6 +186,7 @@ export const roadmapItems = [
   },
   {
     id: 2,
+    slug: 'event-loop-microtasks',
     milestone: 'Milestone 1: Core JavaScript Mechanics',
     title: 'Event Loop, Microtasks & Promises',
     topic: 'Asynchronous Architecture',
@@ -199,6 +201,7 @@ export const roadmapItems = [
   // Milestone 2: Modern React Architecture
   {
     id: 3,
+    slug: 'react-reconciler-fiber',
     milestone: 'Milestone 2: Component Architecture & State',
     title: 'React 19 Reconciler & Fiber Internals',
     topic: 'React Core',
@@ -211,6 +214,7 @@ export const roadmapItems = [
   },
   {
     id: 4,
+    slug: 'custom-hooks-state-machines',
     milestone: 'Milestone 2: Component Architecture & State',
     title: 'Custom Hooks & State Machines',
     topic: 'React Design Patterns',
@@ -225,6 +229,7 @@ export const roadmapItems = [
   // Milestone 3: Data Layer & Persistence
   {
     id: 5,
+    slug: 'relational-database-queries',
     milestone: 'Milestone 3: Data Architecture & Storage',
     title: 'Relational Database Queries & Complex Joins',
     topic: 'SQL & Databases',
@@ -237,6 +242,7 @@ export const roadmapItems = [
   },
   {
     id: 6,
+    slug: 'indexing-query-optimization',
     milestone: 'Milestone 3: Data Architecture & Storage',
     title: 'Indexing & Query Performance Optimization',
     topic: 'Database Performance',
@@ -251,6 +257,7 @@ export const roadmapItems = [
   // Milestone 4: Algorithms & Capstone Project
   {
     id: 7,
+    slug: 'tree-graph-traversal',
     milestone: 'Milestone 4: Verification & Capstones',
     title: 'Tree & Graph Traversal (DFS/BFS)',
     topic: 'Data Structures',
@@ -263,6 +270,7 @@ export const roadmapItems = [
   },
   {
     id: 8,
+    slug: 'portfolio-capstone-verification',
     milestone: 'Milestone 4: Verification & Capstones',
     title: 'Full-Stack Portfolio Project Verification',
     topic: 'Practical Skill Verification',

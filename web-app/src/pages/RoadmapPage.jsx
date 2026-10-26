@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CircleCheck,
   PlayCircle,
@@ -9,7 +10,10 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  RotateCcw
+  RotateCcw,
+  ArrowRight,
+  BookOpen,
+  Zap,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -36,6 +40,16 @@ export default function RoadmapPage() {
       // ignore
     }
   }, [done]);
+
+  const roadmapContext = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('skillpath_generated_roadmap_context');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const [activeFilter, setActiveFilter] = useState('all');
   const [dailyMinutes, setDailyMinutes] = useState(45);
   const [expandedRationales, setExpandedRationales] = useState({});
@@ -101,6 +115,16 @@ export default function RoadmapPage() {
           <p className="mt-1 text-sm text-slate-500 max-w-2xl">
             A dependency-ordered sequence of milestones designed to eliminate identified gaps and build verified proof of work.
           </p>
+          {roadmapContext && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <Badge variant="indigo" icon={Zap}>
+                CAT Calibrated θ = {roadmapContext.theta ?? 0.0}
+              </Badge>
+              <span className="text-xs text-slate-500 font-medium">
+                Placement Tier: <strong className="text-slate-800">{roadmapContext.level}</strong>
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -304,6 +328,14 @@ export default function RoadmapPage() {
                         </div>
 
                         <div className="flex items-center gap-2 sm:self-center shrink-0">
+                          <Link
+                            to={`/learn/${item.slug || 'lexical-scope-closures'}`}
+                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 shadow-2xs transition"
+                          >
+                            <BookOpen size={13} />
+                            <span>Study</span>
+                            <ArrowRight size={13} />
+                          </Link>
                           <Button
                             variant={isDone ? 'outline' : 'secondary'}
                             size="sm"
