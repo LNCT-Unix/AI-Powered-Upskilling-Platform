@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local Secrets & Environment ###
+.env
+.env.*
+*.ps1
+src/main/resources/application.properties
+
