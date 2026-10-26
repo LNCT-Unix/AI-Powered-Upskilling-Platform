@@ -52,7 +52,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-[#060a12] py-4 text-center text-xs text-slate-500">
-        AI Upskilling Platform • Black & Cyan Adaptive Curriculum Edition
+        AI Upskilling Platform • Learning Modules & Resources
       </footer>
 
     </div>
