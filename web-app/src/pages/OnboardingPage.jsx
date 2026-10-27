@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ArrowRight, ArrowLeft, Globe, Target, Briefcase, Cpu } from 'lucide-react';
+import { TRACK_UUID_MAP, BACKEND_TRACK_ID } from '../services/assessmentService';
 
 const TRACKS = [
   {
@@ -59,7 +60,12 @@ export default function OnboardingPage() {
   const [budget, setBudget]   = useState('60');
 
   const handleFinish = () => {
-    const profile = { language: lang, trackId, dailyMinutes: parseInt(budget) };
+    const profile = {
+      language: lang,
+      trackSlug: trackId,
+      trackId: TRACK_UUID_MAP[trackId] || BACKEND_TRACK_ID,
+      dailyMinutes: parseInt(budget),
+    };
     localStorage.setItem('skillpath_onboarding_profile', JSON.stringify(profile));
     navigate('/dashboard');
   };
