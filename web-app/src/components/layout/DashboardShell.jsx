@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { Menu, Bell, LogOut, Globe, X, Search, Settings2, Sparkles, BookOpen } from 'lucide-react';
+import { Menu, Bell, LogOut, Globe, X, Search } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
@@ -66,12 +66,17 @@ export default function DashboardShell() {
             </button>
 
             {/* Mobile logo when sidebar hidden */}
-            <div className="flex items-center gap-2 lg:hidden">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 shadow-2xs">
-                <BookOpen size={14} className="text-white" />
+            <Link to="/" className="flex items-center gap-2 lg:hidden">
+              <img
+                src="/octobyte-logo.png"
+                alt="octoByte Logo"
+                className="h-7 w-7 rounded-lg object-contain"
+              />
+              <span className="text-sm font-black text-slate-900">
+                <span className="text-[#2F2A3E]">octo</span>
+                <span className="text-[#7C5CFA]">Byte</span>
               </span>
-              <span className="text-sm font-extrabold text-slate-900">SkillPath</span>
-            </div>
+            </Link>
 
             {/* Search bar with warm pill styling */}
             <div className="relative hidden sm:flex flex-1 max-w-md">

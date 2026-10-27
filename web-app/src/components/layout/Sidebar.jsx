@@ -2,7 +2,7 @@ import { NavLink, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Map, ClipboardCheck, FlaskConical,
   BarChart2, Briefcase, UserCircle2,
-  Settings, ArrowLeft, BookOpen, Sparkles
+  Settings, ArrowLeft, Sparkles
 } from 'lucide-react';
 
 const LEARNER_NAV = [
@@ -54,15 +54,22 @@ export default function Sidebar({ onClose }) {
   return (
     <div className="flex h-full flex-col bg-white select-none overflow-y-auto border-r border-slate-200/80">
       {/* Logo matching Landing Page */}
-      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-slate-100">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 shadow-2xs">
-          <BookOpen size={16} className="text-white" />
-        </span>
-        <div className="flex flex-col">
-          <span className="text-base font-extrabold text-slate-900 tracking-tight leading-none">SkillPath</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-600 mt-1">Adaptive Studio</span>
+      <Link to="/" className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 hover:bg-slate-50/50 transition">
+        <img
+          src="/octobyte-logo.png"
+          alt="octoByte Logo"
+          className="h-9 w-9 rounded-xl object-contain drop-shadow-xs"
+        />
+        <div className="flex flex-col text-left leading-none">
+          <span className="text-base font-black tracking-tight text-slate-900">
+            <span className="text-[#2F2A3E]">octo</span>
+            <span className="text-[#7C5CFA]">Byte</span>
+          </span>
+          <span className="text-[9px] font-extrabold tracking-widest text-[#FF9838] uppercase mt-1">
+            AI Platform
+          </span>
         </div>
-      </div>
+      </Link>
 
       <div className="flex-1 px-3.5 py-5 space-y-6">
         {/* Learner Path section */}

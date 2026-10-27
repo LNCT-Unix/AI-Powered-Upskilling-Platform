@@ -326,7 +326,7 @@ export default function DashboardPage() {
             <div className="max-w-md mx-auto">
               <h2 className="text-lg font-extrabold text-slate-900">Calibrate Your Adaptive Learning Graph</h2>
               <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                SkillPath uses Item Response Theory (IRT) and Computerized Adaptive Testing to pinpoint exactly where you should focus next.
+                octoByte uses Item Response Theory (IRT) and Computerized Adaptive Testing to pinpoint exactly where you should focus next.
               </p>
             </div>
             <div className="pt-2">

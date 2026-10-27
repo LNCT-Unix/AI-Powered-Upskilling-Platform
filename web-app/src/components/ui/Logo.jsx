@@ -1,18 +1,20 @@
-import { BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Logo({ onClick, asLink = true }) {
   const content = (
-    <div className="flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 shadow-sm text-white">
-        <BookOpen size={18} className="text-white" />
-      </span>
+    <div className="flex items-center gap-3 select-none">
+      <img
+        src="/octobyte-logo.png"
+        alt="octoByte Logo"
+        className="h-10 w-10 rounded-2xl object-contain drop-shadow-xs transition-transform hover:scale-105"
+      />
       <div className="flex flex-col text-left leading-none">
-        <span className="text-lg font-extrabold tracking-tight text-slate-900">
-          SkillPath
+        <span className="text-xl font-black tracking-tight font-sans">
+          <span className="text-[#2F2A3E]">octo</span>
+          <span className="text-[#7C5CFA]">Byte</span>
         </span>
-        <span className="text-[10px] font-bold tracking-widest text-indigo-600 uppercase mt-0.5">
-          Learning Engine
+        <span className="text-[9.5px] font-extrabold tracking-widest text-[#FF9838] uppercase mt-0.5">
+          AI Learning Platform
         </span>
       </div>
     </div>
@@ -22,8 +24,8 @@ export default function Logo({ onClick, asLink = true }) {
     return (
       <Link
         to="/"
-        className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
-        aria-label="SkillPath Home"
+        className="inline-flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+        aria-label="octoByte Home"
       >
         {content}
       </Link>
@@ -34,8 +36,8 @@ export default function Logo({ onClick, asLink = true }) {
     <button
       onClick={onClick}
       type="button"
-      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 cursor-pointer"
-      aria-label="SkillPath Home"
+      className="inline-flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 cursor-pointer"
+      aria-label="octoByte Home"
     >
       {content}
     </button>

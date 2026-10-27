@@ -256,7 +256,7 @@ export default function Login({
               Welcome back
             </span>
             <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-              Sign in to SkillPath
+              Sign in to octoByte
             </h1>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
               Access your personalized adaptive learning roadmap.
