@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -15,11 +15,10 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import ScoreRing from '../components/ui/ScoreRing';
-import { assessmentService } from '../services/assessmentService';
+import { assessmentService, normalizeTrackId, BACKEND_TRACK_ID } from '../services/assessmentService';
 
 const ASSESSMENT_ID_KEY = 'skillpath_assessment_id';
 const ASSESSMENT_RESULT_KEY = 'skillpath_assessment_result';
-const DEFAULT_TRACK_ID = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 
 export default function AssessmentPage() {
   const navigate = useNavigate();
@@ -39,62 +38,71 @@ export default function AssessmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Initialize or resume assessment
-  const initAssessment = useCallback(async (forceRestart = false) => {
-    setLoading(true);
-    setError(null);
-    setSelectedOption(null);
-
-    try {
-      let savedId = !forceRestart ? sessionStorage.getItem(ASSESSMENT_ID_KEY) : null;
-
-      if (savedId) {
-        try {
-          const state = await assessmentService.getState(savedId);
-          setAssessmentState(state);
-
-          if (state.done || state.status === 'COMPLETED') {
-            const res = await assessmentService.getResult(savedId);
-            setResult(res);
-            localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(res));
-          }
-          setLoading(false);
-          return;
-        } catch {
-          // If stored ID failed, fall through to start/resume
-          sessionStorage.removeItem(ASSESSMENT_ID_KEY);
-        }
-      }
-
-      // Start new or resume active test for track
-      const trackId = (() => {
-        try {
-          const profile = JSON.parse(localStorage.getItem('skillpath_onboarding_profile') || '{}');
-          return profile.trackId || DEFAULT_TRACK_ID;
-        } catch {
-          return DEFAULT_TRACK_ID;
-        }
-      })();
-
-      const state = await assessmentService.startOrResume(trackId);
-      setAssessmentState(state);
-      sessionStorage.setItem(ASSESSMENT_ID_KEY, state.assessmentId);
-
-      if (state.done || state.status === 'COMPLETED') {
-        const res = await assessmentService.getResult(state.assessmentId);
-        setResult(res);
-        localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(res));
-      }
-    } catch (err) {
-      setError(err.message || 'Unable to connect to diagnostic engine.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Initialize assessment on mount
   useEffect(() => {
-    initAssessment();
-  }, [initAssessment]);
+    let ignore = false;
+
+    async function loadInitialAssessment() {
+      try {
+        const savedId = sessionStorage.getItem(ASSESSMENT_ID_KEY);
+
+        if (savedId) {
+          try {
+            const state = await assessmentService.getState(savedId);
+            if (ignore) return;
+            setAssessmentState(state);
+
+            if (state.done || state.status === 'COMPLETED') {
+              const res = await assessmentService.getResult(savedId);
+              if (ignore) return;
+              setResult(res);
+              localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(res));
+            }
+            setLoading(false);
+            return;
+          } catch {
+            sessionStorage.removeItem(ASSESSMENT_ID_KEY);
+          }
+        }
+
+        // Start new or resume active test for track with normalized UUID
+        const trackId = (() => {
+          try {
+            const profile = JSON.parse(localStorage.getItem('skillpath_onboarding_profile') || '{}');
+            return normalizeTrackId(profile.trackId || profile.trackSlug);
+          } catch {
+            return BACKEND_TRACK_ID;
+          }
+        })();
+
+        const state = await assessmentService.startOrResume(trackId);
+        if (ignore) return;
+        setAssessmentState(state);
+        sessionStorage.setItem(ASSESSMENT_ID_KEY, state.assessmentId);
+
+        if (state.done || state.status === 'COMPLETED') {
+          const res = await assessmentService.getResult(state.assessmentId);
+          if (ignore) return;
+          setResult(res);
+          localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(res));
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError(err.message || 'Unable to connect to diagnostic engine.');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialAssessment();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Submit answer for current question
   const handleSubmitAnswer = async () => {
@@ -126,11 +134,38 @@ export default function AssessmentPage() {
     }
   };
 
-  const handleRetest = () => {
+  const handleRetest = async () => {
     sessionStorage.removeItem(ASSESSMENT_ID_KEY);
     localStorage.removeItem(ASSESSMENT_RESULT_KEY);
     setResult(null);
-    initAssessment(true);
+    setSelectedOption(null);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const trackId = (() => {
+        try {
+          const profile = JSON.parse(localStorage.getItem('skillpath_onboarding_profile') || '{}');
+          return normalizeTrackId(profile.trackId || profile.trackSlug);
+        } catch {
+          return BACKEND_TRACK_ID;
+        }
+      })();
+
+      const state = await assessmentService.startOrResume(trackId);
+      setAssessmentState(state);
+      sessionStorage.setItem(ASSESSMENT_ID_KEY, state.assessmentId);
+
+      if (state.done || state.status === 'COMPLETED') {
+        const res = await assessmentService.getResult(state.assessmentId);
+        setResult(res);
+        localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(res));
+      }
+    } catch (err) {
+      setError(err.message || 'Unable to connect to diagnostic engine.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isCompleted = result !== null || assessmentState?.done || assessmentState?.status === 'COMPLETED';
@@ -160,7 +195,7 @@ export default function AssessmentPage() {
             <h1 className="text-lg font-bold text-slate-900">Assessment Service Unavailable</h1>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">{error}</p>
           </div>
-          <Button variant="primary" onClick={() => initAssessment(true)}>
+          <Button variant="primary" onClick={handleRetest}>
             <RotateCcw size={14} /> Retry Connection
           </Button>
         </Card>
@@ -181,7 +216,7 @@ export default function AssessmentPage() {
             COMPUTERIZED ADAPTIVE TESTING (CAT)
           </Badge>
           <span className="text-xs font-medium text-slate-500">
-            Item Response Theory (IRT) · Variable Length
+            Item Response Theory (IRT) · Spring Boot Gateway
           </span>
         </div>
         <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
@@ -241,37 +276,44 @@ export default function AssessmentPage() {
             </h2>
 
             <div className="grid gap-2.5">
-              {currentQ.options && currentQ.options.map((option, optIdx) => {
-                const isSelected = selectedOption === optIdx;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setSelectedOption(optIdx)}
-                    className={`flex w-full items-center justify-between rounded-2xl border p-3.5 sm:p-4 text-left text-xs sm:text-sm font-medium transition cursor-pointer ${
-                      isSelected
-                        ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 ring-2 ring-indigo-500/30 shadow-sm'
-                        : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50 shadow-xs'
-                    }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <span
-                        className={`grid h-7 w-7 place-items-center rounded-xl text-xs font-bold shrink-0 ${
-                          isSelected
-                            ? 'bg-indigo-600 text-white shadow-xs'
-                            : 'border border-slate-200 bg-slate-50 text-slate-600'
-                        }`}
-                      >
-                        {String.fromCharCode(65 + optIdx)}
+              {(() => {
+                const optionsList = Array.isArray(currentQ?.options)
+                  ? currentQ.options
+                  : typeof currentQ?.options === 'string'
+                  ? JSON.parse(currentQ.options)
+                  : [];
+                return optionsList.map((option, optIdx) => {
+                  const isSelected = selectedOption === optIdx;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setSelectedOption(optIdx)}
+                      className={`flex w-full items-center justify-between rounded-2xl border p-3.5 sm:p-4 text-left text-xs sm:text-sm font-medium transition cursor-pointer ${
+                        isSelected
+                          ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 ring-2 ring-indigo-500/30 shadow-sm'
+                          : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50 shadow-xs'
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span
+                          className={`grid h-7 w-7 place-items-center rounded-xl text-xs font-bold shrink-0 ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'border border-slate-200 bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          {String.fromCharCode(65 + optIdx)}
+                        </span>
+                        <span className="leading-relaxed">{option}</span>
                       </span>
-                      <span className="leading-relaxed">{option}</span>
-                    </span>
-                    {isSelected && (
-                      <CheckCircle2 size={18} className="text-indigo-600 shrink-0 ml-2" />
-                    )}
-                  </button>
-                );
-              })}
+                      {isSelected && (
+                        <CheckCircle2 size={18} className="text-indigo-600 shrink-0 ml-2" />
+                      )}
+                    </button>
+                  );
+                });
+              })()}
             </div>
 
             {/* Stepper Navigation Buttons */}
@@ -396,7 +438,7 @@ export default function AssessmentPage() {
         <Card className="text-center py-10 space-y-3">
           <Compass size={32} className="mx-auto text-slate-400" />
           <p className="text-sm font-semibold text-slate-700">No active test session</p>
-          <Button variant="primary" onClick={() => initAssessment(true)}>
+          <Button variant="primary" onClick={handleRetest}>
             Start Diagnostic Test
           </Button>
         </Card>
