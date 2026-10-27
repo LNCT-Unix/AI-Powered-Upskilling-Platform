@@ -70,7 +70,7 @@ export default function DashboardShell() {
               <img
                 src="/octobyte-logo.png"
                 alt="octoByte Logo"
-                className="h-7 w-7 rounded-lg object-contain"
+                className="h-7 w-auto max-w-[42px] object-contain"
               />
               <span className="text-sm font-black text-slate-900">
                 <span className="text-[#2F2A3E]">octo</span>

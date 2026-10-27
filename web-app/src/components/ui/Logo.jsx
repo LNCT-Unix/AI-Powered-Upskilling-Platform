@@ -6,7 +6,7 @@ export default function Logo({ onClick, asLink = true }) {
       <img
         src="/octobyte-logo.png"
         alt="octoByte Logo"
-        className="h-10 w-10 rounded-2xl object-contain drop-shadow-xs transition-transform hover:scale-105"
+        className="h-11 w-auto max-w-[64px] object-contain drop-shadow-xs transition-transform hover:scale-105"
       />
       <div className="flex flex-col text-left leading-none">
         <span className="text-xl font-black tracking-tight font-sans">

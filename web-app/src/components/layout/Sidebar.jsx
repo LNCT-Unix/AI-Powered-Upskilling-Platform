@@ -58,7 +58,7 @@ export default function Sidebar({ onClose }) {
         <img
           src="/octobyte-logo.png"
           alt="octoByte Logo"
-          className="h-9 w-9 rounded-xl object-contain drop-shadow-xs"
+          className="h-9 w-auto max-w-[50px] object-contain drop-shadow-xs"
         />
         <div className="flex flex-col text-left leading-none">
           <span className="text-base font-black tracking-tight text-slate-900">
