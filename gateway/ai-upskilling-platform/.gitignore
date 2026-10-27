@@ -37,4 +37,4 @@ build/
 .env.*
 *.ps1
 src/main/resources/application.properties
-
+!.env.example
