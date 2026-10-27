@@ -13,9 +13,9 @@ export default function Button({
   // Support standard variants with graceful fallback for legacy props
   const variants = {
     primary:
-      'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
+      'bg-[#7C5CFA] text-white hover:bg-[#6244E8] active:bg-[#5235D9] shadow-md shadow-[#7C5CFA]/20 focus-visible:ring-2 focus-visible:ring-[#7C5CFA] focus-visible:ring-offset-2',
     indigo:
-      'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
+      'bg-[#7C5CFA] text-white hover:bg-[#6244E8] active:bg-[#5235D9] shadow-md shadow-[#7C5CFA]/20 focus-visible:ring-2 focus-visible:ring-[#7C5CFA] focus-visible:ring-offset-2',
     secondary:
       'bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2',
     outline:

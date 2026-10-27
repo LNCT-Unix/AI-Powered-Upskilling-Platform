@@ -24,7 +24,7 @@ import { useAuth } from '../hooks/useAuth';
 function DynamicSkillGraph({ skills = [] }) {
   if (skills.length === 0) {
     return (
-      <div className="py-12 text-center text-xs text-slate-400">
+      <div className="py-12 text-center text-xs text-[#8D8471]">
         No skill nodes available. Complete your diagnostic test to generate your live graph.
       </div>
     );
@@ -47,12 +47,12 @@ function DynamicSkillGraph({ skills = [] }) {
       >
         <defs>
           <linearGradient id="activeNodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#4f46e5" />
-            <stop offset="100%" stopColor="#7c3aed" />
+            <stop offset="0%" stopColor="#2FBF8F" />
+            <stop offset="100%" stopColor="#1F7A55" />
           </linearGradient>
           <linearGradient id="frontierGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#eef2ff" />
-            <stop offset="100%" stopColor="#e0e7ff" />
+            <stop offset="0%" stopColor="#FFEEDD" />
+            <stop offset="100%" stopColor="#FFF1E2" />
           </linearGradient>
         </defs>
 
@@ -61,6 +61,7 @@ function DynamicSkillGraph({ skills = [] }) {
           if (i === nodes.length - 1) return null;
           const next = nodes[i + 1];
           const isConnectedMastered = node.state === 'MASTERED' && next.state === 'MASTERED';
+          const isConnectedFrontier = next.state === 'FRONTIER';
           return (
             <line
               key={`line-${node.skillId || i}`}
@@ -68,9 +69,9 @@ function DynamicSkillGraph({ skills = [] }) {
               y1={node.y}
               x2={next.x}
               y2={next.y}
-              stroke={isConnectedMastered ? '#4f46e5' : '#cbd5e1'}
-              strokeWidth={isConnectedMastered ? '2.5' : '1.5'}
-              strokeDasharray={next.state === 'LOCKED' ? '4 4' : undefined}
+              stroke={isConnectedMastered ? '#2FBF8F' : isConnectedFrontier ? '#FF9838' : '#DCD2BC'}
+              strokeWidth={isConnectedMastered ? '2.5' : '1.8'}
+              strokeDasharray={!isConnectedMastered ? '5 5' : undefined}
             />
           );
         })}
@@ -80,9 +81,9 @@ function DynamicSkillGraph({ skills = [] }) {
           const isMastered = node.state === 'MASTERED';
           const isFrontier = node.state === 'FRONTIER';
 
-          const circleColor = isMastered ? 'url(#activeNodeGrad)' : isFrontier ? 'url(#frontierGrad)' : '#ffffff';
-          const strokeColor = isMastered ? '#4338ca' : isFrontier ? '#6366f1' : '#e2e8f0';
-          const textColor = isMastered ? '#4f46e5' : isFrontier ? '#1e293b' : '#64748b';
+          const circleColor = isMastered ? 'url(#activeNodeGrad)' : isFrontier ? 'url(#frontierGrad)' : '#F7F3E8';
+          const strokeColor = isMastered ? '#2FBF8F' : isFrontier ? '#FF9838' : '#E8E0CC';
+          const textColor = isMastered ? '#1F7A55' : isFrontier ? '#B45A14' : '#8D8471';
 
           return (
             <g key={node.skillId || `node-${i}`} className="group cursor-pointer">
@@ -92,11 +93,11 @@ function DynamicSkillGraph({ skills = [] }) {
                   cy={node.y}
                   r={26}
                   fill="none"
-                  stroke="#818cf8"
-                  strokeWidth="1.5"
-                  strokeDasharray="3 3"
+                  stroke="#FF9838"
+                  strokeWidth="1.6"
+                  strokeDasharray="4 4"
                   className="animate-spin"
-                  style={{ transformOrigin: `${node.x}px ${node.y}px`, animationDuration: '9s' }}
+                  style={{ transformOrigin: `${node.x}px ${node.y}px`, animationDuration: '8s' }}
                 />
               )}
               <circle
@@ -105,7 +106,7 @@ function DynamicSkillGraph({ skills = [] }) {
                 r={21}
                 fill={circleColor}
                 stroke={strokeColor}
-                strokeWidth={isFrontier ? '2.5' : '1.5'}
+                strokeWidth={isFrontier ? '2.5' : '1.6'}
                 className="transition-all filter drop-shadow-xs group-hover:scale-105"
                 style={{ transformOrigin: `${node.x}px ${node.y}px` }}
               />
@@ -114,11 +115,11 @@ function DynamicSkillGraph({ skills = [] }) {
                   ✓
                 </text>
               ) : isFrontier ? (
-                <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#4f46e5" fontSize="11" fontWeight="800">
+                <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#FF9838" fontSize="12" fontWeight="800">
                   ⚡
                 </text>
               ) : (
-                <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#94a3b8" fontSize="11">
+                <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#8D8471" fontSize="11">
                   🔒
                 </text>
               )}
@@ -146,15 +147,15 @@ function StatCard({ label, value, sub, icon: Icon, badgeBg, iconColor, onClick }
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl border border-slate-100 bg-white p-4 shadow-sm hover:shadow-md transition flex items-center gap-3.5 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`rounded-2xl border border-[#E8E0CC] bg-[#FFFDF7] p-4 shadow-xs hover:shadow-md transition flex items-center gap-3.5 ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${badgeBg} ${iconColor} shadow-xs`}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${badgeBg} ${iconColor} shadow-2xs`}>
         <Icon size={19} />
       </span>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-        <p className="text-base font-extrabold text-slate-900 truncate leading-tight mt-0.5">{value}</p>
-        {sub && <p className="text-[11px] font-medium text-slate-500 mt-0.5 truncate">{sub}</p>}
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#8D8471]">{label}</p>
+        <p className="text-base font-extrabold text-[#2F2A3E] truncate leading-tight mt-0.5">{value}</p>
+        {sub && <p className="text-[11px] font-medium text-[#6E6880] mt-0.5 truncate">{sub}</p>}
       </div>
     </div>
   );
@@ -210,37 +211,37 @@ export default function DashboardPage() {
       <div className="flex-1 min-w-0 p-4 sm:p-7 space-y-6">
 
         {/* ── Landing Page Themed Hero Welcome Banner ── */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-100/60 via-indigo-50/70 to-purple-100/60 p-6 sm:p-8 border border-slate-200/70 shadow-xs">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFFDF7] via-[#F8F3E8] to-[#EFEAFC]/70 p-6 sm:p-8 border border-[#E8E0CC] shadow-xs">
           {/* Subtle decorative circles */}
-          <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-yellow-200/40 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-indigo-200/40 blur-xl pointer-events-none" />
+          <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-[#FF9838]/12 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-[#7C5CFA]/12 blur-xl pointer-events-none" />
 
           {/* Floating badge for visual flair */}
-          <div className="hidden sm:flex absolute right-6 top-6 items-center gap-2 rounded-2xl bg-white/90 backdrop-blur-xs border border-slate-100 px-3.5 py-1.5 shadow-xs">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-yellow-400 text-xs">
+          <div className="hidden sm:flex absolute right-6 top-6 items-center gap-2 rounded-2xl bg-white/95 backdrop-blur-xs border border-[#E8E0CC] px-3.5 py-1.5 shadow-2xs">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FFEEDD] text-[#FF9838] text-xs font-bold">
               ⚡
             </span>
-            <span className="text-[11px] font-bold text-slate-800">
+            <span className="text-[11px] font-bold text-[#2F2A3E]">
               {totalCount > 0 ? `${readinessPct}% Ready` : 'Ready to Calibrate'}
             </span>
           </div>
 
           <div className="relative z-10 max-w-xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/80 backdrop-blur-xs border border-slate-200/60 px-3 py-1 mb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">{today}</p>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/90 backdrop-blur-xs border border-[#E8E0CC] px-3 py-1 mb-3 shadow-2xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#7C5CFA] animate-pulse" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#6E6880]">{today}</p>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#2F2A3E] tracking-tight leading-tight">
               {greeting}, {firstName}!
             </h1>
 
-            <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg">
+            <p className="mt-2 text-xs sm:text-sm text-[#6E6880] leading-relaxed max-w-lg">
               {totalCount > 0 ? (
                 skillsFromReady > 0 ? (
                   <>
-                    You are progressing smoothly on your <span className="font-semibold text-slate-900">Full-Stack Developer</span> path.
-                    You have <span className="font-bold text-indigo-600">{skillsFromReady} milestone{skillsFromReady !== 1 ? 's' : ''}</span> left to complete full competency.
+                    You are progressing smoothly on your <span className="font-semibold text-[#2F2A3E]">Full-Stack Developer</span> path.
+                    You have <span className="font-bold text-[#7C5CFA]">{skillsFromReady} milestone{skillsFromReady !== 1 ? 's' : ''}</span> left to complete full competency.
                   </>
                 ) : (
                   <>Congratulations! You have mastered all competencies in your current learning track.</>
@@ -252,7 +253,7 @@ export default function DashboardPage() {
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
               {totalCount === 0 ? (
-                <Button variant="indigo" onClick={() => navigate('/assessment')}>
+                <Button variant="primary" onClick={() => navigate('/assessment')}>
                   Start Diagnostic Test <ArrowRight size={15} />
                 </Button>
               ) : (
@@ -260,16 +261,16 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/roadmap')}
-                    className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#7C5CFA] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-[#7C5CFA]/20 hover:bg-[#6244E8] transition cursor-pointer"
                   >
                     Resume Next Skill: {nextUpSkill} <ArrowRight size={14} />
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate('/assessment')}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/90 border border-slate-200/80 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/95 border border-[#E8E0CC] px-4 py-2.5 text-xs font-bold text-[#2F2A3E] hover:bg-[#F7F3E8] transition cursor-pointer shadow-2xs"
                   >
-                    <Flame size={14} className="text-amber-500" /> Retake Diagnostic
+                    <Flame size={14} className="text-[#FF9838]" /> Retake Diagnostic
                   </button>
                 </>
               )}
@@ -284,8 +285,8 @@ export default function DashboardPage() {
             value="Full-Stack Dev"
             sub="Primary Specialization"
             icon={Target}
-            badgeBg="bg-indigo-100"
-            iconColor="text-indigo-600"
+            badgeBg="bg-[#EFEAFC]"
+            iconColor="text-[#7C5CFA]"
             onClick={() => navigate('/career')}
           />
           <StatCard
@@ -293,8 +294,8 @@ export default function DashboardPage() {
             value={`${readinessPct}%`}
             sub={totalCount > 0 ? `${completedCount} of ${totalCount} Mastered` : 'Test pending'}
             icon={BookOpen}
-            badgeBg="bg-teal-100"
-            iconColor="text-teal-700"
+            badgeBg="bg-[#E7F8EF]"
+            iconColor="text-[#2FBF8F]"
             onClick={() => navigate('/roadmap')}
           />
           <StatCard
@@ -302,8 +303,8 @@ export default function DashboardPage() {
             value={assessmentResult?.level || 'Pending'}
             sub={assessmentResult ? `θ = ${assessmentResult.theta}` : 'Click to assess'}
             icon={Flame}
-            badgeBg="bg-amber-100"
-            iconColor="text-amber-600"
+            badgeBg="bg-[#FFEEDD]"
+            iconColor="text-[#FF9838]"
             onClick={() => navigate('/assessment')}
           />
           <StatCard
@@ -311,26 +312,26 @@ export default function DashboardPage() {
             value={frontierSkills.length > 0 ? `${frontierSkills.length} In Progress` : totalCount > 0 ? 'All Mastered' : '0 Pending'}
             sub={frontierSkills[0]?.name ? `Focus: ${frontierSkills[0].name}` : 'Ready to start'}
             icon={Zap}
-            badgeBg="bg-purple-100"
-            iconColor="text-purple-600"
+            badgeBg="bg-[#F0EBFF]"
+            iconColor="text-[#7C5CFA]"
             onClick={() => navigate('/roadmap')}
           />
         </div>
 
         {/* ── Assessment Prompt or Interactive Skill Graph ── */}
         {totalCount === 0 ? (
-          <div className="rounded-3xl border border-slate-100 bg-white p-7 sm:p-10 shadow-xs text-center space-y-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-600 mx-auto shadow-2xs">
+          <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-7 sm:p-10 shadow-xs text-center space-y-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#EFEAFC] border border-[#7C5CFA]/20 text-[#7C5CFA] mx-auto shadow-2xs">
               <Sparkles size={26} />
             </div>
             <div className="max-w-md mx-auto">
-              <h2 className="text-lg font-extrabold text-slate-900">Calibrate Your Adaptive Learning Graph</h2>
-              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              <h2 className="text-lg font-extrabold text-[#2F2A3E]">Calibrate Your Adaptive Learning Graph</h2>
+              <p className="text-xs text-[#6E6880] mt-1.5 leading-relaxed">
                 octoByte uses Item Response Theory (IRT) and Computerized Adaptive Testing to pinpoint exactly where you should focus next.
               </p>
             </div>
             <div className="pt-2">
-              <Button variant="indigo" onClick={() => navigate('/assessment')}>
+              <Button variant="primary" onClick={() => navigate('/assessment')}>
                 Start Diagnostic CAT (10-15 min) <ArrowRight size={15} />
               </Button>
             </div>
@@ -338,26 +339,26 @@ export default function DashboardPage() {
         ) : (
           <>
             {/* ── Interactive Skill Graph ── */}
-            <div className="rounded-3xl border border-slate-100 bg-white p-5 sm:p-6 shadow-xs">
+            <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 sm:p-6 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#EFEAFC] text-[#7C5CFA]">
                       <Compass size={14} />
                     </span>
-                    <h2 className="text-base font-extrabold text-slate-900">Interactive Skill Graph</h2>
+                    <h2 className="text-base font-extrabold text-[#2F2A3E]">Interactive Skill Graph</h2>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">Topological Competency Flow & Dependency Prerequisite Tree</p>
+                  <p className="text-xs text-[#6E6880] mt-0.5">Topological Competency Flow &amp; Dependency Prerequisite Tree</p>
                 </div>
-                <div className="flex items-center gap-3 text-[11px] font-bold flex-wrap">
-                  <span className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 border border-slate-100">
-                    <span className="h-2 w-2 rounded-full bg-indigo-600" /> Mastered ({completedCount})
+                <div className="flex items-center gap-2.5 text-[11px] font-bold flex-wrap">
+                  <span className="flex items-center gap-1.5 rounded-full bg-[#E7F8EF] px-2.5 py-1 border border-[#BFE9D2] text-[#1F7A55]">
+                    <span className="h-2 w-2 rounded-full bg-[#2FBF8F]" /> Mastered ({completedCount})
                   </span>
-                  <span className="flex items-center gap-1.5 rounded-full bg-indigo-50/70 px-2.5 py-1 border border-indigo-100 text-indigo-700">
-                    <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse" /> Frontier ({frontierSkills.length})
+                  <span className="flex items-center gap-1.5 rounded-full bg-[#FFEEDD] px-2.5 py-1 border border-[#FFD9B8] text-[#B45A14]">
+                    <span className="h-2 w-2 rounded-full bg-[#FF9838] animate-pulse" /> Frontier ({frontierSkills.length})
                   </span>
-                  <span className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 border border-slate-100 text-slate-400">
-                    <span className="h-2 w-2 rounded-full bg-slate-300" /> Locked ({lockedSkills.length})
+                  <span className="flex items-center gap-1.5 rounded-full bg-[#F7F3E8] px-2.5 py-1 border border-[#E8E0CC] text-[#8D8471]">
+                    <span className="h-2 w-2 rounded-full bg-[#C6BBA2]" /> Locked ({lockedSkills.length})
                   </span>
                 </div>
               </div>
@@ -365,15 +366,15 @@ export default function DashboardPage() {
             </div>
 
             {/* ── Verified Competencies Grid ── */}
-            <div className="rounded-3xl border border-slate-100 bg-white p-5 sm:p-6 shadow-xs">
+            <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 sm:p-6 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-base font-extrabold text-slate-900">Verified Competencies & Frontier Skills</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Real-time status based on your diagnostic answers</p>
+                  <h2 className="text-base font-extrabold text-[#2F2A3E]">Verified Competencies &amp; Frontier Skills</h2>
+                  <p className="text-xs text-[#6E6880] mt-0.5">Real-time status based on your diagnostic answers</p>
                 </div>
                 <Link
                   to="/graph"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#7C5CFA] hover:text-[#6244E8] transition"
                 >
                   Full Graph View <ArrowUpRight size={13} />
                 </Link>
@@ -388,29 +389,29 @@ export default function DashboardPage() {
                       key={skill.skillId || skill.name}
                       className={`flex items-center gap-3.5 rounded-2xl border p-3.5 transition ${
                         isMastered
-                          ? 'border-emerald-100 bg-emerald-50/30'
+                          ? 'border-[#BFE9D2] bg-[#E7F8EF]/60'
                           : isFrontier
-                          ? 'border-indigo-100 bg-indigo-50/30'
-                          : 'border-slate-100 bg-slate-50/40'
+                          ? 'border-[#FFD9B8] bg-[#FFF1E2]/70 ring-1 ring-[#FF9838]/20'
+                          : 'border-[#E8E0CC] bg-[#F7F3E8]/60'
                       }`}
                     >
                       <span
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
                           isMastered
-                            ? 'bg-emerald-100 text-emerald-700'
+                            ? 'bg-[#2FBF8F] text-white shadow-2xs'
                             : isFrontier
-                            ? 'bg-indigo-100 text-indigo-700'
-                            : 'bg-slate-200 text-slate-500'
+                            ? 'bg-[#FF9838] text-white shadow-2xs'
+                            : 'bg-[#E8E0CC] text-[#8D8471]'
                         }`}
                       >
                         {isMastered ? '✓' : isFrontier ? '⚡' : '🔒'}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <p className="text-xs font-bold text-slate-900 truncate">{skill.name}</p>
-                          <span className="text-[10px] font-semibold text-slate-400 shrink-0">{skill.cluster || 'Core'}</span>
+                          <p className="text-xs font-bold text-[#2F2A3E] truncate">{skill.name}</p>
+                          <span className="text-[10px] font-semibold text-[#8D8471] shrink-0">{skill.cluster || 'Core'}</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                        <p className="text-[11px] text-[#6E6880] mt-0.5">
                           {isMastered ? 'Mastered in diagnostic' : isFrontier ? 'Next frontier milestone' : 'Prerequisites pending'}
                         </p>
                       </div>
@@ -418,7 +419,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => navigate('/roadmap')}
-                          className="rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-indigo-700 transition shrink-0 cursor-pointer shadow-2xs"
+                          className="rounded-full bg-[#7C5CFA] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#6244E8] transition shrink-0 cursor-pointer shadow-2xs"
                         >
                           Learn
                         </button>
@@ -433,24 +434,24 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Right Panel: Learning Path & AI Coach ── */}
-      <div className="lg:w-80 xl:w-88 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-200/70 p-4 sm:p-6 space-y-6">
+      <div className="lg:w-80 xl:w-88 shrink-0 border-t lg:border-t-0 lg:border-l border-[#E8E0CC] p-4 sm:p-6 space-y-6">
 
         {/* Learning Path Card */}
-        <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-xs">
+        <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3.5">
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900">Learning Path</h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">Tailored to your target role</p>
+              <h2 className="text-sm font-extrabold text-[#2F2A3E]">Learning Path</h2>
+              <p className="text-[11px] text-[#8D8471] mt-0.5">Tailored to your target role</p>
             </div>
-            <span className="rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-[10px] font-bold text-indigo-600">
+            <span className="rounded-full bg-[#EFEAFC] border border-[#7C5CFA]/20 px-2.5 py-0.5 text-[10px] font-bold text-[#7C5CFA]">
               {completedCount} / {totalCount} Done
             </span>
           </div>
 
           {/* Progress bar */}
-          <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden mb-4">
+          <div className="h-2 w-full rounded-full bg-[#E8E0CC] overflow-hidden mb-4">
             <div
-              className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-[#7C5CFA] to-[#FF9838] transition-all duration-500"
               style={{ width: `${readinessPct}%` }}
             />
           </div>
@@ -465,25 +466,25 @@ export default function DashboardPage() {
                     key={item.skillId || item.name}
                     className={`flex items-center justify-between gap-2.5 rounded-2xl border p-2.5 transition ${
                       isMastered
-                        ? 'border-emerald-100 bg-emerald-50/20'
+                        ? 'border-[#BFE9D2] bg-[#E7F8EF]/40'
                         : isFrontier
-                        ? 'border-indigo-100 bg-indigo-50/30 ring-1 ring-indigo-200/50'
-                        : 'border-slate-100 bg-white'
+                        ? 'border-[#FFD9B8] bg-[#FFF1E2]/70 ring-1 ring-[#FF9838]/30'
+                        : 'border-[#E8E0CC] bg-[#FFFDF7]'
                     }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-800 truncate">{item.name}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
+                      <p className="text-xs font-bold text-[#2F2A3E] truncate">{item.name}</p>
+                      <p className="text-[10px] text-[#8D8471] mt-0.5">
                         {isMastered ? 'Verified Competency' : isFrontier ? 'Currently Calibrating' : 'Locked'}
                       </p>
                     </div>
                     <span
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                         isMastered
-                          ? 'bg-emerald-100 text-emerald-700'
+                          ? 'bg-[#2FBF8F] text-white shadow-2xs'
                           : isFrontier
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-100 text-slate-400'
+                          ? 'bg-[#FF9838] text-white shadow-2xs'
+                          : 'bg-[#E8E0CC] text-[#8D8471]'
                       }`}
                     >
                       {isMastered ? '✓' : isFrontier ? '⚡' : '🔒'}
@@ -492,47 +493,47 @@ export default function DashboardPage() {
                 );
               })
             ) : (
-              <p className="text-xs text-slate-400 py-3 text-center">Complete diagnostic test to unlock modules.</p>
+              <p className="text-xs text-[#8D8471] py-3 text-center">Complete diagnostic test to unlock modules.</p>
             )}
           </div>
 
           <button
             type="button"
             onClick={() => navigate('/roadmap')}
-            className="mt-4 w-full rounded-full border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+            className="mt-4 w-full rounded-full border border-[#E8E0CC] bg-white py-2.5 text-xs font-bold text-[#2F2A3E] hover:bg-[#F7F3E8] transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
           >
             View Full Adaptive Roadmap <ChevronRight size={13} />
           </button>
         </div>
 
         {/* Weekly Focus Micro Card */}
-        <div className="rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50/50 p-5 shadow-xs">
+        <div className="rounded-3xl border border-[#FFD9B8] bg-gradient-to-br from-[#FFEEDD] to-[#FFF3CF]/60 p-5 shadow-xs">
           <div className="flex items-center gap-2.5 mb-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-400 text-amber-950 font-bold text-xs shadow-2xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#FF9838] text-white font-bold text-xs shadow-2xs">
               🎯
             </span>
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-900">Weekly Target</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#B45A14]">Weekly Target</p>
           </div>
-          <p className="text-xs font-medium text-amber-950/80 leading-relaxed">
-            Master 2 Frontier skills this week to reach <span className="font-bold text-amber-900">{Math.min(readinessPct + 15, 100)}%</span> readiness for junior developer opportunities.
+          <p className="text-xs font-medium text-[#6A3906] leading-relaxed">
+            Master 2 Frontier skills this week to reach <span className="font-bold text-[#B45A14]">{Math.min(readinessPct + 15, 100)}%</span> readiness for junior developer opportunities.
           </p>
         </div>
 
         {/* AI Learning Coach Pill / CTA */}
-        <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-500 to-indigo-700 p-5 text-white shadow-sm space-y-3">
+        <div className="rounded-3xl border border-[#7C5CFA]/30 bg-gradient-to-br from-[#6C4BEF] via-[#7C5CFA] to-[#8F74F2] p-5 text-white shadow-md shadow-[#7C5CFA]/20 space-y-3">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 backdrop-blur-xs text-white">
               <Sparkles size={15} />
             </span>
-            <p className="text-xs font-bold uppercase tracking-wider text-indigo-100">AI Learning Coach</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-white">AI Learning Coach</p>
           </div>
-          <p className="text-xs text-indigo-100 leading-relaxed">
+          <p className="text-xs text-[#EFEAFC] leading-relaxed">
             Stuck on a concept or need tailored code examples? Ask your AI coach for immediate guidance.
           </p>
           <button
             type="button"
             onClick={() => navigate('/assessment')}
-            className="w-full flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 transition shadow-2xs cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-[#7C5CFA] hover:bg-[#FAF8F5] transition shadow-2xs cursor-pointer"
           >
             <MessageCircle size={14} />
             Ask AI Coach

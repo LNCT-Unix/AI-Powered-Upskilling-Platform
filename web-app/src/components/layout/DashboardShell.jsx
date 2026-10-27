@@ -21,7 +21,7 @@ export default function DashboardShell() {
     : 'SP';
 
   return (
-    <div className="min-h-screen lg:flex text-slate-900" style={{ background: '#f5f3ee' }}>
+    <div className="min-h-screen lg:flex text-slate-900" style={{ background: '#F7F3E8' }}>
       {/* Desktop Sidebar */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 bg-white lg:block shadow-2xs">
         <Sidebar />
@@ -53,7 +53,7 @@ export default function DashboardShell() {
       {/* Main area */}
       <div className="min-w-0 flex-1 flex flex-col">
         {/* ── Top bar ── matching Landing Page aesthetic ─────── */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80 px-4 py-3 sm:px-8 gap-4 bg-[#f5f3ee]/95 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E8E0CC] px-4 py-3 sm:px-8 gap-4 bg-[#F7F3E8]/90 backdrop-blur-md">
           {/* Left: mobile hamburger + search */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
@@ -84,7 +84,7 @@ export default function DashboardShell() {
               <input
                 type="search"
                 placeholder="Search competencies, roadmaps, career benchmarks..."
-                className="w-full rounded-full border border-slate-200/90 bg-white/90 py-2 pl-9 pr-4 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition shadow-2xs"
+                className="w-full rounded-full border border-[#E8E0CC] bg-white/95 py-2 pl-9 pr-4 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7C5CFA] focus:bg-white focus:ring-2 focus:ring-[#7C5CFA]/20 transition shadow-2xs"
               />
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function DashboardShell() {
           {/* Right: language + notifications + user avatar */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Language Pill */}
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/90 px-3 py-1.5 text-xs text-slate-700 shadow-2xs">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#E8E0CC] bg-white/90 px-3 py-1.5 text-xs text-slate-700 shadow-2xs">
               <Globe size={13} className="text-slate-400" />
               <select
                 value={language}
@@ -112,28 +112,28 @@ export default function DashboardShell() {
                 type="button"
                 onClick={() => setNotifOpen(p => !p)}
                 aria-label="View notifications"
-                className="relative rounded-full p-2 bg-white/80 border border-slate-200/70 text-slate-500 hover:text-slate-900 hover:bg-white transition shadow-2xs"
+                className="relative rounded-full p-2 bg-white/90 border border-[#E8E0CC] text-slate-500 hover:text-slate-900 hover:bg-white transition shadow-2xs"
               >
                 <Bell size={16} />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-indigo-600 ring-2 ring-white" />
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#7C5CFA] ring-2 ring-white" />
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2.5 w-80 rounded-3xl border border-slate-100 bg-white p-5 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                <div className="absolute right-0 mt-2.5 w-80 rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="flex items-center justify-between border-b border-[#E8E0CC] pb-3 mb-3">
                     <p className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Notifications</p>
-                    <button type="button" onClick={() => setNotifOpen(false)} className="text-xs text-indigo-600 font-bold hover:underline">
+                    <button type="button" onClick={() => setNotifOpen(false)} className="text-xs text-[#7C5CFA] font-bold hover:underline">
                       Close
                     </button>
                   </div>
                   <div className="space-y-2 text-xs">
-                    <div className="rounded-2xl bg-indigo-50/60 border border-indigo-100/60 p-3">
-                      <p className="font-bold text-indigo-950">Diagnostic Assessment Ready</p>
-                      <p className="text-indigo-800/80 text-[11px] mt-0.5">Start your 10-question CAT to update your ability score.</p>
+                    <div className="rounded-2xl bg-[#EFEAFC] border border-[#7C5CFA]/20 p-3">
+                      <p className="font-bold text-[#2F2A3E]">Diagnostic Assessment Ready</p>
+                      <p className="text-[#6E6880] text-[11px] mt-0.5">Start your 10-question CAT to update your ability score.</p>
                     </div>
-                    <div className="rounded-2xl bg-amber-50/60 border border-amber-100/60 p-3">
-                      <p className="font-bold text-amber-950">Daily Learning Streak Active</p>
-                      <p className="text-amber-800/80 text-[11px] mt-0.5">Solve 1 coding or conceptual milestone today.</p>
+                    <div className="rounded-2xl bg-[#FFEEDD] border border-[#FFD9B8] p-3">
+                      <p className="font-bold text-[#B45A14]">Daily Learning Streak Active</p>
+                      <p className="text-[#8D8471] text-[11px] mt-0.5">Solve 1 coding or conceptual milestone today.</p>
                     </div>
                   </div>
                 </div>

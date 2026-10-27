@@ -27,22 +27,22 @@ function NavItem({ path, label, icon: Icon, badge, onClose }) {
       className={({ isActive }) =>
         `group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm transition-all ${
           isActive
-            ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100/70 shadow-2xs'
-            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-semibold'
+            ? 'bg-[#EFEAFC] text-[#7C5CFA] font-bold border border-[#7C5CFA]/30 shadow-2xs'
+            : 'text-slate-600 hover:bg-[#F7F3E8] hover:text-slate-900 font-semibold'
         }`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon size={17} className={isActive ? 'text-indigo-600 shrink-0' : 'text-slate-400 shrink-0 group-hover:text-slate-600 transition'} />
+          <Icon size={17} className={isActive ? 'text-[#7C5CFA] shrink-0' : 'text-slate-400 shrink-0 group-hover:text-slate-700 transition'} />
           <span className="flex-1 truncate">{label}</span>
           {badge && (
-            <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[9px] font-extrabold text-white leading-none">
+            <span className="rounded-full bg-[#7C5CFA] px-2 py-0.5 text-[9px] font-extrabold text-white leading-none">
               {badge}
             </span>
           )}
           {isActive && !badge && (
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 shrink-0" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#7C5CFA] shrink-0" />
           )}
         </>
       )}
@@ -52,9 +52,9 @@ function NavItem({ path, label, icon: Icon, badge, onClose }) {
 
 export default function Sidebar({ onClose }) {
   return (
-    <div className="flex h-full flex-col bg-white select-none overflow-y-auto border-r border-slate-200/80">
+    <div className="flex h-full flex-col bg-white select-none overflow-y-auto border-r border-[#E8E0CC]">
       {/* Logo matching Landing Page */}
-      <Link to="/" className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 hover:bg-slate-50/50 transition">
+      <Link to="/" className="flex items-center gap-3 px-5 py-4 border-b border-[#E8E0CC] hover:bg-[#F7F3E8]/60 transition">
         <img
           src="/octobyte-logo.png"
           alt="octoByte Logo"
@@ -99,21 +99,21 @@ export default function Sidebar({ onClose }) {
 
       {/* Pro CTA card inside sidebar */}
       <div className="px-3 pb-3">
-        <div className="rounded-2xl bg-amber-50/70 border border-amber-200/60 p-3 text-center">
-          <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-900">
-            <Sparkles size={13} className="text-amber-500" />
+        <div className="rounded-2xl bg-[#FFEEDD] border border-[#FFD9B8] p-3 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#B45A14]">
+            <Sparkles size={13} className="text-[#FF9838]" />
             CAT v2.4 Active
           </div>
-          <p className="text-[10px] text-amber-800/80 mt-0.5">Real-time IRT Ability Calibration</p>
+          <p className="text-[10px] text-[#8D8471] mt-0.5">Real-time IRT Ability Calibration</p>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-100 p-3">
+      <div className="border-t border-[#E8E0CC] p-3">
         <Link
           to="/"
           onClick={onClose}
-          className="flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          className="flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-[#F7F3E8] hover:text-slate-900 transition-colors"
         >
           <ArrowLeft size={14} />
           <span>Back to Landing</span>
