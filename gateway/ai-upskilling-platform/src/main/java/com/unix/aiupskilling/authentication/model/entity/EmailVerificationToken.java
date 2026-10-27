@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "email_verification_tokens", indexes = {
         @Index(name = "idx_evt_user_id", columnList = "user_id"),
-        @Index(name = "idx_evt_token_hash", columnList = "token_hash")
+        @Index(name = "idx_evt_otp_hash", columnList = "otp_hash")
 })
 @Getter
 @Setter
@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 @Builder
 public class EmailVerificationToken {
 
+    public static final int MAX_FAILED_ATTEMPTS = 5;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,9 +26,12 @@ public class EmailVerificationToken {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "otp_hash", nullable = false, length = 64)
+    private String otpHash;
 
-    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
-    private String tokenHash;
+    @Column(name = "failed_attempts", nullable = false)
+    @Builder.Default
+    private int failedAttempts = 0;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -48,11 +53,19 @@ public class EmailVerificationToken {
         return expiresAt != null && expiresAt.isBefore(LocalDateTime.now());
     }
 
+    public boolean isOtpExpired() {
+        return isExpired();
+    }
+
     public boolean isConsumed() {
         return consumedAt != null;
     }
 
+    public boolean hasExceededMaxAttempts() {
+        return failedAttempts >= MAX_FAILED_ATTEMPTS;
+    }
+
     public boolean isValid() {
-        return !isExpired() && !isConsumed();
+        return !isExpired() && !isConsumed() && !hasExceededMaxAttempts();
     }
 }

@@ -43,10 +43,9 @@ public class AuthProperties {
 
     @Data
     public static class VerificationProperties {
-        private long ttlSeconds = 86400;
+        private long ttlSeconds = 600;
         private int cooldownSeconds = 60;
         private int maxPerHour = 5;
         private int ipMaxPerHour = 20;
     }
 }
-

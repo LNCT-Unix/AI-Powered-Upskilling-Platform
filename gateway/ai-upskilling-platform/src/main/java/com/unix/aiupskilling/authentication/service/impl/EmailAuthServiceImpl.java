@@ -52,20 +52,20 @@ public class EmailAuthServiceImpl implements EmailAuthService {
                 String fullName = (request.getFullName() != null) ? request.getFullName().trim() : "";
                 User newUser = userProvisioningService.createEmailUser(normalizedEmail, fullName, encodedPassword);
 
-                String rawToken = emailVerificationService.issueToken(newUser);
-                eventPublisher.publishEvent(new EmailVerificationEvent(newUser.getEmail(), newUser.getFullName(), rawToken));
+                String otp = emailVerificationService.issueOtp(newUser);
+                eventPublisher.publishEvent(new EmailVerificationEvent(newUser.getEmail(), newUser.getFullName(), otp));
             } catch (EmailAlreadyRegisteredException e) {
                 // Handled gracefully in case of concurrent insert race
             }
         } else {
             User existing = existingUserOpt.get();
-            // If unverified password user and eligible for resend, send replacement token silently
+            // If unverified password user and eligible for resend, send replacement OTP silently
             if (existing.getPasswordHash() != null
                     && !existing.isEmailVerified()
                     && existing.getStatus() != AccountStatus.DISABLED) {
                 if (emailVerificationService.canResend(existing)) {
-                    String rawToken = emailVerificationService.issueToken(existing);
-                    eventPublisher.publishEvent(new EmailVerificationEvent(existing.getEmail(), existing.getFullName(), rawToken));
+                    String otp = emailVerificationService.issueOtp(existing);
+                    eventPublisher.publishEvent(new EmailVerificationEvent(existing.getEmail(), existing.getFullName(), otp));
                 }
             }
             // For verified or OAuth-only accounts, do not alter account and return generic response
@@ -77,7 +77,7 @@ public class EmailAuthServiceImpl implements EmailAuthService {
     @Override
     @Transactional
     public void confirmEmail(ConfirmEmailRequest request) {
-        emailVerificationService.confirmToken(request.getToken());
+        emailVerificationService.verifyOtp(request.getEmail(), request.getOtp());
     }
 
     @Override
@@ -94,8 +94,8 @@ public class EmailAuthServiceImpl implements EmailAuthService {
                     && !user.isEmailVerified()
                     && user.getStatus() != AccountStatus.DISABLED) {
                 if (emailVerificationService.canResend(user)) {
-                    String rawToken = emailVerificationService.issueToken(user);
-                    eventPublisher.publishEvent(new EmailVerificationEvent(user.getEmail(), user.getFullName(), rawToken));
+                    String otp = emailVerificationService.issueOtp(user);
+                    eventPublisher.publishEvent(new EmailVerificationEvent(user.getEmail(), user.getFullName(), otp));
                 }
             }
         }

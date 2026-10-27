@@ -39,10 +39,10 @@ public class EmailAuthController {
         RegistrationAcceptedResponse response = emailAuthService.register(request, clientIp);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(ApiResponse.ok(response, "If the email is eligible, a verification link has been sent."));
+                .body(ApiResponse.ok(response, "If the email is eligible, a 6-digit verification code has been sent."));
     }
 
-    @PostMapping("/email-verification/confirm")
+    @PostMapping({"/email-verification/confirm", "/email-verification/verify-otp"})
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> confirm(
             @Valid @RequestBody ConfirmEmailRequest request) {
 
@@ -59,7 +59,7 @@ public class EmailAuthController {
         RegistrationAcceptedResponse response = emailAuthService.resendVerification(request, clientIp);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(ApiResponse.ok(response, "If the email is eligible, a verification link has been sent."));
+                .body(ApiResponse.ok(response, "If the email is eligible, a 6-digit verification code has been sent."));
     }
 
     @PostMapping("/login")

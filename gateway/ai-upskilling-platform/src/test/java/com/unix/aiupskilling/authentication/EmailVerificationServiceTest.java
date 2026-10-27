@@ -8,8 +8,8 @@ import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
 import com.unix.aiupskilling.authentication.repository.EmailVerificationTokenRepository;
 import com.unix.aiupskilling.authentication.service.impl.EmailVerificationServiceImpl;
 import com.unix.aiupskilling.authentication.util.TokenHashUtil;
-import com.unix.aiupskilling.user.User;
 import com.unix.aiupskilling.user.Role;
+import com.unix.aiupskilling.user.User;
 import com.unix.aiupskilling.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,7 +44,7 @@ class EmailVerificationServiceTest {
     @BeforeEach
     void setUp() {
         authProperties = new AuthProperties();
-        authProperties.getVerification().setTtlSeconds(86400);
+        authProperties.getVerification().setTtlSeconds(600);
         authProperties.getVerification().setCooldownSeconds(60);
         authProperties.getVerification().setMaxPerHour(5);
 
@@ -60,124 +60,171 @@ class EmailVerificationServiceTest {
     }
 
     @Test
-    @DisplayName("issueToken: Generates URL-safe token, persists SHA-256 hash, and invalidates old tokens")
-    void testIssueToken() {
+    @DisplayName("issueOtp: Generates 6-digit numeric OTP, persists SHA-256 hash, and clears older tokens")
+    void testIssueOtp() {
         when(tokenRepository.save(any(EmailVerificationToken.class))).thenAnswer(i -> i.getArgument(0));
 
-        String rawToken = verificationService.issueToken(testUser);
+        String otp = verificationService.issueOtp(testUser);
 
-        assertThat(rawToken).isNotBlank();
-        assertThat(rawToken).matches("^[A-Za-z0-9_-]+$"); // Base64 URL-safe without padding
+        assertThat(otp).isNotBlank();
+        assertThat(otp).matches("^[0-9]{6}$");
 
-        verify(tokenRepository).invalidateAllForUser(eq(1L), any(LocalDateTime.class));
+        verify(tokenRepository).deleteAllByUserId(1L);
 
         ArgumentCaptor<EmailVerificationToken> captor = ArgumentCaptor.forClass(EmailVerificationToken.class);
         verify(tokenRepository).save(captor.capture());
 
         EmailVerificationToken saved = captor.getValue();
         assertThat(saved.getUserId()).isEqualTo(1L);
-        assertThat(saved.getTokenHash()).isEqualTo(TokenHashUtil.sha256(rawToken));
+        assertThat(saved.getOtpHash()).isEqualTo(TokenHashUtil.sha256(otp));
+        assertThat(saved.getFailedAttempts()).isEqualTo(0);
         assertThat(saved.getExpiresAt()).isAfter(saved.getCreatedAt());
     }
 
     @Test
-    @DisplayName("confirmToken: Successfully consumes token and verifies user")
-    void testConfirmTokenSuccess() {
-        String rawToken = "sample-raw-token-123";
-        String hash = TokenHashUtil.sha256(rawToken);
+    @DisplayName("verifyOtp: Successfully consumes OTP and verifies user")
+    void testVerifyOtpSuccess() {
+        String rawOtp = "123456";
+        String hash = TokenHashUtil.sha256(rawOtp);
 
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .id(10L)
                 .userId(1L)
-                .tokenHash(hash)
-                .createdAt(LocalDateTime.now().minusMinutes(5))
-                .expiresAt(LocalDateTime.now().plusHours(23))
+                .otpHash(hash)
+                .failedAttempts(0)
+                .createdAt(LocalDateTime.now().minusMinutes(1))
+                .expiresAt(LocalDateTime.now().plusMinutes(9))
                 .build();
 
-        when(tokenRepository.findByTokenHash(hash)).thenReturn(Optional.of(token));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(tokenRepository.markConsumedIfUnconsumed(eq(10L), any(LocalDateTime.class))).thenReturn(1);
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(testUser));
+        when(tokenRepository.findTopByUserIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.of(token));
 
-        verificationService.confirmToken(rawToken);
+        verificationService.verifyOtp("test@example.com", rawOtp);
 
         assertThat(testUser.isEmailVerified()).isTrue();
         assertThat(testUser.getEmailVerifiedAt()).isNotNull();
+        assertThat(token.isConsumed()).isTrue();
         verify(userRepository).save(testUser);
+        verify(tokenRepository).save(token);
     }
 
     @Test
-    @DisplayName("confirmToken: Rejects unknown token with VERIFICATION_TOKEN_INVALID")
-    void testConfirmTokenInvalid() {
-        when(tokenRepository.findByTokenHash(any())).thenReturn(Optional.empty());
+    @DisplayName("verifyOtp: Rejects unknown user with INVALID_VERIFICATION_CODE")
+    void testVerifyOtpUnknownUser() {
+        when(userRepository.findByEmailIgnoreCase("unknown@example.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> verificationService.confirmToken("unknown-token"))
+        assertThatThrownBy(() -> verificationService.verifyOtp("unknown@example.com", "123456"))
                 .isInstanceOf(VerificationTokenException.class)
-                .matches(e -> ((VerificationTokenException) e).getCode().equals("VERIFICATION_TOKEN_INVALID"));
+                .matches(e -> ((VerificationTokenException) e).getCode().equals("INVALID_VERIFICATION_CODE"));
     }
 
     @Test
-    @DisplayName("confirmToken: Rejects already consumed token with VERIFICATION_TOKEN_USED")
-    void testConfirmTokenAlreadyUsed() {
-        String rawToken = "used-token";
-        String hash = TokenHashUtil.sha256(rawToken);
+    @DisplayName("verifyOtp: Rejects already consumed OTP with VERIFICATION_CODE_USED")
+    void testVerifyOtpAlreadyUsed() {
+        String rawOtp = "123456";
+        String hash = TokenHashUtil.sha256(rawOtp);
 
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .id(11L)
                 .userId(1L)
-                .tokenHash(hash)
-                .createdAt(LocalDateTime.now().minusHours(1))
-                .expiresAt(LocalDateTime.now().plusHours(20))
-                .consumedAt(LocalDateTime.now().minusMinutes(10))
+                .otpHash(hash)
+                .createdAt(LocalDateTime.now().minusMinutes(5))
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
+                .consumedAt(LocalDateTime.now().minusMinutes(2))
                 .build();
 
-        when(tokenRepository.findByTokenHash(hash)).thenReturn(Optional.of(token));
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(testUser));
+        when(tokenRepository.findTopByUserIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.of(token));
 
-        assertThatThrownBy(() -> verificationService.confirmToken(rawToken))
+        assertThatThrownBy(() -> verificationService.verifyOtp("test@example.com", rawOtp))
                 .isInstanceOf(VerificationTokenException.class)
-                .matches(e -> ((VerificationTokenException) e).getCode().equals("VERIFICATION_TOKEN_USED"));
+                .matches(e -> ((VerificationTokenException) e).getCode().equals("VERIFICATION_CODE_USED"));
     }
 
     @Test
-    @DisplayName("confirmToken: Rejects expired token with VERIFICATION_TOKEN_EXPIRED")
-    void testConfirmTokenExpired() {
-        String rawToken = "expired-token";
-        String hash = TokenHashUtil.sha256(rawToken);
+    @DisplayName("verifyOtp: Rejects expired OTP with VERIFICATION_CODE_EXPIRED")
+    void testVerifyOtpExpired() {
+        String rawOtp = "123456";
+        String hash = TokenHashUtil.sha256(rawOtp);
 
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .id(12L)
                 .userId(1L)
-                .tokenHash(hash)
-                .createdAt(LocalDateTime.now().minusDays(2))
-                .expiresAt(LocalDateTime.now().minusDays(1))
+                .otpHash(hash)
+                .createdAt(LocalDateTime.now().minusMinutes(20))
+                .expiresAt(LocalDateTime.now().minusMinutes(10))
                 .build();
 
-        when(tokenRepository.findByTokenHash(hash)).thenReturn(Optional.of(token));
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(testUser));
+        when(tokenRepository.findTopByUserIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.of(token));
 
-        assertThatThrownBy(() -> verificationService.confirmToken(rawToken))
+        assertThatThrownBy(() -> verificationService.verifyOtp("test@example.com", rawOtp))
                 .isInstanceOf(VerificationTokenException.class)
-                .matches(e -> ((VerificationTokenException) e).getCode().equals("VERIFICATION_TOKEN_EXPIRED"));
+                .matches(e -> ((VerificationTokenException) e).getCode().equals("VERIFICATION_CODE_EXPIRED"));
+
+        verify(tokenRepository).delete(token);
     }
 
     @Test
-    @DisplayName("confirmToken: Rejects disabled user with ACCOUNT_DISABLED")
-    void testConfirmTokenDisabledAccount() {
-        String rawToken = "disabled-user-token";
-        String hash = TokenHashUtil.sha256(rawToken);
-        testUser.setStatus(AccountStatus.DISABLED);
+    @DisplayName("verifyOtp: Increments failed attempts on mismatch and reports remaining attempts")
+    void testVerifyOtpFailedAttemptIncrement() {
+        String actualOtp = "123456";
+        String wrongOtp = "654321";
 
         EmailVerificationToken token = EmailVerificationToken.builder()
-                .id(13L)
+                .id(14L)
                 .userId(1L)
-                .tokenHash(hash)
-                .createdAt(LocalDateTime.now().minusMinutes(5))
-                .expiresAt(LocalDateTime.now().plusHours(23))
+                .otpHash(TokenHashUtil.sha256(actualOtp))
+                .failedAttempts(1)
+                .createdAt(LocalDateTime.now().minusMinutes(1))
+                .expiresAt(LocalDateTime.now().plusMinutes(9))
                 .build();
 
-        when(tokenRepository.findByTokenHash(hash)).thenReturn(Optional.of(token));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(testUser));
+        when(tokenRepository.findTopByUserIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.of(token));
 
-        assertThatThrownBy(() -> verificationService.confirmToken(rawToken))
+        assertThatThrownBy(() -> verificationService.verifyOtp("test@example.com", wrongOtp))
+                .isInstanceOf(VerificationTokenException.class)
+                .hasMessageContaining("3 attempt(s) remaining")
+                .matches(e -> ((VerificationTokenException) e).getCode().equals("INVALID_VERIFICATION_CODE"));
 
+        assertThat(token.getFailedAttempts()).isEqualTo(2);
+        verify(tokenRepository).save(token);
+    }
+
+    @Test
+    @DisplayName("verifyOtp: Exceeding max attempts invalidates code with MAX_ATTEMPTS_EXCEEDED")
+    void testVerifyOtpMaxAttemptsExceeded() {
+        String actualOtp = "123456";
+        String wrongOtp = "999999";
+
+        EmailVerificationToken token = EmailVerificationToken.builder()
+                .id(15L)
+                .userId(1L)
+                .otpHash(TokenHashUtil.sha256(actualOtp))
+                .failedAttempts(4)
+                .createdAt(LocalDateTime.now().minusMinutes(1))
+                .expiresAt(LocalDateTime.now().plusMinutes(9))
+                .build();
+
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(testUser));
+        when(tokenRepository.findTopByUserIdOrderByCreatedAtDesc(1L)).thenReturn(Optional.of(token));
+
+        assertThatThrownBy(() -> verificationService.verifyOtp("test@example.com", wrongOtp))
+                .isInstanceOf(VerificationTokenException.class)
+                .matches(e -> ((VerificationTokenException) e).getCode().equals("MAX_ATTEMPTS_EXCEEDED"));
+
+        verify(tokenRepository).delete(token);
+    }
+
+    @Test
+    @DisplayName("verifyOtp: Rejects disabled user with ACCOUNT_DISABLED")
+    void testVerifyOtpDisabledAccount() {
+        testUser.setStatus(AccountStatus.DISABLED);
+
+        when(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(Optional.of(testUser));
+
+        assertThatThrownBy(() -> verificationService.verifyOtp("test@example.com", "123456"))
                 .isInstanceOf(AccountNotEligibleException.class)
                 .matches(e -> ((AccountNotEligibleException) e).getCode().equals("ACCOUNT_DISABLED"));
     }

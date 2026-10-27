@@ -16,6 +16,6 @@ public class EmailVerificationEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onEmailVerificationEvent(EmailVerificationEvent event) {
-        emailSender.sendVerificationEmail(event.email(), event.fullName(), event.rawToken());
+        emailSender.sendVerificationEmail(event.email(), event.fullName(), event.otp());
     }
 }

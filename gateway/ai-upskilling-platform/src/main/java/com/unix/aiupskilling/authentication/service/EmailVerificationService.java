@@ -4,11 +4,19 @@ import com.unix.aiupskilling.user.User;
 
 public interface EmailVerificationService {
 
-    String issueToken(User user);
+    String issueOtp(User user);
 
-    void confirmToken(String rawToken);
+    void verifyOtp(String email, String otp);
 
     boolean canResend(User user);
 
     void invalidateAllForUser(Long userId);
+
+    default String issueToken(User user) {
+        return issueOtp(user);
+    }
+
+    default void confirmToken(String rawToken) {
+        throw new UnsupportedOperationException("confirmToken is deprecated. Use verifyOtp(email, otp)");
+    }
 }

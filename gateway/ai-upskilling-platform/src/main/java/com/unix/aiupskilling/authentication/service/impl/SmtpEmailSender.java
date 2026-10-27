@@ -27,15 +27,12 @@ public class SmtpEmailSender implements EmailSender {
     private String fromAddress;
 
     @Override
-    public void sendVerificationEmail(String toEmail, String fullName, String rawToken) {
+    public void sendVerificationEmail(String toEmail, String fullName, String otp) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
             log.warn("JavaMailSender is not configured. Verification email was not sent via SMTP.");
             return;
         }
-
-        String verificationUrl = authProperties.getFrontend().getVerificationUrl();
-        String link = verificationUrl + "#token=" + rawToken;
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -48,9 +45,9 @@ public class SmtpEmailSender implements EmailSender {
             String greeting = (fullName != null && !fullName.isBlank()) ? "Hello " + fullName + "," : "Hello,";
             String body = greeting + "\n\n"
                     + "Thank you for registering with AI Upskilling Platform.\n"
-                    + "Please verify your email address by clicking the link below:\n\n"
-                    + link + "\n\n"
-                    + "This link will expire in 24 hours.\n"
+                    + "Your 6-digit email verification code is:\n\n"
+                    + "    " + otp + "\n\n"
+                    + "This code will expire in 10 minutes.\n"
                     + "If you did not request this, you can safely ignore this email.\n\n"
                     + "Best regards,\nAI Upskilling Platform Team";
 

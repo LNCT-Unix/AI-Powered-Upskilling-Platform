@@ -7,21 +7,27 @@ import com.unix.aiupskilling.authentication.model.entity.EmailVerificationToken;
 import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
 import com.unix.aiupskilling.authentication.repository.EmailVerificationTokenRepository;
 import com.unix.aiupskilling.authentication.service.EmailVerificationService;
+import com.unix.aiupskilling.authentication.util.EmailNormalizer;
 import com.unix.aiupskilling.authentication.util.TokenHashUtil;
 import com.unix.aiupskilling.user.User;
 import com.unix.aiupskilling.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationServiceImpl implements EmailVerificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailVerificationServiceImpl.class);
 
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
@@ -30,64 +36,111 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
     @Override
     @Transactional
-    public String issueToken(User user) {
-        byte[] randomBytes = new byte[32];
-        secureRandom.nextBytes(randomBytes);
-        String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    public String issueOtp(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User and user id must not be null");
+        }
 
-        String tokenHash = TokenHashUtil.sha256(rawToken);
+        // Invalidate or delete older tokens for this user
+        tokenRepository.deleteAllByUserId(user.getId());
 
-        // Invalidate any existing unconsumed tokens for this user
-        tokenRepository.invalidateAllForUser(user.getId(), LocalDateTime.now());
+        // Generate cryptographically secure 6-digit numeric OTP
+        int code = 100_000 + secureRandom.nextInt(900_000);
+        String otp = String.valueOf(code);
 
+        // Store SHA-256 hash of OTP (never plain text)
+        String otpHash = TokenHashUtil.sha256(otp);
         long ttl = authProperties.getVerification().getTtlSeconds();
         LocalDateTime now = LocalDateTime.now();
+
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .userId(user.getId())
-                .tokenHash(tokenHash)
+                .otpHash(otpHash)
+                .failedAttempts(0)
                 .createdAt(now)
                 .expiresAt(now.plusSeconds(ttl))
                 .build();
 
         tokenRepository.save(token);
-        return rawToken;
+        log.info("Email verification OTP generated for user id: {}", user.getId());
+        return otp;
     }
 
     @Override
     @Transactional
-    public void confirmToken(String rawToken) {
-        if (rawToken == null || rawToken.isBlank()) {
-            throw new VerificationTokenException("Invalid verification token", "VERIFICATION_TOKEN_INVALID");
+    public void verifyOtp(String email, String otp) {
+        if (email == null || email.isBlank() || otp == null || otp.isBlank()) {
+            throw new VerificationTokenException("Email and verification code are required", "INVALID_VERIFICATION_CODE");
         }
 
-        String tokenHash = TokenHashUtil.sha256(rawToken.trim());
-        EmailVerificationToken token = tokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new VerificationTokenException("Invalid verification token", "VERIFICATION_TOKEN_INVALID"));
+        String normalizedEmail = EmailNormalizer.normalize(email);
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
 
-        if (token.getConsumedAt() != null) {
-            throw new VerificationTokenException("Verification token has already been used", "VERIFICATION_TOKEN_USED");
+        if (userOpt.isEmpty()) {
+            throw new VerificationTokenException("Invalid or expired verification code", "INVALID_VERIFICATION_CODE");
         }
 
-        if (token.isExpired()) {
-            throw new VerificationTokenException("Verification token has expired", "VERIFICATION_TOKEN_EXPIRED");
-        }
-
-        User user = userRepository.findById(token.getUserId())
-                .orElseThrow(() -> new VerificationTokenException("User not found", "VERIFICATION_TOKEN_INVALID"));
-
+        User user = userOpt.get();
         if (user.getStatus() == AccountStatus.DISABLED) {
             throw new AccountNotEligibleException("Account is disabled", "ACCOUNT_DISABLED");
         }
 
+        Optional<EmailVerificationToken> tokenOpt =
+                tokenRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId());
 
-        int affectedRows = tokenRepository.markConsumedIfUnconsumed(token.getId(), LocalDateTime.now());
-        if (affectedRows == 0) {
-            throw new VerificationTokenException("Verification token has already been used", "VERIFICATION_TOKEN_USED");
+        if (tokenOpt.isEmpty()) {
+            throw new VerificationTokenException("Invalid or expired verification code", "INVALID_VERIFICATION_CODE");
         }
+
+        EmailVerificationToken token = tokenOpt.get();
+
+        if (token.isConsumed()) {
+            throw new VerificationTokenException("Verification code has already been used", "VERIFICATION_CODE_USED");
+        }
+
+        if (token.isOtpExpired()) {
+            tokenRepository.delete(token);
+            throw new VerificationTokenException("Verification code has expired. Please request a new one.", "VERIFICATION_CODE_EXPIRED");
+        }
+
+        if (token.hasExceededMaxAttempts()) {
+            tokenRepository.delete(token);
+            throw new VerificationTokenException("Too many invalid attempts. Verification code has been invalidated.", "MAX_ATTEMPTS_EXCEEDED");
+        }
+
+        // Constant-time hash comparison
+        String providedOtpHash = TokenHashUtil.sha256(otp.trim());
+        boolean matches = MessageDigest.isEqual(
+                token.getOtpHash().getBytes(StandardCharsets.UTF_8),
+                providedOtpHash.getBytes(StandardCharsets.UTF_8)
+        );
+
+        if (!matches) {
+            int attempts = token.getFailedAttempts() + 1;
+            token.setFailedAttempts(attempts);
+
+            if (token.hasExceededMaxAttempts()) {
+                tokenRepository.delete(token);
+                throw new VerificationTokenException("Too many invalid attempts. Verification code has been invalidated.", "MAX_ATTEMPTS_EXCEEDED");
+            }
+
+            tokenRepository.save(token);
+            int remaining = EmailVerificationToken.MAX_FAILED_ATTEMPTS - attempts;
+            throw new VerificationTokenException(
+                    "Invalid verification code. " + remaining + " attempt(s) remaining.",
+                    "INVALID_VERIFICATION_CODE"
+            );
+        }
+
+        // Mark consumed
+        token.setConsumedAt(LocalDateTime.now());
+        tokenRepository.save(token);
 
         user.setEmailVerified(true);
         user.setEmailVerifiedAt(LocalDateTime.now());
         userRepository.save(user);
+
+        log.info("Email verification successful for user id: {}", user.getId());
     }
 
     @Override

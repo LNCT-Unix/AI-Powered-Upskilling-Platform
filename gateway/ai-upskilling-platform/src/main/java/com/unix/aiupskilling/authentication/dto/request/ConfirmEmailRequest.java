@@ -1,7 +1,8 @@
 package com.unix.aiupskilling.authentication.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +14,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ConfirmEmailRequest {
 
-    @NotBlank(message = "Token is required")
-    @Size(max = 128, message = "Token cannot exceed 128 characters")
-    private String token;
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @NotBlank(message = "OTP is required")
+    @Pattern(regexp = "^[0-9]{6}$", message = "OTP must be a 6-digit number")
+    private String otp;
 }

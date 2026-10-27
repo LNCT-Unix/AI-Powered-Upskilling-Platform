@@ -158,13 +158,13 @@ class EmailAuthIntegrationTest {
 
     @Test
     @DisplayName("Registration: UTF-8 byte boundary handling (8 and 72 bytes accepted, 73 rejected)")
-    void testRegisterByteLengthBoundaries() throws Exception {
-        // Exactly 8 UTF-8 bytes: "12345678"
+    void testRegisterPasswordByteBoundary() throws Exception {
+        // Exactly 8 bytes ASCII
         String eightBytes = """
                 {
-                    "email": "byte8@example.com",
+                    "email": "eight@example.com",
                     "password": "12345678",
-                    "fullName": "Eight Bytes"
+                    "fullName": "User Eight"
                 }
                 """;
         mockMvc.perform(post("/api/auth/register")
@@ -172,29 +172,29 @@ class EmailAuthIntegrationTest {
                         .content(eightBytes))
                 .andExpect(status().isAccepted());
 
-        // Exactly 72 UTF-8 bytes
-        String pwd72 = "A".repeat(72);
-        String seventyTwoBytes = String.format("""
+        // Exactly 72 bytes UTF-8 (24 characters of '€', 3 bytes each = 72 bytes)
+        String seventyTwoBytes = """
                 {
-                    "email": "byte72@example.com",
+                    "email": "seventytwo@example.com",
                     "password": "%s",
-                    "fullName": "Seventy Two Bytes"
+                    "fullName": "User 72"
                 }
-                """, pwd72);
+                """.formatted("€".repeat(24));
+
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(seventyTwoBytes))
                 .andExpect(status().isAccepted());
 
-        // 73 UTF-8 bytes
-        String pwd73 = "A".repeat(73);
-        String seventyThreeBytes = String.format("""
+        // 73 bytes UTF-8 (24 * 3 = 72 + 'a' = 73 bytes) -> should fail with 400 VALIDATION_ERROR
+        String seventyThreeBytes = """
                 {
-                    "email": "byte73@example.com",
-                    "password": "%s",
-                    "fullName": "Seventy Three Bytes"
+                    "email": "seventythree@example.com",
+                    "password": "%sa",
+                    "fullName": "User 73"
                 }
-                """, pwd73);
+                """.formatted("€".repeat(24));
+
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(seventyThreeBytes))
@@ -262,7 +262,7 @@ class EmailAuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("Verification: Confirm valid token marks email verified")
+    @DisplayName("Verification: Confirm valid OTP marks email verified")
     void testConfirmEmailSuccess() throws Exception {
         User user = User.builder()
                 .email("verify.me@example.com")
@@ -272,18 +272,18 @@ class EmailAuthIntegrationTest {
                 .build();
         user = userRepository.save(user);
 
-        String rawToken = "raw-verification-token-xyz-123";
+        String otp = "123456";
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .userId(user.getId())
-                .tokenHash(TokenHashUtil.sha256(rawToken))
+                .otpHash(TokenHashUtil.sha256(otp))
                 .createdAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusHours(24))
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
                 .build();
         emailVerificationTokenRepository.save(token);
 
         mockMvc.perform(post("/api/auth/email-verification/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"" + rawToken + "\"}"))
+                        .content("{\"email\":\"verify.me@example.com\",\"otp\":\"" + otp + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.emailVerified").value(true));
@@ -297,47 +297,46 @@ class EmailAuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("Verification: Confirm invalid, expired, or already-used token returns 400 Bad Request")
+    @DisplayName("Verification: Confirm invalid, expired, or already-used OTP returns 400 Bad Request")
     void testConfirmEmailErrors() throws Exception {
-        // Unknown token
+        // Unknown user
         mockMvc.perform(post("/api/auth/email-verification/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"completely-unknown-token\"}"))
+                        .content("{\"email\":\"unknown@example.com\",\"otp\":\"123456\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.data.code").value("VERIFICATION_TOKEN_INVALID"));
+                .andExpect(jsonPath("$.data.code").value("INVALID_VERIFICATION_CODE"));
 
-        // Expired token
+        // Expired OTP
         User user = userRepository.save(User.builder().email("exp@example.com").role(Role.USER).status(AccountStatus.ACTIVE).build());
-        String expiredRaw = "expired-token-123";
+        String expiredOtp = "123456";
         emailVerificationTokenRepository.save(EmailVerificationToken.builder()
                 .userId(user.getId())
-                .tokenHash(TokenHashUtil.sha256(expiredRaw))
-                .createdAt(LocalDateTime.now().minusDays(2))
-                .expiresAt(LocalDateTime.now().minusDays(1))
+                .otpHash(TokenHashUtil.sha256(expiredOtp))
+                .createdAt(LocalDateTime.now().minusMinutes(20))
+                .expiresAt(LocalDateTime.now().minusMinutes(10))
                 .build());
 
         mockMvc.perform(post("/api/auth/email-verification/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"" + expiredRaw + "\"}"))
+                        .content("{\"email\":\"exp@example.com\",\"otp\":\"" + expiredOtp + "\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.data.code").value("VERIFICATION_TOKEN_EXPIRED"));
+                .andExpect(jsonPath("$.data.code").value("VERIFICATION_CODE_EXPIRED"));
 
-        // Already consumed token
-        String usedRaw = "used-token-123";
+        // Already consumed OTP
+        String usedOtp = "654321";
         emailVerificationTokenRepository.save(EmailVerificationToken.builder()
                 .userId(user.getId())
-                .tokenHash(TokenHashUtil.sha256(usedRaw))
-                .createdAt(LocalDateTime.now().minusHours(2))
-                .expiresAt(LocalDateTime.now().plusHours(22))
-                .consumedAt(LocalDateTime.now().minusMinutes(5))
+                .otpHash(TokenHashUtil.sha256(usedOtp))
+                .createdAt(LocalDateTime.now().minusMinutes(5))
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
+                .consumedAt(LocalDateTime.now().minusMinutes(1))
                 .build());
-
 
         mockMvc.perform(post("/api/auth/email-verification/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"" + usedRaw + "\"}"))
+                        .content("{\"email\":\"exp@example.com\",\"otp\":\"" + usedOtp + "\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.data.code").value("VERIFICATION_TOKEN_USED"));
+                .andExpect(jsonPath("$.data.code").value("VERIFICATION_CODE_USED"));
     }
 
     @Test
