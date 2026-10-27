@@ -6,7 +6,7 @@ import Logo from '../components/ui/Logo';
 
 export default function NotFoundPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#f5f3ee' }}>
       <Card className="max-w-md w-full text-center py-10 px-6 sm:px-8 space-y-5">
         <div className="flex justify-center">
           <Logo />

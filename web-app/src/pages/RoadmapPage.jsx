@@ -1,396 +1,259 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  CircleCheck,
-  PlayCircle,
-  Clock3,
-  AlertCircle,
-  Sparkles,
-  Layers,
-  Calendar,
+  CheckCircle2,
+  Lock,
+  Clock,
   ChevronDown,
   ChevronUp,
-  RotateCcw,
-  ArrowRight,
   BookOpen,
-  Zap,
+  Sparkles,
+  Map,
+  ArrowRight,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import { roadmapItems } from '../data/mockData';
 
-const STORAGE_ROADMAP_DONE = 'skillpath_roadmap_done';
+const STATUS_CONFIG = {
+  done:   { label: 'Mastered',    dot: 'bg-emerald-500', ring: 'border-emerald-500 bg-emerald-50', icon: CheckCircle2, iconCls: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
+  active: { label: 'In Progress', dot: 'bg-indigo-500',  ring: 'border-indigo-500 bg-indigo-50',  icon: Sparkles,     iconCls: 'text-indigo-600',  badge: 'bg-indigo-100 text-indigo-700' },
+  locked: { label: 'Up Next',     dot: 'bg-slate-300',   ring: 'border-slate-300 bg-white',       icon: Lock,         iconCls: 'text-slate-400',   badge: 'bg-slate-100 text-slate-500' },
+};
+
+function RoadmapItem({ item, index, isLast }) {
+  const [open, setOpen] = useState(item.status === 'active');
+  const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.locked;
+  const Icon = cfg.icon;
+  const delay = `${index * 60}ms`;
+
+  return (
+    <div
+      className="animate-slide-left flex gap-4"
+      style={{ animationDelay: delay, animationFillMode: 'both' }}
+    >
+      {/* Timeline spine */}
+      <div className="flex flex-col items-center">
+        <div className={`h-9 w-9 shrink-0 rounded-full border-2 flex items-center justify-center ${cfg.ring} card-hover transition-all`}>
+          <Icon size={15} className={cfg.iconCls} />
+        </div>
+        {!isLast && <div className="w-px flex-1 bg-slate-200 mt-1 mb-1" />}
+      </div>
+
+      {/* Content card */}
+      <div className={`flex-1 mb-5 rounded-2xl border bg-white shadow-sm overflow-hidden transition-all duration-200 ${
+        item.status === 'active' ? 'border-indigo-200 shadow-md ring-1 ring-indigo-50' : 'border-slate-100'
+      }`}>
+        <button
+          type="button"
+          onClick={() => setOpen(p => !p)}
+          aria-expanded={open}
+          className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-slate-50/80 transition-colors group cursor-pointer"
+        >
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-0.5">
+              {item.cluster || 'Core Milestone'}
+            </p>
+            <p className={`text-sm font-bold ${item.status === 'locked' ? 'text-slate-400' : 'text-slate-900'}`}>
+              {item.title}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${cfg.badge}`}>
+                <Icon size={9} /> {cfg.label}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
+                <Clock size={10} /> {item.duration || '35 min'}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
+                <BookOpen size={10} /> {item.type || 'Applied Practice'}
+              </span>
+            </div>
+          </div>
+          <div className="shrink-0 text-slate-400 group-hover:text-slate-600 transition-colors">
+            {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        </button>
+
+        {open && (
+          <div className="animate-slide-up border-t border-slate-100 px-5 py-4 space-y-3">
+            <div className="rounded-xl bg-indigo-50/70 border border-indigo-100/80 p-3.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-1">
+                Pedagogical Objective
+              </p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                {item.whyThisStep || `Targeted mastery of ${item.title} calibrated to your learning track frontier.`}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600">
+                {item.difficulty || 'Applied Standard'}
+              </span>
+            </div>
+            {item.status !== 'locked' && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-sm cursor-pointer"
+              >
+                {item.status === 'done' ? 'Review Concept' : 'Start Learning Module'} <ArrowRight size={12} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function RoadmapPage() {
-  const [done, setDone] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_ROADMAP_DONE);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // fallback
-    }
-    return roadmapItems.filter((x) => x.done).map((x) => x.id);
-  });
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
+  // Load real assessment result from storage
+  const assessmentResult = useMemo(() => {
     try {
-      localStorage.setItem(STORAGE_ROADMAP_DONE, JSON.stringify(done));
-    } catch {
-      // ignore
-    }
-  }, [done]);
-
-  const roadmapContext = useMemo(() => {
-    try {
-      const raw = localStorage.getItem('skillpath_generated_roadmap_context');
+      const raw = localStorage.getItem('skillpath_assessment_result');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   }, []);
 
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [dailyMinutes, setDailyMinutes] = useState(45);
-  const [expandedRationales, setExpandedRationales] = useState({});
-  const [activeRevisions, setActiveRevisions] = useState({ 2: true });
+  // Transform backend skills into real roadmap milestones
+  const milestones = useMemo(() => {
+    if (!assessmentResult?.skills || assessmentResult.skills.length === 0) {
+      return [];
+    }
 
-  const remainingMinutes = roadmapItems
-    .filter((item) => !done.includes(item.id))
-    .reduce((acc, item) => acc + (parseInt(item.duration, 10) || 30), 0);
+    return assessmentResult.skills.map((skill, index) => {
+      const isMastered = skill.state === 'MASTERED';
+      const isFrontier = skill.state === 'FRONTIER';
 
-  const daysToFinish = Math.max(1, Math.ceil(remainingMinutes / dailyMinutes));
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + daysToFinish);
-  const formattedDate = targetDate.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+      return {
+        id: skill.skillId || `skill-${index}`,
+        title: skill.name,
+        cluster: skill.cluster || 'Technical Core',
+        status: isMastered ? 'done' : isFrontier ? 'active' : 'locked',
+        duration: isMastered ? '25 min' : isFrontier ? '40 min' : '50 min',
+        type: isMastered ? 'Verified Competency' : isFrontier ? 'Target Learning Module' : 'Upcoming Prerequisite',
+        difficulty: isMastered ? 'Mastered' : isFrontier ? 'Focus Area' : 'Advanced Prerequisite',
+        whyThisStep: isMastered
+          ? `Verified proficiency during adaptive testing (θ = ${assessmentResult.theta}). Available for refresher review.`
+          : isFrontier
+          ? `Topological frontier node identified for immediate skill acquisition in ${skill.cluster || 'your track'}.`
+          : `Prerequisite competencies must be consolidated before activating this milestone.`,
+      };
+    });
+  }, [assessmentResult]);
 
-  const toggleDone = (id) => {
-    setDone((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
+  const completedCount = milestones.filter(m => m.status === 'done').length;
+  const totalCount = milestones.length;
+  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const toggleRationale = (id) => {
-    setExpandedRationales((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  const resolveRevision = (id) => {
-    setActiveRevisions((prev) => ({ ...prev, [id]: false }));
-  };
-
-  const filteredItems = roadmapItems.filter((item) => {
-    const isDone = done.includes(item.id);
-    const hasActiveRev = activeRevisions[item.id];
-    if (activeFilter === 'completed') return isDone;
-    if (activeFilter === 'revision') return hasActiveRev;
-    if (activeFilter === 'in-progress') return !isDone && !hasActiveRev;
-    return true;
-  });
-
-  // Group by milestone
-  const milestones = [...new Set(roadmapItems.map((item) => item.milestone))];
-  const completionPercentage = Math.round((done.length / roadmapItems.length) * 100);
+  const filtered = useMemo(() => {
+    if (filter === 'all') return milestones;
+    return milestones.filter(m => m.status === filter);
+  }, [filter, milestones]);
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center border-b border-slate-200/80 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="indigo" icon={Sparkles}>
-              TAILORED CURRICULUM
-            </Badge>
-            <span className="text-xs font-medium text-slate-500">Topological Milestone Graph</span>
-          </div>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            Personalized Learning Roadmap
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 max-w-2xl">
-            A dependency-ordered sequence of milestones designed to eliminate identified gaps and build verified proof of work.
-          </p>
-          {roadmapContext && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <Badge variant="indigo" icon={Zap}>
-                CAT Calibrated θ = {roadmapContext.theta ?? 0.0}
-              </Badge>
-              <span className="text-xs text-slate-500 font-medium">
-                Placement Tier: <strong className="text-slate-800">{roadmapContext.level}</strong>
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDone(roadmapItems.map((i) => i.id))}
-          >
-            Mark All Completed
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDone([])}
-          >
-            Reset Progress
-          </Button>
-        </div>
+    <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="animate-slide-up">
+        <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">Your Adaptive Plan</span>
+        <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900">Learning Roadmap</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          {totalCount > 0
+            ? `${completedCount} of ${totalCount} milestones mastered (${pct}% of your diagnostic track).`
+            : 'Personalized milestones generated from your adaptive assessment.'}
+        </p>
       </div>
 
-      {/* Progress & Smart Study Planner Grid */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {/* Progress Card (2 cols) */}
-        <Card className="md:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
-                ROADMAP COMPLETION
-              </span>
-              <p className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
-                {done.length} of {roadmapItems.length} Milestones Mastered ({completionPercentage}%)
-              </p>
+      {totalCount === 0 ? (
+        <div className="rounded-2xl border border-slate-100 bg-white p-8 sm:p-12 text-center space-y-4 shadow-sm">
+          <div className="h-14 w-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-indigo-600">
+            <Map size={26} />
+          </div>
+          <div className="max-w-md mx-auto">
+            <h2 className="text-lg font-bold text-slate-900">No Assessment Data Found</h2>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              Complete your initial diagnostic test to allow the backend adaptive engine to map your verified skills and frontier milestones.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Button variant="indigo" onClick={() => navigate('/assessment')}>
+              Take Diagnostic Test <ArrowRight size={15} />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Progress bar */}
+          <div className="animate-slide-up delay-75 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold text-slate-700">Overall Track Progress</p>
+              <p className="text-xs font-extrabold text-indigo-600">{pct}%</p>
             </div>
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-sm border border-indigo-100">
-              {completionPercentage}%
-            </span>
+            <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div className="mt-3 flex items-center gap-4 text-[10px] font-semibold">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> {completedCount} Mastered
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-indigo-500" />{' '}
+                {milestones.filter(m => m.status === 'active').length} In Progress
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-slate-300" />{' '}
+                {milestones.filter(m => m.status === 'locked').length} Up Next
+              </span>
+            </div>
           </div>
 
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full bg-indigo-600 transition-all duration-500 rounded-full"
-              style={{ width: `${completionPercentage}%` }}
-            />
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex flex-wrap gap-1.5 pt-1 text-xs">
+          {/* Filter tabs */}
+          <div className="animate-slide-up delay-150 flex rounded-full bg-slate-200/60 p-1 w-fit gap-0.5">
             {[
-              ['all', 'All Topics'],
-              ['in-progress', 'In Progress'],
-              ['revision', 'Revision Loops'],
-              ['completed', 'Completed'],
-            ].map(([id, label]) => (
+              ['all', 'All'],
+              ['done', 'Mastered'],
+              ['active', 'In Progress'],
+              ['locked', 'Up Next'],
+            ].map(([key, label]) => (
               <button
-                key={id}
+                key={key}
                 type="button"
-                onClick={() => setActiveFilter(id)}
-                className={`rounded-lg px-3 py-1.5 font-medium transition cursor-pointer ${
-                  activeFilter === id
-                    ? 'bg-slate-900 text-white shadow-2xs font-semibold'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                onClick={() => setFilter(key)}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  filter === key
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {label}
               </button>
             ))}
           </div>
-        </Card>
 
-        {/* Smart Study Planner Card */}
-        <Card className="space-y-3 border-indigo-100 bg-slate-50/50">
-          <div className="flex items-center gap-1.5 text-indigo-700 text-xs font-bold uppercase tracking-wider">
-            <Calendar size={14} /> Smart Study Planner
-          </div>
-          <p className="text-xs text-slate-600">
-            Based on {remainingMinutes} mins of pending study time:
-          </p>
-
-          <div className="flex items-center gap-1.5">
-            {[30, 45, 60].map((mins) => (
-              <button
-                key={mins}
-                type="button"
-                onClick={() => setDailyMinutes(mins)}
-                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition border cursor-pointer ${
-                  dailyMinutes === mins
-                    ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {mins}m/day
-              </button>
-            ))}
-          </div>
-
-          <div className="rounded-lg bg-white p-3 border border-slate-200/80 space-y-1">
-            <p className="text-[11px] font-semibold text-slate-500">Projected Target Completion</p>
-            <p className="text-sm font-bold text-slate-900">{formattedDate}</p>
-            <p className="text-[10px] text-slate-400">~{daysToFinish} days at current commitment</p>
-          </div>
-        </Card>
-      </div>
-
-      {/* Topological Milestone Groups */}
-      <div className="space-y-8">
-        {milestones.map((mName) => {
-          const mItems = filteredItems.filter((item) => item.milestone === mName);
-          if (mItems.length === 0) return null;
-
-          const mCompleted = mItems.filter((i) => done.includes(i.id)).length;
-
-          return (
-            <div key={mName} className="space-y-3">
-              {/* Milestone Header */}
-              <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-                    <Layers size={15} />
-                  </span>
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900">{mName}</h2>
-                </div>
-                <span className="text-xs font-medium text-slate-500">
-                  {mCompleted} of {mItems.length} completed
-                </span>
+          {/* Timeline */}
+          <div className="pt-2">
+            {filtered.length === 0 ? (
+              <div className="animate-fade-in rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+                <Map size={28} className="mx-auto text-slate-300 mb-2" />
+                <p className="text-sm font-semibold text-slate-500">No milestones match this filter.</p>
               </div>
-
-              {/* Milestone Items */}
-              <div className="space-y-3">
-                {mItems.map((item) => {
-                  const isDone = done.includes(item.id);
-                  const isRevisionActive = activeRevisions[item.id];
-                  const isRationaleOpen = expandedRationales[item.id];
-
-                  return (
-                    <Card
-                      key={item.id}
-                      className={`transition-all duration-150 ${
-                        isRevisionActive
-                          ? 'border-amber-300 bg-amber-50/20'
-                          : isDone
-                          ? 'border-slate-200 bg-white'
-                          : 'border-slate-200/90 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start justify-between">
-                        <div className="flex items-start gap-3.5">
-                          <button
-                            type="button"
-                            onClick={() => toggleDone(item.id)}
-                            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition cursor-pointer ${
-                              isDone
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200 hover:text-slate-600'
-                            }`}
-                            aria-label={isDone ? 'Mark as incomplete' : 'Mark as complete'}
-                          >
-                            {isDone ? <CircleCheck size={20} /> : <PlayCircle size={20} />}
-                          </button>
-
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                                {item.topic}
-                              </span>
-                              <span className="text-slate-300">·</span>
-                              <span className="text-xs text-slate-500">{item.type}</span>
-                              <Badge
-                                variant={item.difficulty === 'Advanced' ? 'indigo' : 'neutral'}
-                                size="sm"
-                              >
-                                {item.difficulty}
-                              </Badge>
-                            </div>
-
-                            <h3
-                              className={`text-sm sm:text-base font-bold ${
-                                isDone ? 'text-slate-400 line-through' : 'text-slate-900'
-                              }`}
-                            >
-                              {item.title}
-                            </h3>
-
-                            <div className="flex items-center gap-4 text-xs text-slate-500 pt-1">
-                              <span className="flex items-center gap-1">
-                                <Clock3 size={13} /> {item.duration}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => toggleRationale(item.id)}
-                                className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer"
-                              >
-                                {isRationaleOpen ? 'Hide rationale' : 'Why this step?'}
-                                {isRationaleOpen ? (
-                                  <ChevronUp size={13} />
-                                ) : (
-                                  <ChevronDown size={13} />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 sm:self-center shrink-0">
-                          <Link
-                            to={`/learn/${item.slug || 'lexical-scope-closures'}`}
-                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 shadow-2xs transition"
-                          >
-                            <BookOpen size={13} />
-                            <span>Study</span>
-                            <ArrowRight size={13} />
-                          </Link>
-                          <Button
-                            variant={isDone ? 'outline' : 'secondary'}
-                            size="sm"
-                            onClick={() => toggleDone(item.id)}
-                          >
-                            {isDone ? 'Mark incomplete' : 'Mark complete'}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Transparent Rationale Box ("Why this step") */}
-                      {isRationaleOpen && (
-                        <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3.5 text-xs text-slate-700 space-y-1">
-                          <p className="font-bold flex items-center gap-1.5 text-indigo-900">
-                            <Sparkles size={13} /> Transparent Curriculum Rationale
-                          </p>
-                          <p className="leading-relaxed">{item.whyThisStep}</p>
-                        </div>
-                      )}
-
-                      {/* Remediation Loop Alert & Revision Module */}
-                      {isRevisionActive && (
-                        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
-                              <AlertCircle size={15} /> Remediation Loop Active (Weak Subtopic Detected)
-                            </div>
-                            <span className="text-[10px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                              Retest Pending
-                            </span>
-                          </div>
-                          <p className="text-xs text-amber-950 leading-relaxed">
-                            Your last diagnostic quiz showed uncertainty in microtask vs macrotask execution order. 
-                            An interactive revision module has been attached to clarify this concept before proceeding.
-                          </p>
-                          <div className="flex items-center gap-2 pt-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => resolveRevision(item.id)}
-                              className="border-amber-300 text-amber-950 bg-white hover:bg-amber-50"
-                            >
-                              <RotateCcw size={13} /> Complete Revision & Retest
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            ) : (
+              filtered.map((item, i) => (
+                <RoadmapItem
+                  key={item.id}
+                  item={item}
+                  index={i}
+                  isLast={i === filtered.length - 1}
+                />
+              ))
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

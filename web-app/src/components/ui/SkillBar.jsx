@@ -24,7 +24,7 @@ export default function SkillBar({
         <span className="font-medium text-slate-800 truncate">{name}</span>
         <div className="flex items-center gap-2 shrink-0">
           {level && (
-            <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+            <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
               {level}
             </span>
           )}

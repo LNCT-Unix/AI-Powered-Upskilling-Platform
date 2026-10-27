@@ -79,7 +79,7 @@ export default function ForgotPass({
   const hasError = touched && error;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12 sm:px-6">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:px-6" style={{ background: '#f5f3ee' }}>
       <div className="w-full max-w-md space-y-6">
         {/* Branding header */}
         <div className="flex flex-col items-center text-center">
@@ -96,7 +96,7 @@ export default function ForgotPass({
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 sm:p-8 shadow-sm">
           {formError && (
             <div
               role="alert"
@@ -145,7 +145,7 @@ export default function ForgotPass({
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>

@@ -71,7 +71,7 @@ export default function VerifyEmailPage() {
   }, [token, status, confirmEmailVerification, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#f5f3ee' }}>
       <Card className="max-w-md w-full text-center py-10 px-6 sm:px-8 space-y-6">
         <div className="flex justify-center">
           <Logo asLink={false} />
@@ -97,7 +97,7 @@ export default function VerifyEmailPage() {
             <div className="pt-3">
               <Link
                 to="/login"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
               >
                 <span>Sign In to Continue</span>
                 <ArrowRight className="h-4 w-4" />

@@ -34,7 +34,7 @@ export default function MetricCard({
         </span>
         {Icon && (
           <span
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg border text-sm ${iconClass}`}
+            className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border text-sm ${iconClass}`}
             aria-hidden="true"
           >
             <Icon size={18} />

@@ -7,6 +7,11 @@ import {
   EyeOff,
   Loader2,
   AlertCircle,
+  Video,
+  Users,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import Logo from '../ui/Logo';
 
@@ -64,56 +69,80 @@ function GitHubIcon() {
   );
 }
 
+/* ── Floating Stat Badge from Landing Page ── */
+function FloatingBadge({ icon: Icon, value, label, className = '' }) {
+  return (
+    <div className={`flex items-center gap-2.5 rounded-2xl bg-white/95 backdrop-blur-xs shadow-md border border-slate-100 px-4 py-2.5 ${className}`}>
+      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 shrink-0">
+        <Icon size={16} className="text-indigo-600" />
+      </span>
+      <div>
+        <p className="text-xs font-extrabold text-slate-900 leading-none">{value}</p>
+        <p className="text-[10px] font-medium text-slate-500 mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Colorful Avatar Card from Landing Page ── */
+function AvatarBadge({ initials, bg, rotate = 0, className = '' }) {
+  return (
+    <div
+      className={`h-16 w-14 rounded-2xl flex items-center justify-center font-black text-white text-sm select-none shadow-md ${bg} ${className}`}
+      style={{ transform: `rotate(${rotate}deg)` }}
+      aria-hidden="true"
+    >
+      {initials}
+    </div>
+  );
+}
+
 export default function Login({
-  userName = 'Learner',
   onSubmit,
   onGoogleSignIn,
   onGitHubSignIn,
-  forgotPasswordHref = '/forgot-password',
   signUpHref = '/signup',
+  forgotPasswordHref = '/forgot-password',
+  initialValues = { email: '', password: '' },
 }) {
-  const [values, setValues] = useState({
-    email: '',
-    password: '',
-    remember: false,
-  });
+  const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formError, setFormError] = useState('');
+  const [formError, setFormError] = useState(null);
 
   function handleChange(e) {
-    const { name, value, type, checked } = e.target;
-    const next = {
-      ...values,
-      [name]: type === 'checkbox' ? checked : value,
-    };
-    setValues(next);
+    const { name, value } = e.target;
+    const nextValues = { ...values, [name]: value };
+    setValues(nextValues);
 
     if (touched[name]) {
-      setErrors(validate(next));
+      const fieldErrors = validate(nextValues);
+      setErrors(prev => ({ ...prev, [name]: fieldErrors[name] }));
     }
   }
 
   function handleBlur(e) {
     const { name } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors(validate(values));
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const fieldErrors = validate(values);
+    setErrors(prev => ({ ...prev, [name]: fieldErrors[name] }));
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const validationErrors = validate(values);
-    setErrors(validationErrors);
-    setTouched({ email: true, password: true });
+    setFormError(null);
 
-    if (Object.keys(validationErrors).length > 0) {
+    setTouched({ email: true, password: true });
+    const fieldErrors = validate(values);
+    setErrors(fieldErrors);
+
+    if (Object.keys(fieldErrors).length > 0) {
       return;
     }
 
     setLoading(true);
-    setFormError('');
 
     try {
       if (onSubmit) {
@@ -127,30 +156,117 @@ export default function Login({
   }
 
   const inputBase =
-    'w-full rounded-lg border bg-slate-50 py-2.5 pl-10 pr-3.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600';
+    'w-full rounded-full border bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100';
   const okInput = 'border-slate-200';
-  const badInput = 'border-rose-400 focus:border-rose-600 focus:ring-rose-600 bg-rose-50/20';
+  const badInput = 'border-rose-400 focus:border-rose-600 focus:ring-rose-100 bg-rose-50/20';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12 sm:px-6">
-      <div className="w-full max-w-md space-y-6">
-        {/* Branding header */}
-        <div className="flex flex-col items-center text-center">
+    <div className="min-h-screen flex flex-col lg:flex-row text-slate-900" style={{ background: '#f5f3ee' }}>
+      {/* ── Left Column: Art & Visual Showcase ───────────── */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-7/12 flex-col justify-center items-center p-8 xl:p-14 relative overflow-hidden select-none border-r border-slate-200/60">
+        {/* Soft background glow circles */}
+        <div className="absolute top-1/4 -right-12 w-96 h-96 rounded-full bg-indigo-200/30 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 -left-12 w-96 h-96 rounded-full bg-amber-200/30 blur-3xl pointer-events-none" />
+
+        {/* Art Container Card */}
+        <div className="relative w-full max-w-lg rounded-3xl bg-gradient-to-br from-white/90 via-white/80 to-indigo-50/50 p-8 xl:p-10 border border-slate-100 shadow-xl backdrop-blur-xs space-y-8">
+          {/* Header pill */}
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">
+              <Sparkles size={13} /> ADAPTIVE LEARNING STUDIO
+            </span>
+            <span className="text-xs font-bold text-slate-400">Phase 1 — 5</span>
+          </div>
+
+          {/* Heading */}
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-snug">
+              Diagnose gaps,<br />
+              learn with focus,<br />
+              <span className="text-indigo-600">get job-ready.</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
+              Personalized Computerized Adaptive Testing (CAT) and topological prerequisite roadmaps tailored for Indian tech learners.
+            </p>
+          </div>
+
+          {/* Visual Showcase collage */}
+          <div className="relative h-64 w-full rounded-2xl bg-gradient-to-br from-indigo-500/10 via-amber-500/10 to-teal-500/10 border border-slate-200/60 p-4 overflow-hidden flex items-center justify-center">
+            {/* Background avatar badges with angles matching landing page */}
+            <AvatarBadge initials="PK" bg="bg-yellow-400" rotate={-8} className="absolute left-6 top-6" />
+            <AvatarBadge initials="RS" bg="bg-teal-400" rotate={6} className="absolute left-10 bottom-6" />
+            <AvatarBadge initials="AM" bg="bg-purple-400" rotate={5} className="absolute right-6 top-8" />
+            <AvatarBadge initials="VJ" bg="bg-pink-400" rotate={-6} className="absolute right-12 bottom-6" />
+
+            {/* Central hero badge */}
+            <div className="relative z-10 rounded-2xl bg-white p-4 shadow-xl border border-slate-100 text-center space-y-1">
+              <div className="text-4xl">👩‍💻</div>
+              <p className="text-xs font-extrabold text-slate-900">CAT Adaptive Engine</p>
+              <p className="text-[10px] text-indigo-600 font-bold">Item Response Theory</p>
+            </div>
+
+            {/* Floating stat pill cards */}
+            <FloatingBadge
+              icon={Video}
+              value="3K+"
+              label="Practice problems"
+              className="absolute -left-2 top-24 z-20 shadow-md"
+            />
+            <FloatingBadge
+              icon={CheckCircle2}
+              value="120+"
+              label="Skills verified"
+              className="absolute -right-2 top-24 z-20 shadow-md"
+            />
+          </div>
+
+          {/* Three Feature Highlights */}
+          <div className="grid gap-3 sm:grid-cols-3 pt-2">
+            {[
+              { title: '15-Min Test', sub: 'Adaptive diagnostic' },
+              { title: 'DAG Roadmap', sub: 'Skip what you know' },
+              { title: 'Job Matching', sub: 'Naukri & LinkedIn' },
+            ].map(({ title, sub }) => (
+              <div key={title} className="rounded-2xl border border-slate-100 bg-white/90 p-3 text-center shadow-xs">
+                <p className="text-xs font-extrabold text-slate-900">{title}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right Column: Login Form ────────────────────── */}
+      <div className="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 bg-white/80 lg:bg-white backdrop-blur-xs shadow-xs">
+        {/* Top: Logo */}
+        <div className="flex items-center justify-between">
           <Logo />
-          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Welcome back, {userName}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Sign in to access your personalized learning roadmap.
-          </p>
+          <Link
+            to="/"
+            className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition"
+          >
+            ← Back to Home
+          </Link>
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">
+        {/* Center: Auth Form Container */}
+        <div className="w-full max-w-sm mx-auto my-8 space-y-6">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
+              Welcome back
+            </span>
+            <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+              Sign in to SkillPath
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
+              Access your personalized adaptive learning roadmap.
+            </p>
+          </div>
+
           {formError && (
             <div
               role="alert"
-              className="mb-5 flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+              className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-800"
             >
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600" aria-hidden="true" />
               <span>{formError}</span>
@@ -189,9 +305,17 @@ export default function Login({
 
             {/* Password input */}
             <div>
-              <label htmlFor="password" className="mb-1.5 block text-xs font-semibold text-slate-700">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password" className="text-xs font-semibold text-slate-700">
+                  Password
+                </label>
+                <Link
+                  to={forgotPasswordHref}
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock
                   className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
@@ -214,7 +338,7 @@ export default function Login({
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-slate-600 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -224,31 +348,11 @@ export default function Login({
               )}
             </div>
 
-            {/* Remember me & forgot password */}
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-600">
-                <input
-                  type="checkbox"
-                  name="remember"
-                  checked={values.remember}
-                  onChange={handleChange}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
-                />
-                <span>Remember me</span>
-              </label>
-              <a
-                href={forgotPasswordHref}
-                className="font-medium text-indigo-600 hover:text-indigo-800 transition"
-              >
-                Forgot password?
-              </a>
-            </div>
-
             {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -256,13 +360,16 @@ export default function Login({
                   <span>Signing in...</span>
                 </>
               ) : (
-                <span>Sign In</span>
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight size={15} />
+                </>
               )}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="my-5 flex items-center gap-3">
+          <div className="flex items-center gap-3 pt-1">
             <div className="h-px flex-1 bg-slate-200" />
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               or continue with
@@ -276,7 +383,7 @@ export default function Login({
               type="button"
               onClick={onGoogleSignIn}
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-60 cursor-pointer"
             >
               <GoogleIcon />
               <span>Google</span>
@@ -287,7 +394,7 @@ export default function Login({
                 type="button"
                 onClick={onGitHubSignIn}
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-60 cursor-pointer"
               >
                 <GitHubIcon />
                 <span>GitHub</span>
@@ -295,19 +402,20 @@ export default function Login({
             )}
           </div>
 
-          <p className="mt-6 text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-slate-500 pt-2">
             Don't have an account?{' '}
             <Link
               to={signUpHref}
-              className="font-semibold text-indigo-600 hover:text-indigo-800 transition"
+              className="font-bold text-indigo-600 hover:text-indigo-800 transition"
             >
-              Create account
+              Create free account
             </Link>
           </p>
         </div>
 
-        <p className="text-center text-xs text-slate-400">
-          Protected by Enterprise OAuth2 & JWT gateway session security.
+        {/* Bottom */}
+        <p className="text-center text-[11px] text-slate-400">
+          Protected by Enterprise OAuth2 & JWT session encryption.
         </p>
       </div>
     </div>

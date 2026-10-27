@@ -1,17 +1,17 @@
-import { Compass } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Logo({ onClick, asLink = true }) {
   const content = (
     <div className="flex items-center gap-2.5">
-      <span className="grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-lg bg-slate-900 text-indigo-400 shadow-xs border border-slate-800">
-        <Compass size={19} className="text-indigo-400" />
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 shadow-sm text-white">
+        <BookOpen size={18} className="text-white" />
       </span>
       <div className="flex flex-col text-left leading-none">
-        <span className="text-base sm:text-lg font-bold tracking-tight text-slate-900">
-          AI<span className="text-indigo-600">Upskill</span>
+        <span className="text-lg font-extrabold tracking-tight text-slate-900">
+          SkillPath
         </span>
-        <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+        <span className="text-[10px] font-bold tracking-widest text-indigo-600 uppercase mt-0.5">
           Learning Engine
         </span>
       </div>
@@ -23,7 +23,7 @@ export default function Logo({ onClick, asLink = true }) {
       <Link
         to="/"
         className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
-        aria-label="AI Upskill Home"
+        aria-label="SkillPath Home"
       >
         {content}
       </Link>
@@ -35,7 +35,7 @@ export default function Logo({ onClick, asLink = true }) {
       onClick={onClick}
       type="button"
       className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 cursor-pointer"
-      aria-label="AI Upskill Home"
+      aria-label="SkillPath Home"
     >
       {content}
     </button>

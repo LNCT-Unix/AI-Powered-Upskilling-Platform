@@ -1,511 +1,202 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  ArrowRight,
-  Check,
-  ChevronRight,
-  Menu,
-  X,
-  LogIn,
-  Sparkles,
-  Layers,
-  Map,
-  ChartNoAxesColumnIncreasing,
-  Code2,
-  Server,
-  Cloud,
-  Cpu,
-  ShieldCheck,
-  Clock
-} from 'lucide-react';
-import Button from '../components/ui/Button';
-import Logo from '../components/ui/Logo';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import ScoreRing from '../components/ui/ScoreRing';
-import SkillBar from '../components/ui/SkillBar';
-import { useAuth } from '../hooks/useAuth';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, BookOpen, Users, Video, CheckCircle2 } from 'lucide-react';
 
-const TRACKS_PREVIEW = [
-  {
-    id: 'fullstack',
-    title: 'Full-Stack Web Development',
-    tagline: 'Modern React 19, TypeScript, Distributed State & Fullstack Cloud',
-    icon: Code2,
-    badge: 'Popular Track',
-    duration: '6-8 Weeks',
-    topicsCount: 18,
-  },
-  {
-    id: 'backend',
-    title: 'Backend Systems & Architecture',
-    tagline: 'Spring Boot, High-Throughput APIs, Kafka Queues & SQL Optimization',
-    icon: Server,
-    badge: 'Enterprise Demand',
-    duration: '8-10 Weeks',
-    topicsCount: 22,
-  },
-  {
-    id: 'devops',
-    title: 'Cloud Engineering & DevOps',
-    tagline: 'Docker, Kubernetes, AWS/GCP Infrastructures & Production CI/CD',
-    icon: Cloud,
-    badge: 'Infrastructure',
-    duration: '6-8 Weeks',
-    topicsCount: 16,
-  },
-  {
-    id: 'ai-data',
-    title: 'AI Engineering & Applied ML',
-    tagline: 'Python, LLMs, Vector Databases, RAG Pipelines & Agent Orchestration',
-    icon: Cpu,
-    badge: 'Advanced AI',
-    duration: '8-10 Weeks',
-    topicsCount: 20,
-  },
-];
+/* ── Stat badge floating card ─────────────────────────── */
+function StatBadge({ icon: Icon, value, label, className = '' }) {
+  return (
+    <div className={`flex items-center gap-2.5 rounded-2xl bg-white shadow-sm border border-slate-100 px-4 py-2.5 ${className}`}>
+      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100">
+        <Icon size={16} className="text-indigo-600" />
+      </span>
+      <div>
+        <p className="text-sm font-extrabold text-slate-900 leading-none">{value}</p>
+        <p className="text-[11px] text-slate-500 mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
+}
 
-const PLATFORM_FEATURES = [
-  {
-    icon: Sparkles,
-    title: 'Adaptive Diagnostic Assessment',
-    text: 'Evaluate your proficiency across 5 engineering dimensions to establish an honest baseline ability score.',
-    route: '/assessment',
-  },
-  {
-    icon: Map,
-    title: 'Topological Learning Roadmap',
-    text: 'A structured, dependency-ordered sequence of milestones designed to close gaps with zero redundant study.',
-    route: '/roadmap',
-  },
-  {
-    icon: Layers,
-    title: 'Interactive Skill Graph',
-    text: 'Visualize prerequisites and knowledge relationships before progressing into high-complexity architecture.',
-    route: '/graph',
-  },
-  {
-    icon: ChartNoAxesColumnIncreasing,
-    title: 'Analytics & Verification',
-    text: 'Track real learning velocity, habit streaks, and preparation for verifiable capstone credentials.',
-    route: '/analytics',
-  },
-];
+/* ── Avatar card (coloured background + initials) ──────── */
+function AvatarCard({ initials, bg, size = 'md', rotate = 0, className = '' }) {
+  const sizes = { sm: 'h-20 w-16', md: 'h-28 w-22', lg: 'h-36 w-28' };
+  return (
+    <div
+      className={`${sizes[size]} rounded-2xl flex items-center justify-center font-bold text-white text-lg select-none shadow-md ${bg} ${className}`}
+      style={{ transform: `rotate(${rotate}deg)` }}
+      aria-hidden="true"
+    >
+      {initials}
+    </div>
+  );
+}
 
-const WORKFLOW_STEPS = [
-  {
-    num: '01',
-    title: 'Diagnose Baseline',
-    desc: 'Take an adaptive 10-question evaluation that analyzes core prerequisites, theory, syntax, and problem-solving.',
-  },
-  {
-    num: '02',
-    title: 'Generate Roadmap',
-    desc: 'The AI engine eliminates mastered topics and compiles a topological milestone path calibrated to your schedule.',
-  },
-  {
-    num: '03',
-    title: 'Learn & Remediate',
-    desc: 'Follow curated modules and exercises. If a quiz score is below threshold, automated revision loops bridge the gap.',
-  },
-  {
-    num: '04',
-    title: 'Verify & Credential',
-    desc: 'Build capstone projects, undergo AI code evaluation, and earn verifiable proof-of-competency credentials.',
-  },
-];
+/* ── Feature row ───────────────────────────────────────── */
+function Feature({ title, desc }) {
+  return (
+    <div className="flex items-start gap-3">
+      <CheckCircle2 size={18} className="text-indigo-600 shrink-0 mt-0.5" />
+      <div>
+        <p className="text-sm font-semibold text-slate-900">{title}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-
-  const handleStartDiagnostic = () => {
-    if (isAuthenticated) {
-      navigate('/onboarding');
-    } else {
-      navigate('/login', { state: { from: { pathname: '/onboarding' } } });
-    }
-  };
-
-  const handleOpenDashboard = () => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    } else {
-      navigate('/login', { state: { from: { pathname: '/dashboard' } } });
-    }
-  };
 
   return (
-    <div id="top" className="min-h-screen bg-white text-slate-900 select-none">
-      {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur">
-        <nav
-          className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8"
-          aria-label="Main navigation"
-        >
-          <Logo onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} asLink={false} />
+    <div className="min-h-screen" style={{ background: '#f5f3ee' }}>
+      {/* ── Navbar ──────────────────────────────────────── */}
+      <header className="flex items-center justify-between px-6 sm:px-10 py-4">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
+            <BookOpen size={16} className="text-white" />
+          </span>
+          <span className="text-lg font-extrabold text-slate-900">SkillPath</span>
+        </div>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden items-center gap-7 md:flex text-sm font-medium text-slate-600">
-            <a href="#tracks" className="hover:text-slate-900 transition-colors">
-              Tracks
-            </a>
-            <a href="#features" className="hover:text-slate-900 transition-colors">
-              Platform
-            </a>
-            <a href="#how" className="hover:text-slate-900 transition-colors">
-              Methodology
-            </a>
-
-            {isAuthenticated ? (
-              <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-                Open Dashboard
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
-                <LogIn size={15} /> Sign in
-              </Button>
-            )}
-
-            <Button
-              variant="indigo"
-              size="sm"
-              onClick={handleStartDiagnostic}
-              className="gap-1.5"
-            >
-              Start Diagnostic
-              <ArrowRight size={15} />
-            </Button>
-          </div>
-
-          {/* Mobile hamburger button */}
-          <button
-            type="button"
-            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
-            aria-label="Toggle menu"
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+        <nav className="hidden sm:flex items-center gap-8 text-sm font-medium text-slate-600">
+          <a href="#" className="text-slate-900 border-b-2 border-indigo-600 pb-0.5">Home</a>
+          <a href="#" className="hover:text-slate-900 transition">Courses</a>
+          <a href="#" className="hover:text-slate-900 transition">About</a>
+          <a href="#" className="hover:text-slate-900 transition">Blog</a>
         </nav>
 
-        {/* Mobile menu dropdown */}
-        {mobileOpen && (
-          <div className="border-t border-slate-200 bg-white px-4 py-4 space-y-3 md:hidden shadow-lg">
-            <a
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              href="#tracks"
-            >
-              Curriculum Tracks
-            </a>
-            <a
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              href="#features"
-            >
-              Platform Capabilities
-            </a>
-            <a
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              href="#how"
-            >
-              How It Works
-            </a>
-            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-              <Button
-                variant="outline"
-                className="w-full justify-center"
-                onClick={() => {
-                  setMobileOpen(false);
-                  navigate('/login');
-                }}
-              >
-                Sign in
-              </Button>
-              <Button
-                variant="indigo"
-                className="w-full justify-center"
-                onClick={() => {
-                  setMobileOpen(false);
-                  handleStartDiagnostic();
-                }}
-              >
-                Start Diagnostic & Onboarding
-              </Button>
-            </div>
-          </div>
-        )}
+        <Link
+          to="/login"
+          className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-sm"
+        >
+          Get Started
+        </Link>
       </header>
 
-      <main>
-        {/* Hero Section */}
-        <section className="relative border-b border-slate-200/80 bg-slate-50/50 py-16 sm:py-24 lg:py-28">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid items-center gap-12 lg:grid-cols-12">
-              {/* Left Column: Value Proposition */}
-              <div className="lg:col-span-7 space-y-6 text-left">
-                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-800">
-                  <Sparkles size={13} /> ADAPTIVE LEARNING & VERIFICATION
-                </div>
+      {/* ── Hero ────────────────────────────────────────── */}
+      <main className="relative overflow-hidden">
+        {/* Heading block */}
+        <div className="text-center pt-12 pb-6 px-4">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight max-w-3xl mx-auto">
+            Diagnose your gaps,<br />
+            build real skills,<br />
+            get hired.
+          </h1>
+          <p className="mt-5 text-base sm:text-lg text-slate-500 max-w-md mx-auto">
+            Adaptive diagnostic, personalised roadmap, and job-match verification — built for Indian learners.
+          </p>
+          <button
+            onClick={() => navigate('/signup')}
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-md"
+          >
+            Start for free <ArrowRight size={16} />
+          </button>
+        </div>
 
-                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem] leading-[1.12]">
-                  Know what to learn next.{' '}
-                  <span className="text-indigo-600 block sm:inline">Eliminate skill gaps.</span>
-                </h1>
+        {/* Photo collage area */}
+        <div className="relative mx-auto max-w-4xl h-80 sm:h-96 px-4">
+          {/* Left side cards */}
+          <AvatarCard initials="PK" bg="bg-yellow-400" size="sm" rotate={-4}
+            className="absolute left-4 sm:left-16 top-4" />
+          <AvatarCard initials="RS" bg="bg-teal-400" size="sm" rotate={3}
+            className="absolute left-0 sm:left-8 top-28" />
 
-                <p className="max-w-2xl text-base sm:text-lg text-slate-600 leading-relaxed">
-                  Engineered for college students, job seekers, and working professionals. Take an adaptive diagnostic assessment, follow a personalized milestone roadmap, and verify mastery with structured proof of work.
+          {/* Centre large card */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-0 h-64 w-44 sm:w-52 rounded-3xl bg-yellow-300 flex items-center justify-center shadow-lg">
+            <div className="h-56 w-40 sm:w-48 rounded-2xl bg-gradient-to-b from-indigo-200 to-indigo-400 flex items-end justify-center overflow-hidden">
+              <div className="text-5xl mb-4">👩‍💻</div>
+            </div>
+          </div>
+
+          {/* Right side cards */}
+          <AvatarCard initials="AM" bg="bg-purple-300" size="sm" rotate={2}
+            className="absolute right-8 sm:right-20 top-2" />
+          <AvatarCard initials="VJ" bg="bg-pink-300" size="sm" rotate={-3}
+            className="absolute right-2 sm:right-6 top-32" />
+          <AvatarCard initials="NK" bg="bg-sky-300" size="sm" rotate={4}
+            className="absolute right-16 sm:right-36 top-44 sm:top-52" />
+
+          {/* Floating stat badges */}
+          <StatBadge icon={Video} value="3K+" label="Practice problems"
+            className="absolute left-4 sm:left-24 top-44 sm:top-48 z-10" />
+          <StatBadge icon={Users} value="98%" label="Learner satisfaction"
+            className="absolute left-1/2 -translate-x-1/2 bottom-0 z-10" />
+          <StatBadge icon={CheckCircle2} value="120+" label="Skills verified"
+            className="absolute right-2 sm:right-16 top-44 z-10" />
+        </div>
+
+        {/* ── How it works ─────────────────────────────── */}
+        <section className="mt-16 mx-auto max-w-5xl px-6 sm:px-10">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-2">How it works</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Four steps to job-ready</h2>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { n: '01', title: 'Take the diagnostic', desc: 'A 10-question adaptive test maps your current knowledge across 5 dimensions in under 15 minutes.' },
+              { n: '02', title: 'Get your roadmap', desc: 'AI skips topics you already know and adds revision loops where you need work.' },
+              { n: '03', title: 'Learn & verify', desc: 'NPTEL, freeCodeCamp, Kaggle — curated resources with time estimates, not just links.' },
+              { n: '04', title: 'Match to jobs', desc: 'Your skill profile is compared against real JDs. You see exactly what to complete next.' },
+            ].map(({ n, title, desc }) => (
+              <div key={n} className="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm">
+                <p className="text-3xl font-black text-indigo-100 leading-none">{n}</p>
+                <p className="mt-2 text-sm font-bold text-slate-900">{title}</p>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Features ─────────────────────────────────── */}
+        <section className="mt-16 mx-auto max-w-5xl px-6 sm:px-10">
+          <div className="rounded-3xl bg-white border border-slate-100 shadow-sm p-8 sm:p-10">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-3">Why SkillPath</p>
+                <h2 className="text-2xl font-extrabold text-slate-900 leading-snug">Built for the Indian job market</h2>
+                <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+                  Every "why this step?" is backed by a real job-posting signal — not generic advice.
                 </p>
-
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                  <Button
-                    variant="indigo"
-                    size="lg"
-                    onClick={handleStartDiagnostic}
-                    className="justify-center"
-                  >
-                    Start Free Diagnostic
-                    <ArrowRight size={17} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={handleOpenDashboard}
-                    className="justify-center"
-                  >
-                    Explore Dashboard Demo
-                  </Button>
-                </div>
-
-                {/* Trust Badges */}
-                <div className="pt-4 flex flex-wrap items-center gap-5 text-xs font-medium text-slate-500">
-                  <span className="flex items-center gap-1.5">
-                    <Check size={15} className="text-emerald-600" /> 10-Question Diagnostic
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Check size={15} className="text-emerald-600" /> Automated Revision Loops
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Check size={15} className="text-emerald-600" /> Verifiable Proof of Work
-                  </span>
-                </div>
-              </div>
-
-              {/* Right Column: Live Product Preview Card */}
-              <div className="lg:col-span-5">
-                <Card className="border border-slate-200/90 shadow-md bg-white p-5 sm:p-6 space-y-5">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                        Live Learning Snapshot
-                      </span>
-                    </div>
-                    <Badge variant="indigo">Full-Stack Track</Badge>
-                  </div>
-
-                  <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <ScoreRing score={78} size={80} strokeWidth={6} color="#4f46e5" />
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Readiness Score
-                      </p>
-                      <p className="text-lg font-bold text-slate-900">78 / 100 Benchmarked</p>
-                      <p className="text-xs text-emerald-700 font-medium mt-0.5">
-                        Top 20% in Core Concepts
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Knowledge Frontier
-                    </p>
-                    <SkillBar name="JavaScript Mechanics" score={85} level="Mastered" />
-                    <SkillBar name="React State & Fiber" score={72} level="Proficient" />
-                    <SkillBar name="Relational DB & SQL" score={45} level="Revision Loop" />
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>Next milestone: Relational Queries</span>
-                    <span className="font-semibold text-indigo-600">30 min</span>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Tracks Section */}
-        <section id="tracks" className="scroll-mt-20 py-16 sm:py-20 lg:py-24 bg-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl text-left">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                Curated Engineering Tracks
-              </span>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                Industry-Calibrated Curriculums
-              </h2>
-              <p className="mt-2 text-sm sm:text-base text-slate-600">
-                Choose a technology track to generate your personalized topological roadmap.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {TRACKS_PREVIEW.map((t) => {
-                const Icon = t.icon;
-                return (
-                  <Card
-                    key={t.id}
-                    interactive
-                    onClick={handleStartDiagnostic}
-                    className="flex flex-col justify-between group border-slate-200/90 hover:border-indigo-300"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="grid h-10 w-10 place-items-center rounded-lg bg-slate-100 text-slate-700 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                          <Icon size={20} />
-                        </span>
-                        <Badge variant="neutral">{t.badge}</Badge>
-                      </div>
-
-                      <h3 className="mt-4 text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                        {t.title}
-                      </h3>
-                      <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                        {t.tagline}
-                      </p>
-                    </div>
-
-                    <div className="mt-6 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <Clock size={13} /> {t.duration}
-                      </span>
-                      <span className="font-semibold text-indigo-600 flex items-center gap-0.5">
-                        Start <ChevronRight size={13} />
-                      </span>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Platform Capabilities */}
-        <section id="features" className="scroll-mt-20 py-16 sm:py-20 lg:py-24 bg-slate-50/60 border-y border-slate-200/80">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                Architecture & Methodology
-              </span>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                Engineered for Measurable Competency
-              </h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Move beyond passive video tutorials with active diagnostic evaluation and automated remediation.
-              </p>
-            </div>
-
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {PLATFORM_FEATURES.map((f) => {
-                const Icon = f.icon;
-                return (
-                  <Card key={f.title} className="p-5 space-y-3">
-                    <span className="grid h-10 w-10 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
-                      <Icon size={20} />
-                    </span>
-                    <h3 className="text-base font-bold text-slate-900">{f.title}</h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">{f.text}</p>
-                    <button
-                      type="button"
-                      onClick={() => navigate(f.route)}
-                      className="pt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 cursor-pointer"
-                    >
-                      Explore capability <ChevronRight size={13} />
-                    </button>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* 4-Step Methodology */}
-        <section id="how" className="scroll-mt-20 py-16 sm:py-20 lg:py-24 bg-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                End-to-End Workflow
-              </span>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                The 4-Phase Learning Lifecycle
-              </h2>
-            </div>
-
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {WORKFLOW_STEPS.map((step) => (
-                <div
-                  key={step.num}
-                  className="rounded-xl border border-slate-200/90 bg-white p-5 space-y-3 shadow-2xs"
+                <button
+                  onClick={() => navigate('/signup')}
+                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition"
                 >
-                  <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                    PHASE {step.num}
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900">{step.title}</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">{step.desc}</p>
-                </div>
-              ))}
+                  Create free account <ArrowRight size={14} />
+                </button>
+              </div>
+              <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2">
+                <Feature title="Adaptive diagnostic" desc="10 questions across 5 competency areas. Results update your roadmap automatically." />
+                <Feature title="Visual skill graph" desc="See which skills are prerequisites for others. Know exactly what to learn next." />
+                <Feature title="Personalised roadmap" desc="Milestones are ordered by dependency, not alphabetically. Skips what you already know." />
+                <Feature title="Job-match score" desc="Compares your skill profile against real JDs on Naukri, LinkedIn, and Unstop." />
+                <Feature title="Project verification" desc="Submit a GitHub repo. Automated checks confirm your code actually works." />
+                <Feature title="Progress analytics" desc="Track daily study hours, streak, and dimension scores — not just a completion %" />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Bottom CTA Card */}
-        <section className="py-16 sm:py-20 bg-slate-50 border-t border-slate-200/80">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl bg-slate-900 p-8 sm:p-12 text-center text-white shadow-md space-y-5">
-              <span className="grid h-12 w-12 place-items-center rounded-xl bg-slate-800 text-indigo-400 mx-auto">
-                <ShieldCheck size={24} />
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Ready to accelerate your technical skills?
-              </h2>
-              <p className="max-w-xl mx-auto text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Take the 10-minute adaptive assessment to pinpoint knowledge gaps and establish your customized starting milestone.
-              </p>
-              <div className="pt-2 flex justify-center">
-                <Button
-                  variant="indigo"
-                  size="lg"
-                  onClick={handleStartDiagnostic}
-                >
-                  Start Adaptive Diagnostic
-                  <ArrowRight size={17} />
-                </Button>
-              </div>
-            </div>
+        {/* ── CTA footer ───────────────────────────────── */}
+        <section className="mt-16 mb-16 mx-auto max-w-2xl text-center px-6">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Ready to find your next step?</h2>
+          <p className="mt-3 text-sm text-slate-500">Takes 15 minutes. No credit card.</p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={() => navigate('/signup')}
+              className="rounded-full bg-indigo-600 px-7 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-md"
+            >
+              Start the diagnostic
+            </button>
+            <Link to="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 underline underline-offset-2">
+              Sign in
+            </Link>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white px-4 py-8 text-center text-xs text-slate-500 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto gap-4">
-        <span>© 2026 AI Upskilling Platform. All rights reserved.</span>
-        <div className="flex items-center gap-5">
-          <Link to="/login" className="hover:text-slate-900 transition">
-            Sign In
-          </Link>
-          <Link to="/onboarding" className="hover:text-slate-900 transition">
-            Start Diagnostic
-          </Link>
-          <Link to="/dashboard" className="hover:text-slate-900 transition">
-            Dashboard
-          </Link>
-        </div>
+      <footer className="border-t border-slate-200 py-6 px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+        <span>© 2025 SkillPath · AI-Powered Upskilling for Indian Learners</span>
+        <span>WCAG 2.2 AA · Secure</span>
       </footer>
     </div>
   );

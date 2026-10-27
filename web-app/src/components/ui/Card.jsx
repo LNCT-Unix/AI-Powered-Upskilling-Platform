@@ -7,10 +7,10 @@ export default function Card({
 }) {
   return (
     <section
-      className={`rounded-xl border border-slate-200/90 bg-white text-slate-900 shadow-xs transition-all duration-150 ${
+      className={`rounded-3xl border border-slate-100 bg-white text-slate-900 shadow-xs transition-all duration-150 ${
         padding ? 'p-5 sm:p-6' : ''
       } ${
-        interactive ? 'hover:border-slate-300 hover:shadow-sm cursor-pointer' : ''
+        interactive ? 'hover:border-slate-200 hover:shadow-md cursor-pointer' : ''
       } ${className}`}
       {...props}
     >
