@@ -1,202 +1,456 @@
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Users, Video, CheckCircle2 } from 'lucide-react';
-
-/* ── Stat badge floating card ─────────────────────────── */
-function StatBadge({ icon: Icon, value, label, className = '' }) {
-  return (
-    <div className={`flex items-center gap-2.5 rounded-2xl bg-white shadow-sm border border-slate-100 px-4 py-2.5 ${className}`}>
-      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100">
-        <Icon size={16} className="text-indigo-600" />
-      </span>
-      <div>
-        <p className="text-sm font-extrabold text-slate-900 leading-none">{value}</p>
-        <p className="text-[11px] text-slate-500 mt-0.5">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Avatar card (coloured background + initials) ──────── */
-function AvatarCard({ initials, bg, size = 'md', rotate = 0, className = '' }) {
-  const sizes = { sm: 'h-20 w-16', md: 'h-28 w-22', lg: 'h-36 w-28' };
-  return (
-    <div
-      className={`${sizes[size]} rounded-2xl flex items-center justify-center font-bold text-white text-lg select-none shadow-md ${bg} ${className}`}
-      style={{ transform: `rotate(${rotate}deg)` }}
-      aria-hidden="true"
-    >
-      {initials}
-    </div>
-  );
-}
-
-/* ── Feature row ───────────────────────────────────────── */
-function Feature({ title, desc }) {
-  return (
-    <div className="flex items-start gap-3">
-      <CheckCircle2 size={18} className="text-indigo-600 shrink-0 mt-0.5" />
-      <div>
-        <p className="text-sm font-semibold text-slate-900">{title}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-      </div>
-    </div>
-  );
-}
+import Logo from '../components/ui/Logo';
+import OctoMascotAnimation from '../components/ui/OctoMascotAnimation';
+import './LandingPage.css';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
-  return (
-    <div className="min-h-screen" style={{ background: '#f5f3ee' }}>
-      {/* ── Navbar ──────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-6 sm:px-10 py-4">
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-            <BookOpen size={16} className="text-white" />
-          </span>
-          <span className="text-lg font-extrabold text-slate-900">SkillPath</span>
-        </div>
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const revealEls = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.16 }
+    );
 
-        <nav className="hidden sm:flex items-center gap-8 text-sm font-medium text-slate-600">
-          <a href="#" className="text-slate-900 border-b-2 border-indigo-600 pb-0.5">Home</a>
-          <a href="#" className="hover:text-slate-900 transition">Courses</a>
-          <a href="#" className="hover:text-slate-900 transition">About</a>
-          <a href="#" className="hover:text-slate-900 transition">Blog</a>
+    revealEls.forEach((el) => {
+      if (reduced) el.classList.add('in');
+      else io.observe(el);
+    });
+
+    const countEls = document.querySelectorAll('[data-count]');
+    const cio = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          cio.unobserve(e.target);
+          const el = e.target;
+          const end = parseFloat(el.getAttribute('data-count'));
+          const dec = +(el.getAttribute('data-dec') || 0);
+          if (reduced) {
+            el.textContent = end.toFixed(dec);
+            return;
+          }
+          const t0 = performance.now();
+          const tick = (t) => {
+            const p = Math.min((t - t0) / 1400, 1);
+            const v = end * (1 - Math.pow(1 - p, 3));
+            el.textContent = v.toFixed(dec);
+            if (p < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    countEls.forEach((el) => {
+      if (reduced) {
+        el.textContent = parseFloat(el.getAttribute('data-count')).toFixed(+(el.getAttribute('data-dec') || 0));
+      } else {
+        cio.observe(el);
+      }
+    });
+
+    return () => {
+      io.disconnect();
+      cio.disconnect();
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen text-slate-900" style={{ background: '#F7F3E8', fontFamily: 'Inter, sans-serif' }}>
+      {/* ── Navbar ──────────────────────────────────────── */}
+      <header className="flex items-center justify-between px-6 sm:px-10 py-4 max-w-7xl mx-auto">
+        <Logo />
+
+        <nav className="hidden sm:flex items-center gap-8 text-sm font-semibold text-slate-600">
+          <a href="#top" className="text-[#7C5CFA] border-b-2 border-[#7C5CFA] pb-0.5">Home</a>
+          <a href="#how" className="hover:text-slate-900 transition">How it works</a>
+          <a href="#graph" className="hover:text-slate-900 transition">Skill graph</a>
+          <a href="#features" className="hover:text-slate-900 transition">Features</a>
         </nav>
 
-        <Link
-          to="/login"
-          className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-sm"
-        >
-          Get Started
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/login"
+            className="hidden sm:inline-flex text-sm font-bold text-slate-700 hover:text-slate-900 px-4 py-2"
+          >
+            Sign In
+          </Link>
+          <Link
+            to="/signup"
+            className="rounded-full bg-[#7C5CFA] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-md shadow-[#7C5CFA]/20"
+          >
+            Get Started <span className="arr">&rarr;</span>
+          </Link>
+        </div>
       </header>
 
       {/* ── Hero ────────────────────────────────────────── */}
-      <main className="relative overflow-hidden">
+      <main id="top" className="relative overflow-hidden pt-6">
         {/* Heading block */}
-        <div className="text-center pt-12 pb-6 px-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight max-w-3xl mx-auto">
+        <div className="text-center pt-8 pb-4 px-4 max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tight">
             Diagnose your gaps,<br />
-            build real skills,<br />
-            get hired.
+            build real skills with <span className="text-[#7C5CFA]">octoByte</span>.
           </h1>
-          <p className="mt-5 text-base sm:text-lg text-slate-500 max-w-md mx-auto">
-            Adaptive diagnostic, personalised roadmap, and job-match verification — built for Indian learners.
+          <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-xl mx-auto leading-relaxed">
+            Stop guessing what to learn. Octobyte measures where you actually stand with an adaptive diagnostic, turns your result into an AI-built roadmap, and tracks every skill you master along the way.
           </p>
-          <button
-            onClick={() => navigate('/signup')}
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-md"
-          >
-            Start for free <ArrowRight size={16} />
-          </button>
-        </div>
-
-        {/* Photo collage area */}
-        <div className="relative mx-auto max-w-4xl h-80 sm:h-96 px-4">
-          {/* Left side cards */}
-          <AvatarCard initials="PK" bg="bg-yellow-400" size="sm" rotate={-4}
-            className="absolute left-4 sm:left-16 top-4" />
-          <AvatarCard initials="RS" bg="bg-teal-400" size="sm" rotate={3}
-            className="absolute left-0 sm:left-8 top-28" />
-
-          {/* Centre large card */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-0 h-64 w-44 sm:w-52 rounded-3xl bg-yellow-300 flex items-center justify-center shadow-lg">
-            <div className="h-56 w-40 sm:w-48 rounded-2xl bg-gradient-to-b from-indigo-200 to-indigo-400 flex items-end justify-center overflow-hidden">
-              <div className="text-5xl mb-4">👩‍💻</div>
-            </div>
-          </div>
-
-          {/* Right side cards */}
-          <AvatarCard initials="AM" bg="bg-purple-300" size="sm" rotate={2}
-            className="absolute right-8 sm:right-20 top-2" />
-          <AvatarCard initials="VJ" bg="bg-pink-300" size="sm" rotate={-3}
-            className="absolute right-2 sm:right-6 top-32" />
-          <AvatarCard initials="NK" bg="bg-sky-300" size="sm" rotate={4}
-            className="absolute right-16 sm:right-36 top-44 sm:top-52" />
-
-          {/* Floating stat badges */}
-          <StatBadge icon={Video} value="3K+" label="Practice problems"
-            className="absolute left-4 sm:left-24 top-44 sm:top-48 z-10" />
-          <StatBadge icon={Users} value="98%" label="Learner satisfaction"
-            className="absolute left-1/2 -translate-x-1/2 bottom-0 z-10" />
-          <StatBadge icon={CheckCircle2} value="120+" label="Skills verified"
-            className="absolute right-2 sm:right-16 top-44 z-10" />
-        </div>
-
-        {/* ── How it works ─────────────────────────────── */}
-        <section className="mt-16 mx-auto max-w-5xl px-6 sm:px-10">
-          <div className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-2">How it works</p>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Four steps to job-ready</h2>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { n: '01', title: 'Take the diagnostic', desc: 'A 10-question adaptive test maps your current knowledge across 5 dimensions in under 15 minutes.' },
-              { n: '02', title: 'Get your roadmap', desc: 'AI skips topics you already know and adds revision loops where you need work.' },
-              { n: '03', title: 'Learn & verify', desc: 'NPTEL, freeCodeCamp, Kaggle — curated resources with time estimates, not just links.' },
-              { n: '04', title: 'Match to jobs', desc: 'Your skill profile is compared against real JDs. You see exactly what to complete next.' },
-            ].map(({ n, title, desc }) => (
-              <div key={n} className="rounded-2xl bg-white border border-slate-100 p-5 shadow-sm">
-                <p className="text-3xl font-black text-indigo-100 leading-none">{n}</p>
-                <p className="mt-2 text-sm font-bold text-slate-900">{title}</p>
-                <p className="mt-1 text-xs text-slate-500 leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Features ─────────────────────────────────── */}
-        <section className="mt-16 mx-auto max-w-5xl px-6 sm:px-10">
-          <div className="rounded-3xl bg-white border border-slate-100 shadow-sm p-8 sm:p-10">
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="lg:col-span-1">
-                <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-3">Why SkillPath</p>
-                <h2 className="text-2xl font-extrabold text-slate-900 leading-snug">Built for the Indian job market</h2>
-                <p className="mt-3 text-sm text-slate-500 leading-relaxed">
-                  Every "why this step?" is backed by a real job-posting signal — not generic advice.
-                </p>
-                <button
-                  onClick={() => navigate('/signup')}
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition"
-                >
-                  Create free account <ArrowRight size={14} />
-                </button>
-              </div>
-              <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2">
-                <Feature title="Adaptive diagnostic" desc="10 questions across 5 competency areas. Results update your roadmap automatically." />
-                <Feature title="Visual skill graph" desc="See which skills are prerequisites for others. Know exactly what to learn next." />
-                <Feature title="Personalised roadmap" desc="Milestones are ordered by dependency, not alphabetically. Skips what you already know." />
-                <Feature title="Job-match score" desc="Compares your skill profile against real JDs on Naukri, LinkedIn, and Unstop." />
-                <Feature title="Project verification" desc="Submit a GitHub repo. Automated checks confirm your code actually works." />
-                <Feature title="Progress analytics" desc="Track daily study hours, streak, and dimension scores — not just a completion %" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── CTA footer ───────────────────────────────── */}
-        <section className="mt-16 mb-16 mx-auto max-w-2xl text-center px-6">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Ready to find your next step?</h2>
-          <p className="mt-3 text-sm text-slate-500">Takes 15 minutes. No credit card.</p>
-          <div className="mt-6 flex items-center justify-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
             <button
               onClick={() => navigate('/signup')}
-              className="rounded-full bg-indigo-600 px-7 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-md"
+              className="inline-flex items-center gap-2 rounded-full bg-[#7C5CFA] px-7 py-3.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-lg shadow-[#7C5CFA]/25 cursor-pointer"
             >
-              Start the diagnostic
+              Start for free <span className="arr">&rarr;</span>
             </button>
-            <Link to="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 underline underline-offset-2">
-              Sign in
-            </Link>
+            <a
+              href="#how"
+              className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-6 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer"
+            >
+              See how it works
+            </a>
           </div>
-        </section>
+          <div className="mt-4 text-xs text-slate-500 font-medium">
+            Free for learners &middot; your first diagnostic takes about 4 minutes
+          </div>
+        </div>
+
+        {/* Mascot Animation in Center of Hero */}
+        <div className="relative mx-auto max-w-3xl px-4 py-6 flex justify-center items-center">
+          <OctoMascotAnimation />
+        </div>
+
+        {/* ── Stats ─────────────────────────────────────── */}
+        <div className="landing-container">
+          <div className="stats">
+            <div className="stat reveal" style={{ '--d': '0s' }}>
+              <div className="stat-n"><span data-count="7.5" data-dec="1">0</span></div>
+              <p>avg questions to find your baseline</p>
+            </div>
+            <div className="stat reveal" style={{ '--d': '.08s' }}>
+              <div className="stat-n"><span data-count="56">0</span></div>
+              <p>skills mapped in the Backend track</p>
+            </div>
+            <div className="stat reveal" style={{ '--d': '.16s' }}>
+              <div className="stat-n"><span data-count="9">0</span></div>
+              <p>clusters, from foundations to DevOps</p>
+            </div>
+            <div className="stat reveal" style={{ '--d': '.24s' }}>
+              <div className="stat-n"><span data-count="90">0</span><em>%</em></div>
+              <p>estimate accuracy vs true ability</p>
+            </div>
+          </div>
+          <div className="stat-note">Numbers from our 1,000-learner diagnostic simulation &mdash; rerun live at launch.</div>
+        </div>
+
+        {/* ── Cluster Marquee ───────────────────────────── */}
+        <div className="marquee" aria-hidden="true">
+          <div className="marquee-track">
+            <span>Foundations</span><i>&#10022;</i><span>Web APIs</span><i>&#10022;</i><span>Databases</span><i>&#10022;</i><span>Security</span><i>&#10022;</i><span>Architecture &amp; Design</span><i>&#10022;</i><span>Performance</span><i>&#10022;</i><span>Async &amp; Distributed</span><i>&#10022;</i><span>Quality &amp; Observability</span><i>&#10022;</i><span>DevOps</span><i>&#10022;</i>
+            <span>Foundations</span><i>&#10022;</i><span>Web APIs</span><i>&#10022;</i><span>Databases</span><i>&#10022;</i><span>Security</span><i>&#10022;</i><span>Architecture &amp; Design</span><i>&#10022;</i><span>Performance</span><i>&#10022;</i><span>Async &amp; Distributed</span><i>&#10022;</i><span>Quality &amp; Observability</span><i>&#10022;</i><span>DevOps</span><i>&#10022;</i>
+          </div>
+        </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 py-6 px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
-        <span>© 2025 SkillPath · AI-Powered Upskilling for Indian Learners</span>
-        <span>WCAG 2.2 AA · Secure</span>
+      {/* ── How it works ─────────────────────────────── */}
+      <section className="section" id="how">
+        <div className="landing-container">
+          <div className="sec-head">
+            <span className="kicker reveal">How it works</span>
+            <h2 className="reveal" style={{ '--d': '.08s' }}>Three steps. Zero guesswork.</h2>
+            <p className="sec-sub reveal" style={{ '--d': '.16s' }}>A loop that repeats every time you level up &mdash; each cycle starts from evidence about you, not vibes.</p>
+          </div>
+          <div className="steps">
+            <article className="step reveal" style={{ '--d': '0s' }}>
+              <span className="step-num">01</span>
+              <div className="step-ic">
+                <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 15.5a7 7 0 1 1 14 0" />
+                  <path d="M12 15.5l3.6-4.2" />
+                  <circle cx="12" cy="15.5" r="1.5" fill="currentColor" stroke="none" />
+                </svg>
+              </div>
+              <h3>Measure</h3>
+              <p>A short adaptive test finds your true level. The engine re-estimates your ability after every answer and stops the moment it is confident &mdash; 7.5 questions on average, never more than 9, and the same answers always produce the same result.</p>
+              <span className="step-tag">IRT engine &middot; reproducible</span>
+            </article>
+
+            <article className="step reveal" style={{ '--d': '.12s' }}>
+              <span className="step-num">02</span>
+              <div className="step-ic">
+                <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 17c5.5 0 6.5-10 12-10" />
+                  <circle cx="6" cy="17" r="2.1" fill="currentColor" stroke="none" />
+                  <circle cx="18" cy="7" r="2.1" fill="currentColor" stroke="none" />
+                </svg>
+              </div>
+              <h3>Plan</h3>
+              <p>Your score is mapped onto the track&rsquo;s skill graph, marking every skill mastered, ready or locked. The AI turns that snapshot into an ordered roadmap &mdash; what to learn first, what to skip, and roughly how long each step takes.</p>
+              <span className="step-tag">AI roadmap &middot; validated JSON</span>
+            </article>
+
+            <article className="step reveal" style={{ '--d': '.24s' }}>
+              <span className="step-num">03</span>
+              <div className="step-ic">
+                <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 17l6-6 4 4 8-8.5" />
+                  <path d="M15 6.5h6v6" />
+                </svg>
+              </div>
+              <h3>Track</h3>
+              <p>Follow the roadmap at your own pace. Tick steps off, watch your skill map light up, and re-test to see the needle move. Mentors and org admins see the same progress, scoped to their team.</p>
+              <span className="step-tag">Live skill states &middot; re-test anytime</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Skill graph ──────────────────────────────── */}
+      <section className="section" id="graph">
+        <div className="landing-container">
+          <div className="graph-grid">
+            <div className="split-head">
+              <span className="kicker reveal">The skill graph</span>
+              <h2 className="reveal" style={{ '--d': '.08s' }}>See exactly where you stand &mdash; and what unlocks next.</h2>
+              <p className="lede reveal" style={{ '--d': '.16s' }}>Every track is a directed graph of skills and prerequisites, checked on every load for cycles and broken links. Your diagnostic result marks each node, so your roadmap always builds on solid ground.</p>
+              <div className="legend">
+                <div className="legend-item reveal" style={{ '--d': '.2s' }}>
+                  <span className="dot g"></span>
+                  <span>
+                    <b>Mastered</b>
+                    <p>Proven by your test result. The roadmap routes around what you already know.</p>
+                  </span>
+                </div>
+                <div className="legend-item reveal" style={{ '--d': '.28s' }}>
+                  <span className="dot o"></span>
+                  <span>
+                    <b>Ready to learn</b>
+                    <p>Prerequisites met. These are exactly your next steps, in dependency order.</p>
+                  </span>
+                </div>
+                <div className="legend-item reveal" style={{ '--d': '.36s' }}>
+                  <span className="dot l"></span>
+                  <span>
+                    <b>Locked</b>
+                    <p>Not yet. Each one unlocks automatically as its prerequisites turn green.</p>
+                  </span>
+                </div>
+              </div>
+              <div className="gstats reveal" style={{ '--d': '.44s' }}>
+                <span className="gstat"><b>56</b> skills</span>
+                <span className="gstat"><b>72</b> prerequisite links</span>
+                <span className="gstat"><b>9</b> clusters</span>
+                <span className="gstat"><b>6</b>-deep chains</span>
+              </div>
+            </div>
+
+            <div className="map-card reveal in" style={{ '--d': '.15s' }}>
+              <div className="map-head">
+                <span className="map-title"><i />backend-engineering &middot; skill map</span>
+                <span className="live">LIVE VIEW</span>
+              </div>
+              <svg className="map-svg" viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mini skill map showing mastered, ready and locked skills">
+                <g stroke="#DCD2BC" strokeWidth="2" strokeDasharray="2 7" strokeLinecap="round" fill="none">
+                  <path d="M245 70 C220 95 130 105 108 132" />
+                  <path d="M103 178 C103 205 103 225 103 252" />
+                  <path d="M417 178 C417 205 417 225 417 252" />
+                  <path d="M118 178 C150 245 205 282 222 310" />
+                  <path d="M402 178 C370 245 315 282 298 310" />
+                </g>
+                <path className="edge-on" d="M275 70 C300 92 392 100 414 130" stroke="#FF9838" strokeWidth="2.5" strokeDasharray="7 7" fill="none" />
+                <circle r="5.5" fill="#FF9838" stroke="#fff" strokeWidth="2.5">
+                  <animateMotion dur="2.8s" repeatCount="indefinite" path="M275 70 C300 92 392 100 414 130" />
+                </circle>
+                <circle className="ping" cx="417" cy="155" r="24" fill="none" stroke="#FF9838" />
+                <g fontFamily="'Baloo 2',sans-serif" fontSize="14.5" fontWeight="600" textAnchor="middle">
+                  <g><rect className="nd g" x="185" y="24" width="150" height="46" rx="14" /><text x="249" y="52" fill="#1F7A55">Foundations</text><circle cx="317" cy="47" r="4.5" fill="#2FBF8F" /></g>
+                  <g><rect className="nd g" x="28" y="132" width="150" height="46" rx="14" /><text x="92" y="160" fill="#1F7A55">HTTP &amp; APIs</text><circle cx="160" cy="155" r="4.5" fill="#2FBF8F" /></g>
+                  <g><rect className="nd o" x="342" y="132" width="150" height="46" rx="14" /><text x="406" y="160" fill="#B45A14">Databases</text><circle cx="474" cy="155" r="4.5" fill="#FF9838" /></g>
+                  <g><rect className="nd l" x="28" y="252" width="150" height="46" rx="14" /><text x="92" y="280" fill="#8D8471">Security</text><circle cx="160" cy="275" r="4.5" fill="#C6BBA2" /></g>
+                  <g><rect className="nd l" x="185" y="310" width="150" height="46" rx="14" /><text x="249" y="338" fill="#8D8471">Caching</text><circle cx="317" cy="333" r="4.5" fill="#C6BBA2" /></g>
+                  <g><rect className="nd l" x="342" y="252" width="150" height="46" rx="14" /><text x="406" y="280" fill="#8D8471">Async</text><circle cx="474" cy="275" r="4.5" fill="#C6BBA2" /></g>
+                </g>
+                <g className="here">
+                  <rect x="357" y="94" width="120" height="24" rx="12" fill="#FF9838" />
+                  <text x="417" y="110" textAnchor="middle" fontFamily="'Inter',sans-serif" fontSize="10.5" fontWeight="700" fill="#fff" letterSpacing="1.5">YOU ARE HERE</text>
+                </g>
+              </svg>
+              <div className="map-foot">
+                <div className="map-foot-t"><span>Track progress</span><b>18%</b></div>
+                <div className="bar"><span></span></div>
+                <p>Next milestone: Databases &mdash; 4 skills in queue.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features ─────────────────────────────────── */}
+      <section className="section" id="features">
+        <div className="landing-container">
+          <div className="sec-head">
+            <span className="kicker reveal">Why Octobyte</span>
+            <h2 className="reveal" style={{ '--d': '.08s' }}>Built like a product, measured like a science.</h2>
+            <p className="sec-sub reveal" style={{ '--d': '.16s' }}>Everything on the platform exists to answer one question honestly: what do you actually know?</p>
+          </div>
+          <div className="feat-grid">
+            <article className="feat reveal" style={{ '--d': '0s' }}>
+              <div className="f-ic">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="4.6" />
+                  <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+                </svg>
+              </div>
+              <h3>Deterministic diagnostics</h3>
+              <p>Our IRT engine is pure, seeded logic &mdash; no randomness anywhere. Replaying the same answers reproduces the same level, so every progress number is one you can trust.</p>
+            </article>
+
+            <article className="feat reveal" style={{ '--d': '.08s' }}>
+              <div className="f-ic">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" />
+                  <circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none" />
+                  <circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none" />
+                  <circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none" />
+                </svg>
+              </div>
+              <h3>Roadmaps with real structure</h3>
+              <p>Every AI roadmap arrives as schema-validated JSON: ordered steps, linked skills, curated resources and hour estimates &mdash; checked twice before you ever see it.</p>
+            </article>
+
+            <article className="feat reveal" style={{ '--d': '.16s' }}>
+              <div className="f-ic">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+                  <circle cx="6" cy="12" r="2.4" />
+                  <circle cx="18" cy="5.5" r="2.4" />
+                  <circle cx="18" cy="18.5" r="2.4" />
+                  <path d="M8.2 10.9l7.6-4.2" />
+                  <path d="M8.2 13.1l7.6 4.2" />
+                </svg>
+              </div>
+              <h3>A map, not a checklist</h3>
+              <p>Skills form a dependency graph, not a flat list. Mark one step done and watch downstream skills flip from locked to ready in real time.</p>
+            </article>
+
+            <article className="feat reveal" style={{ '--d': '.24s' }}>
+              <div className="f-ic">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 17l6-6 4 4 8-8.5" />
+                  <path d="M15 6.5h6v6" />
+                </svg>
+              </div>
+              <h3>Re-test to prove growth</h3>
+              <p>Retake the diagnostic whenever you like. Your level history is stored with every answer, so &ldquo;I feel better&rdquo; becomes &ldquo;I am measurably better.&rdquo;</p>
+            </article>
+
+            <article className="feat reveal" style={{ '--d': '.32s' }}>
+              <div className="f-ic">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="8" r="3.4" />
+                  <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+                  <circle cx="17.5" cy="9" r="2.8" />
+                  <path d="M16 15.6a5.6 5.6 0 0 1 5.5 4.4" />
+                </svg>
+              </div>
+              <h3>Made for teams</h3>
+              <p>Organizations, invites and roles. Mentors see exactly where each learner is stuck &mdash; and which skill to unblock next, scoped to their own org.</p>
+            </article>
+
+            <article className="feat reveal" style={{ '--d': '.4s' }}>
+              <div className="f-ic">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3l7.5 3v5.5c0 5-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.5-7.5-9.5V6z" />
+                  <path d="M9 12l2.2 2.2 4.3-4.4" />
+                </svg>
+              </div>
+              <h3>Secure by default</h3>
+              <p>BCrypt passwords, rotating refresh tokens and short-lived JWTs &mdash; and test questions that never ship the answer key to your browser.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ──────────────────────────────────────── */}
+      <section className="cta-wrap" id="cta">
+        <div className="landing-container">
+          <div className="cta reveal in">
+            <h2>Ready to meet your real level?</h2>
+            <p>Take the diagnostic &mdash; it&rsquo;s shorter than making coffee. Your personalised roadmap is waiting on the other side.</p>
+            <Link className="btn btn-white" to="/signup">
+              Start for free <span className="arr">&rarr;</span>
+            </Link>
+            <div className="peek" aria-hidden="true">
+              <svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg">
+                <g className="peek-bob">
+                  <path d="M20 100 C20 46 44 20 70 20 C96 20 120 46 120 100 Z" fill="#A78BFA" />
+                  <path d="M30 100 q7 -15 16 -7 M110 100 q-7 -15 -16 -7" stroke="#8F74F2" strokeWidth="11" fill="none" strokeLinecap="round" />
+                  <g className="eye">
+                    <ellipse cx="52" cy="60" rx="7" ry="8" fill="#2F2A3E" />
+                    <circle cx="54.5" cy="57" r="2.4" fill="#fff" />
+                  </g>
+                  <g className="eye e2">
+                    <ellipse cx="88" cy="60" rx="7" ry="8" fill="#2F2A3E" />
+                    <circle cx="90.5" cy="57" r="2.4" fill="#fff" />
+                  </g>
+                  <path d="M61 74 Q70 81 79 74" stroke="#2F2A3E" strokeWidth="3.6" fill="none" strokeLinecap="round" />
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ───────────────────────────────────── */}
+      <footer className="lp-footer">
+        <div className="landing-container">
+          <div className="foot-grid">
+            <div className="foot-brand">
+              <a className="brand" href="#top" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+                <svg width="38" height="34" viewBox="0 0 48 44" aria-hidden="true">
+                  <ellipse cx="24" cy="19" rx="16.5" ry="15.5" fill="#9077F2" />
+                  <circle cx="10.5" cy="31" r="5" fill="#9077F2" />
+                  <circle cx="24" cy="34.5" r="5.5" fill="#9077F2" />
+                  <circle cx="37.5" cy="31" r="5" fill="#9077F2" />
+                  <circle cx="17.5" cy="21" r="2.7" fill="#2F2A3E" />
+                  <circle cx="30.5" cy="21" r="2.7" fill="#2F2A3E" />
+                  <path d="M18.5 27.5q5.5 4.5 11 0" stroke="#2F2A3E" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+                </svg>
+                <span className="wordmark" style={{ fontFamily: "'Baloo 2', cursive", fontSize: '1.45rem', fontWeight: 800, color: 'var(--ink)' }}>octo<b style={{ color: 'var(--purple)' }}>Byte</b></span>
+              </a>
+              <p>The AI learning platform that measures where you really stand, plans what to learn next, and tracks every skill you master. Measure. Plan. Track. Repeat.</p>
+            </div>
+            <div className="foot-col">
+              <h4>Explore</h4>
+              <a href="#how">How it works</a>
+              <a href="#graph">Skill graph</a>
+              <a href="#features">Features</a>
+              <Link to="/signup">Get started</Link>
+            </div>
+            <div className="foot-col">
+              <h4>The team</h4>
+              <span>Team Unix &middot; 12 members</span>
+              <span>Lakshmi Narain College of Technology, Bhopal</span>
+              <span>Built for the EPAM CoE programme</span>
+              <span>Maintained by Dev Sharma</span>
+            </div>
+          </div>
+          <div className="foot-bottom">
+            <span>&copy; 2026 octoByte &mdash; Team Unix, LNCT Bhopal</span>
+            <span>Made with care for the EPAM CoE mentors</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
