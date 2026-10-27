@@ -18,7 +18,7 @@ Welcome to the central documentation hub for the **AI-Powered Upskilling Platfor
 | **[`frontend/FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md)** | Historical source code audit from initial prototype phase. | Engineering Team | Archive |
 | **[`authentication/AUTHENTICATION_TEAM_CONTRACT.md`](./authentication/AUTHENTICATION_TEAM_CONTRACT.md)** | Teammate contracts for Spring Boot auth (Riya: email auth; Aadi: OAuth2 & tokens). | Backend & Gateway | v1.0 Implemented |
 | **[`authentication/OAUTH_INTEGRATION_GUIDE.md`](./authentication/OAUTH_INTEGRATION_GUIDE.md)** | Full-stack OAuth2/OIDC integration guide, sequence diagrams, GitHub/Google setups, troubleshooting & error codes. | Full Team & Frontend | Active Guide |
-| **[`authentication/ENVIRONMENT.md`](./authentication/ENVIRONMENT.md)** | Environment variables, local setup instructions, Docker, and PostgreSQL configuration. | Full Team | Verified |
+| **[`authentication/ENVIRONMENT.md`](./authentication/ENVIRONMENT.md)** | Environment variables, local setup instructions, and PostgreSQL configuration. | Full Team | Verified |
 
 ---
 

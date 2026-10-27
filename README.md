@@ -6,7 +6,6 @@
 [![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![EPAM CoE](https://img.shields.io/badge/Programme-EPAM_CoE-00A3E0?style=for-the-badge)](https://www.epam.com/)
 
 <p align="center">
@@ -274,7 +273,6 @@ The roadmap targets a 4-sprint MVP structure.
 ```plaintext
 AI-Powered-Upskilling-Platform/
 ├── README.md                          # Project documentation
-├── docker-compose.yml                 # Gateway, AI worker, PostgreSQL, Redis orchestration
 ├── .env.example                       # Reference environment variables
 │
 ├── contracts/                         # Shared JSON Schemas for LLM outputs
@@ -320,7 +318,6 @@ AI-Powered-Upskilling-Platform/
 | Data Persistence  | PostgreSQL 16+ (citext extension), Flyway Migrations |
 | AI Microservice   | Node.js 20+, BullMQ / Redis                           |
 | Test Engine       | Item Response Theory (1-PL Rasch Model in pure Java)   |
-| Containerization  | Docker, Docker Compose                                 |
 +───────────────────+───────────────────────────────────────────────────────+
 ```
 
@@ -331,7 +328,7 @@ AI-Powered-Upskilling-Platform/
 ### Prerequisites
 - **Java Development Kit (JDK):** Version 17 or higher
 - **Node.js:** Version 20 or higher
-- **Docker & Docker Compose:** Latest stable release
+- **PostgreSQL Database:** Neon Cloud PostgreSQL or local PostgreSQL 16+
 
 ### Installation & Run
 
@@ -355,7 +352,7 @@ AI-Powered-Upskilling-Platform/
    cd gateway\ai-upskilling-platform
    .\mvnw.cmd spring-boot:run
    ```
-   To use the gateway from the frontend, set `VITE_USE_MOCK_AUTH=false` in `web-app/.env`. The gateway's PostgreSQL container can be started with `docker compose up -d` from `gateway/ai-upskilling-platform`.
+   To use the gateway from the frontend, set `VITE_USE_MOCK_AUTH=false` in `web-app/.env`. The gateway connects to Neon Cloud PostgreSQL or a configured PostgreSQL instance.
 
 ### Core Environment Configuration
 
@@ -441,7 +438,7 @@ Engineered for relational integrity on PostgreSQL with strict schema migration c
 
 - **Cryptographic Hashing:** Passwords secured with salted `BCrypt`. Refresh tokens are stored strictly as irreversible cryptographic hashes and rotated on every single use.
 - **Stateless Authentication:** Short-lived access JWT tokens with automatic rate-limiting and lockout protection against brute-force attacks.
-- **Isolated AI Perimeter:** The AI worker resides strictly in a private Docker bridge network, requires bearer shared-secret headers, and has zero direct database credentials.
+- **Isolated AI Perimeter:** The AI worker resides strictly in a private service boundary, requires bearer shared-secret headers, and has zero direct database credentials.
 - **Exam Integrity:** Assessment payloads delivered to clients never expose question difficulty parameters, discrimination indices, or correct answer identifiers.
 - **Dual Contract Verification:** Generative payloads are validated against rigid schemas via AJV in the Node worker and re-validated upon arrival at the Spring Boot gateway prior to storage.
 - **Authorization Scopes:** Administrative routes require the `PLATFORM_ADMIN` authority, while institutional data access is bounded by organization membership roles.

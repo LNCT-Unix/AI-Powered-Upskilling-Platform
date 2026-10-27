@@ -117,18 +117,15 @@ $env:APP_AUTH_JWT_SECRET="<your-generated-base64-or-random-string-at-least-32-ch
 
 ## 5. PostgreSQL Database Setup
 
-1. **Using Docker Compose (Recommended for local development)**:
-   A `compose.yaml` is provided in `gateway/ai-upskilling-platform/compose.yaml`.
-   Start PostgreSQL:
+1. **Using Neon Cloud PostgreSQL (Default)**:
+   The application is configured to connect to Neon PostgreSQL:
    ```powershell
-   docker compose up -d
+   $env:SPRING_DATASOURCE_URL="jdbc:postgresql://ep-long-star-b53x3tu6-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require"
+   $env:SPRING_DATASOURCE_USERNAME="neondb_owner"
+   $env:SPRING_DATASOURCE_PASSWORD="<password>"
    ```
-   This spins up PostgreSQL on port `5432` with:
-   - Database: `mydatabase`
-   - Username: `myuser`
-   - Password: `secret`
 
-2. **Using an existing local PostgreSQL instance**:
+2. **Using a Local PostgreSQL instance**:
    Ensure a database exists:
    ```sql
    CREATE DATABASE mydatabase;
@@ -149,7 +146,7 @@ In the `gateway/ai-upskilling-platform` directory:
 ```powershell
 ./mvnw.cmd test
 ```
-All unit and MockMvc integration tests run in-memory using H2 (PostgreSQL compatibility mode) and do not require external credentials or Docker to be active.
+All unit and MockMvc integration tests run in-memory using H2 (PostgreSQL compatibility mode) and do not require external credentials or database instances to be active.
 
 ### 2. Start the Application
 With your environment variables set:
