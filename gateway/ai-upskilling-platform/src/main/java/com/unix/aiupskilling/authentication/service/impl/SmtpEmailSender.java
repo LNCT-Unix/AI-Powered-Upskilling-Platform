@@ -30,7 +30,9 @@ public class SmtpEmailSender implements EmailSender {
     public void sendVerificationEmail(String toEmail, String fullName, String otp) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.warn("JavaMailSender is not configured. Verification email was not sent via SMTP.");
+            log.error("SMTP is not configured — verification email was NOT sent to: {}. " +
+                    "Set SPRING_MAIL_USERNAME and SPRING_MAIL_PASSWORD environment variables " +
+                    "(and SPRING_MAIL_HOST / SPRING_MAIL_PORT if needed).", toEmail);
             return;
         }
 
@@ -64,7 +66,9 @@ public class SmtpEmailSender implements EmailSender {
     public void sendPasswordResetOtpEmail(String toEmail, String fullName, String otp) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.warn("JavaMailSender is not configured. Password reset OTP email was not sent via SMTP.");
+            log.error("SMTP is not configured — password reset OTP email was NOT sent to: {}. " +
+                    "Set SPRING_MAIL_USERNAME and SPRING_MAIL_PASSWORD environment variables " +
+                    "(and SPRING_MAIL_HOST / SPRING_MAIL_PORT if needed).", toEmail);
             return;
         }
 

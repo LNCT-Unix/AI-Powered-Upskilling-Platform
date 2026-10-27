@@ -55,7 +55,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .userId(user.getId())
-                .otpHash(otpHash)
+                .tokenHash(otpHash)
                 .failedAttempts(0)
                 .createdAt(now)
                 .expiresAt(now.plusSeconds(ttl))

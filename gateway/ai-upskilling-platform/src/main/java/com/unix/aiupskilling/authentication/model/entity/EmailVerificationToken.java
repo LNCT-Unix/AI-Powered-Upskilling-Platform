@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "email_verification_tokens", indexes = {
         @Index(name = "idx_evt_user_id", columnList = "user_id"),
-        @Index(name = "idx_evt_otp_hash", columnList = "otp_hash")
+        @Index(name = "idx_evt_token_hash", columnList = "token_hash")
 })
 @Getter
 @Setter
@@ -26,8 +26,8 @@ public class EmailVerificationToken {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "otp_hash", nullable = false, length = 64)
-    private String otpHash;
+    @Column(name = "token_hash", nullable = false, length = 64)
+    private String tokenHash;
 
     @Column(name = "failed_attempts", nullable = false)
     @Builder.Default
@@ -67,5 +67,21 @@ public class EmailVerificationToken {
 
     public boolean isValid() {
         return !isExpired() && !isConsumed() && !hasExceededMaxAttempts();
+    }
+
+    // OTP alias getters/setters/builder
+    public String getOtpHash() {
+        return this.tokenHash;
+    }
+
+    public void setOtpHash(String otpHash) {
+        this.tokenHash = otpHash;
+    }
+
+    public static class EmailVerificationTokenBuilder {
+        public EmailVerificationTokenBuilder otpHash(String otpHash) {
+            this.tokenHash = otpHash;
+            return this;
+        }
     }
 }
