@@ -1,11 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import OctoMascotAnimation from '../components/ui/OctoMascotAnimation';
+import { useAuth } from '../hooks/useAuth';
 import './LandingPage.css';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -70,49 +74,116 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen text-slate-900" style={{ background: '#F7F3E8', fontFamily: 'Inter, sans-serif' }}>
       {/* ── Navbar ──────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-6 sm:px-10 py-4 max-w-7xl mx-auto">
-        <Logo />
+      <header className="sticky top-0 z-50 bg-[#F7F3E8]/90 backdrop-blur-md border-b border-[#E8E0CC]/80">
+        <div className="flex items-center justify-between px-6 sm:px-10 py-3.5 max-w-7xl mx-auto">
+          <Logo />
 
-        <nav className="hidden sm:flex items-center gap-8 text-sm font-semibold text-slate-600">
-          <a href="#top" className="text-[#7C5CFA] border-b-2 border-[#7C5CFA] pb-0.5">Home</a>
-          <a href="#how" className="hover:text-slate-900 transition">How it works</a>
-          <a href="#graph" className="hover:text-slate-900 transition">Skill graph</a>
-          <a href="#features" className="hover:text-slate-900 transition">Features</a>
-        </nav>
+          <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
+            <a href="#top" className="text-[#7C5CFA] font-bold">Home</a>
+            <a href="#how" className="hover:text-slate-900 transition">How it works</a>
+            <a href="#graph" className="hover:text-slate-900 transition">Skill graph</a>
+            <a href="#features" className="hover:text-slate-900 transition">Platform features</a>
+            <a href="#projects" className="hover:text-slate-900 transition">Lab &amp; Career</a>
+          </nav>
 
-        <div className="flex items-center gap-3">
-          <Link
-            to="/login"
-            className="hidden sm:inline-flex text-sm font-bold text-slate-700 hover:text-slate-900 px-4 py-2"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/signup"
-            className="rounded-full bg-[#7C5CFA] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-md shadow-[#7C5CFA]/20"
-          >
-            Get Started <span className="arr">&rarr;</span>
-          </Link>
+          <div className="hidden sm:flex items-center gap-3">
+            {user ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 rounded-full bg-[#7C5CFA] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-md shadow-[#7C5CFA]/20"
+              >
+                Go to Dashboard <span className="arr">&rarr;</span>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm font-bold text-slate-700 hover:text-slate-900 px-4 py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#7C5CFA] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-md shadow-[#7C5CFA]/20"
+                >
+                  Get Started <span className="arr">&rarr;</span>
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile hamburger button */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-slate-700 hover:text-slate-900 rounded-xl hover:bg-slate-200/50 transition cursor-pointer"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-[#E8E0CC] bg-[#FFFDF7] px-6 py-4 shadow-xl space-y-3">
+            <nav className="flex flex-col gap-2.5 text-sm font-semibold text-slate-700">
+              <a href="#top" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Home</a>
+              <a href="#how" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">How it works</a>
+              <a href="#graph" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Skill graph</a>
+              <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Platform features</a>
+              <a href="#projects" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Project Lab &amp; Career</a>
+            </nav>
+            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+              {user ? (
+                <Link
+                  to="/dashboard"
+                  className="w-full text-center rounded-full bg-[#7C5CFA] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8]"
+                >
+                  Go to Dashboard &rarr;
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="w-full text-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="w-full text-center rounded-full bg-[#7C5CFA] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8]"
+                  >
+                    Get Started &rarr;
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ── Hero ────────────────────────────────────────── */}
       <main id="top" className="relative overflow-hidden pt-6">
         {/* Heading block */}
         <div className="text-center pt-8 pb-4 px-4 max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#EFEAFC] px-3.5 py-1 text-xs font-bold text-[#7C5CFA] uppercase tracking-wider mb-4 border border-[#7C5CFA]/20">
+            <Sparkles size={13} /> AI-Powered Adaptive Upskilling Platform
+          </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tight">
             Diagnose your gaps,<br />
             build real skills with <span className="text-[#7C5CFA]">octoByte</span>.
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-xl mx-auto leading-relaxed">
-            Stop guessing what to learn. Octobyte measures where you actually stand with an adaptive diagnostic, turns your result into an AI-built roadmap, and tracks every skill you master along the way.
+          <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Stop guessing what to learn. octoByte calibrates where you actually stand using Item Response Theory (IRT), generates an AI roadmap mapped onto a topological DAG, and verifies project code for job readiness.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
             <button
-              onClick={() => navigate('/signup')}
+              onClick={() => navigate(user ? '/assessment' : '/signup')}
               className="inline-flex items-center gap-2 rounded-full bg-[#7C5CFA] px-7 py-3.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-lg shadow-[#7C5CFA]/25 cursor-pointer"
             >
-              Start for free <span className="arr">&rarr;</span>
+              {user ? 'Start Diagnostic Test' : 'Start for free'} <span className="arr">&rarr;</span>
             </button>
             <a
               href="#how"
@@ -122,7 +193,7 @@ export default function LandingPage() {
             </a>
           </div>
           <div className="mt-4 text-xs text-slate-500 font-medium">
-            Free for learners &middot; your first diagnostic takes about 4 minutes
+            Free for learners &middot; Seeded with 56 Backend skills across 9 core clusters &middot; Takes ~4 minutes
           </div>
         </div>
 
@@ -300,7 +371,7 @@ export default function LandingPage() {
       <section className="section" id="features">
         <div className="landing-container">
           <div className="sec-head">
-            <span className="kicker reveal">Why Octobyte</span>
+            <span className="kicker reveal">Why octoByte</span>
             <h2 className="reveal" style={{ '--d': '.08s' }}>Built like a product, measured like a science.</h2>
             <p className="sec-sub reveal" style={{ '--d': '.16s' }}>Everything on the platform exists to answer one question honestly: what do you actually know?</p>
           </div>
@@ -355,28 +426,25 @@ export default function LandingPage() {
               <p>Retake the diagnostic whenever you like. Your level history is stored with every answer, so &ldquo;I feel better&rdquo; becomes &ldquo;I am measurably better.&rdquo;</p>
             </article>
 
-            <article className="feat reveal" style={{ '--d': '.32s' }}>
+            <article className="feat reveal" id="projects" style={{ '--d': '.32s' }}>
               <div className="f-ic">
                 <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="8" r="3.4" />
-                  <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
-                  <circle cx="17.5" cy="9" r="2.8" />
-                  <path d="M16 15.6a5.6 5.6 0 0 1 5.5 4.4" />
+                  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
                 </svg>
               </div>
-              <h3>Made for teams</h3>
-              <p>Organizations, invites and roles. Mentors see exactly where each learner is stuck &mdash; and which skill to unblock next, scoped to their own org.</p>
+              <h3>Project Lab &amp; Verification</h3>
+              <p>Bridge theory and code. Submit GitHub repositories and practical implementations to automated rubrics that verify real competency retention.</p>
             </article>
 
             <article className="feat reveal" style={{ '--d': '.4s' }}>
               <div className="f-ic">
                 <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 3l7.5 3v5.5c0 5-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.5-7.5-9.5V6z" />
-                  <path d="M9 12l2.2 2.2 4.3-4.4" />
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                 </svg>
               </div>
-              <h3>Secure by default</h3>
-              <p>BCrypt passwords, rotating refresh tokens and short-lived JWTs &mdash; and test questions that never ship the answer key to your browser.</p>
+              <h3>Career Match Scoring</h3>
+              <p>Your demonstrated ability score (&theta;) is automatically benchmarked against real software engineering specs across Indian product startups and tech leaders.</p>
             </article>
           </div>
         </div>
@@ -388,8 +456,8 @@ export default function LandingPage() {
           <div className="cta reveal in">
             <h2>Ready to meet your real level?</h2>
             <p>Take the diagnostic &mdash; it&rsquo;s shorter than making coffee. Your personalised roadmap is waiting on the other side.</p>
-            <Link className="btn btn-white" to="/signup">
-              Start for free <span className="arr">&rarr;</span>
+            <Link className="btn btn-white" to={user ? '/assessment' : '/signup'}>
+              {user ? 'Launch Diagnostic CAT' : 'Start for free'} <span className="arr">&rarr;</span>
             </Link>
             <div className="peek" aria-hidden="true">
               <svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg">
