@@ -7,9 +7,10 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 /**
- * One question in the pool. Rows are seeded into the database (see the INSERT example in
- * AssessmentService), so this entity has no id generator - the service only reads items.
+ * One question in the pool. Rows are seeded into the database (see AssessmentDataLoader),
+ * so this entity has no id generator - the service only reads items.
  * options is a jsonb/text column, read as plain text here and parsed in the service.
+ * skillSlug links this question back to the Skill it primarily tests.
  */
 @Entity
 @Table(name = "assessment_items")
@@ -33,9 +34,19 @@ public class AssessmentItem {
 
     private String status;          // ACTIVE items take part in tests
 
+    /** The slug of the Skill this question primarily tests (matches Skill.slug). */
+    @Column(name = "skill_slug", length = 100)
+    private String skillSlug;
+
     public AssessmentItem() {}
 
-    public AssessmentItem(UUID id, UUID trackId, double difficulty, String stem, String options, int correctOption, String status) {
+    public AssessmentItem(UUID id, UUID trackId, double difficulty, String stem, String options,
+                          int correctOption, String status) {
+        this(id, trackId, difficulty, stem, options, correctOption, status, null);
+    }
+
+    public AssessmentItem(UUID id, UUID trackId, double difficulty, String stem, String options,
+                          int correctOption, String status, String skillSlug) {
         this.id = id;
         this.trackId = trackId;
         this.difficulty = difficulty;
@@ -43,6 +54,7 @@ public class AssessmentItem {
         this.options = options;
         this.correctOption = correctOption;
         this.status = status;
+        this.skillSlug = skillSlug;
     }
 
     public UUID getId() { return id; }
@@ -59,4 +71,6 @@ public class AssessmentItem {
     public void setCorrectOption(int correctOption) { this.correctOption = correctOption; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getSkillSlug() { return skillSlug; }
+    public void setSkillSlug(String skillSlug) { this.skillSlug = skillSlug; }
 }

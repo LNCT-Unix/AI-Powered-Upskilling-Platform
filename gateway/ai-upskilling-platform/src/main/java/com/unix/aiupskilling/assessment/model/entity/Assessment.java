@@ -31,6 +31,19 @@ public class Assessment {
 
     private Double theta;           // final ability estimate, set when finished
 
+    /**
+     * Starting theta for the adaptive IRT test (starts at 0.0).
+     */
+    @Column(name = "initial_theta")
+    private Double initialTheta;
+
+    /**
+     * Slugs of skills the user selected they are already comfortable in during onboarding.
+     * Stored as JSON text: ["sql-basics", "http-basics", ...]
+     */
+    @Column(name = "known_skill_slugs", columnDefinition = "text")
+    private String knownSkillSlugs;
+
     @Column(name = "items_administered")
     private Integer itemsAdministered;
 
@@ -55,6 +68,10 @@ public class Assessment {
     public void setLevel(String level) { this.level = level; }
     public Double getTheta() { return theta; }
     public void setTheta(Double theta) { this.theta = theta; }
+    public Double getInitialTheta() { return initialTheta; }
+    public void setInitialTheta(Double initialTheta) { this.initialTheta = initialTheta; }
+    public String getKnownSkillSlugs() { return knownSkillSlugs; }
+    public void setKnownSkillSlugs(String knownSkillSlugs) { this.knownSkillSlugs = knownSkillSlugs; }
     public Integer getItemsAdministered() { return itemsAdministered; }
     public void setItemsAdministered(Integer itemsAdministered) { this.itemsAdministered = itemsAdministered; }
     public Integer getCorrectCount() { return correctCount; }
