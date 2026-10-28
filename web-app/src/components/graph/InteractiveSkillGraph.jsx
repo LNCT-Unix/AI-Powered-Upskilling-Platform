@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buildGraphModel, computeLayout, clusterTitle, clusterHue } from './graphModel';
 import '../../pages/SkillGraphPage.css';
 
 /* ================= Inline SVG Icons matching the prototype ================= */
+// Defined outside the component so they are created once, not on every render.
 const ICONS = {
   code: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -129,6 +130,34 @@ const ICONS = {
   ),
 };
 
+/* ===============================================================
+   SkillNode — memoized so it only re-renders when its own props
+   change, not when any other node is hovered / selected.
+   =============================================================== */
+const SkillNode = memo(function SkillNode({ n, isSelected, isDim, subText, onClick, onMouseEnter, onMouseLeave, onKeyDown, animDelay }) {
+  const stateIcon = n.status === 'mastered' ? 'check' : n.status === 'frontier' ? 'flame' : 'lock';
+  return (
+    <div
+      className={`sg-node ${n.status}${isSelected ? ' active' : ''}${isDim ? ' dim' : ''}`}
+      style={{ left: `${n.x}px`, top: `${n.y}px`, animationDelay: animDelay }}
+      tabIndex={0}
+      role="button"
+      aria-label={n.label}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onKeyDown={onKeyDown}
+    >
+      <div className="sg-n-icon">{ICONS[n.icon] || ICONS.box}</div>
+      <div className="sg-n-text">
+        <div className="sg-n-label">{n.label}</div>
+        <div className="sg-n-sub">{subText}</div>
+      </div>
+      <div className="sg-n-state">{ICONS[stateIcon]}</div>
+    </div>
+  );
+});
+
 export default function InteractiveSkillGraph({ skills = [], height = 480, showHeader = false, initialCluster = null }) {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('all');
@@ -138,35 +167,46 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
 
-  // Pan & Zoom state
-  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
+  // ── Pan & Zoom ──────────────────────────────────────────────────────────────
+  // Store transform in a ref and drive the DOM directly — never calls setState
+  // during drag/wheel so the whole tree is NOT re-rendered on every pixel moved.
+  const transformRef = useRef({ x: 0, y: 0, scale: 1 });
+  const [zoomLabel, setZoomLabel] = useState(100); // only re-renders the % badge
   const stageRef = useRef(null);
+  const worldRef = useRef(null);
   const isPointerDownRef = useRef(false);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
+  const rafRef = useRef(null);
+
+  // Apply transform directly to the world DOM node — bypasses React reconciler
+  const applyTransform = useCallback((t) => {
+    if (worldRef.current) {
+      worldRef.current.style.transform = `translate(${t.x}px,${t.y}px) scale(${t.scale})`;
+    }
+  }, []);
+
+  // Debounce the zoom-% label update to a single rAF tick
+  const scheduleZoomLabel = useCallback((scale) => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => setZoomLabel(Math.round(scale * 100)));
+  }, []);
 
   // Build the graph model, then lay out the cluster sub-graphs (islands)
   const graph = useMemo(() => buildGraphModel(skills), [skills]);
 
-  // Extract available cluster modules (matches the top-left title of island cards)
+  // Extract available cluster modules
   const clusterOptions = useMemo(() => {
     const map = new Map();
     graph.nodes.forEach((n) => {
       const c = n.cluster || 'core';
-      if (!map.has(c)) {
-        map.set(c, {
-          key: c,
-          title: clusterTitle(c),
-          count: 0,
-        });
-      }
+      if (!map.has(c)) map.set(c, { key: c, title: clusterTitle(c), count: 0 });
       map.get(c).count++;
     });
     return Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title));
   }, [graph.nodes]);
 
-  // Default to an individual block to prevent initial render lag & slowness:
-  // Prioritize block with active frontier skills, otherwise first cluster in graph
+  // Default cluster: prioritise frontier, then first cluster
   const defaultCluster = useMemo(() => {
     if (initialCluster) return initialCluster;
     if (graph.nodes.length === 0) return 'all';
@@ -177,7 +217,6 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
 
   const [selectedCluster, setSelectedCluster] = useState(() => defaultCluster);
 
-  // When skills or defaultCluster resolve, update initial cluster if user hasn't manually selected one
   useEffect(() => {
     if (!userSelectedClusterRef.current && defaultCluster && defaultCluster !== 'all') {
       setSelectedCluster(defaultCluster);
@@ -192,106 +231,110 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     setIsDropdownOpen(false);
     if (selectedNodeId && newCluster !== 'all') {
       const node = graph.nodes.find((n) => n.id === selectedNodeId);
-      if (node && node.cluster !== newCluster) {
-        setSelectedNodeId(null);
-      }
+      if (node && node.cluster !== newCluster) setSelectedNodeId(null);
     }
   }, [selectedNodeId, graph.nodes]);
 
   // Close dropdown on outside click
   useEffect(() => {
+    if (!isDropdownOpen) return;
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
     }
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
 
   // Counts for status filters
   const counts = useMemo(() => {
     const res = { mastered: 0, frontier: 0, locked: 0 };
-    layout.nodesList.forEach((n) => {
-      if (res[n.status] !== undefined) res[n.status]++;
-    });
+    layout.nodesList.forEach((n) => { if (res[n.status] !== undefined) res[n.status]++; });
     return res;
   }, [layout]);
 
-  // Fit to view
+  // ── Fit-to-view ─────────────────────────────────────────────────────────────
   const fitView = useCallback(() => {
     if (!stageRef.current) return;
     const r = stageRef.current.getBoundingClientRect();
     const padding = 70;
-    const scaleX = (r.width - padding) / layout.worldW;
-    const scaleY = (r.height - padding) / layout.worldH;
-    const clampedScale = Math.min(1.2, Math.max(0.12, Math.min(scaleX, scaleY)));
-    const vx = (r.width - layout.worldW * clampedScale) / 2;
-    const vy = (r.height - layout.worldH * clampedScale) / 2;
-    setTransform({ x: vx, y: vy, scale: clampedScale });
-  }, [layout.worldW, layout.worldH]);
+    const s = Math.min(1.2, Math.max(0.12, Math.min(
+      (r.width - padding) / layout.worldW,
+      (r.height - padding) / layout.worldH,
+    )));
+    const t = {
+      x: (r.width - layout.worldW * s) / 2,
+      y: (r.height - layout.worldH * s) / 2,
+      scale: s,
+    };
+    transformRef.current = t;
+    applyTransform(t);
+    scheduleZoomLabel(s);
+  }, [layout.worldW, layout.worldH, applyTransform, scheduleZoomLabel]);
 
   useEffect(() => {
     const timer = setTimeout(fitView, 60);
     window.addEventListener('resize', fitView);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', fitView);
-    };
+    return () => { clearTimeout(timer); window.removeEventListener('resize', fitView); };
   }, [fitView]);
 
-  // Auto re-center whenever selected cluster changes
+  // Re-center on cluster change
   useEffect(() => {
     const timer = setTimeout(fitView, 50);
     return () => clearTimeout(timer);
   }, [selectedCluster, fitView]);
 
-  // Zoom towards a specific point
+  // ── Zoom ─────────────────────────────────────────────────────────────────────
   const zoomAt = useCallback((cx, cy, factor) => {
-    setTransform((prev) => {
-      const nextScale = Math.min(2.4, Math.max(0.12, prev.scale * factor));
-      const nx = cx - (cx - prev.x) * (nextScale / prev.scale);
-      const ny = cy - (cy - prev.y) * (nextScale / prev.scale);
-      return { x: nx, y: ny, scale: nextScale };
-    });
-  }, []);
+    const prev = transformRef.current;
+    const nextScale = Math.min(2.4, Math.max(0.12, prev.scale * factor));
+    const t = {
+      x: cx - (cx - prev.x) * (nextScale / prev.scale),
+      y: cy - (cy - prev.y) * (nextScale / prev.scale),
+      scale: nextScale,
+    };
+    transformRef.current = t;
+    applyTransform(t);
+    scheduleZoomLabel(nextScale);
+  }, [applyTransform, scheduleZoomLabel]);
 
-  // Pointer drag panning
-  const handlePointerDown = (e) => {
+  // ── Pointer drag panning ─────────────────────────────────────────────────────
+  const handlePointerDown = useCallback((e) => {
     if (e.button !== 0) return;
-    if (e.target.closest('.sg-panel') || e.target.closest('.sg-zoomctl') || e.target.closest('.sg-cluster-dropdown-wrapper')) return;
+    if (
+      e.target.closest('.sg-panel') ||
+      e.target.closest('.sg-zoomctl') ||
+      e.target.closest('.sg-cluster-dropdown-wrapper')
+    ) return;
     isPointerDownRef.current = true;
     isDraggingRef.current = false;
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     stageRef.current?.classList.add('panning');
-  };
+  }, []);
 
-  const handlePointerMove = (e) => {
+  const handlePointerMove = useCallback((e) => {
     if (!isPointerDownRef.current) return;
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
-    if (Math.abs(dx) + Math.abs(dy) > 4) {
-      isDraggingRef.current = true;
-    }
+    if (Math.abs(dx) + Math.abs(dy) > 4) isDraggingRef.current = true;
     if (isDraggingRef.current) {
-      setTransform((prev) => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
+      const prev = transformRef.current;
+      const t = { ...prev, x: prev.x + dx, y: prev.y + dy };
+      transformRef.current = t;
+      applyTransform(t);
       dragStartRef.current = { x: e.clientX, y: e.clientY };
     }
-  };
+  }, [applyTransform]);
 
-  const handlePointerUp = (e) => {
+  const handlePointerUp = useCallback((e) => {
     if (!isPointerDownRef.current) return;
     isPointerDownRef.current = false;
     stageRef.current?.classList.remove('panning');
-
     if (!isDraggingRef.current && !e.target.closest('.sg-node') && !e.target.closest('.sg-panel')) {
       setSelectedNodeId(null);
     }
-  };
+  }, []);
 
   // Wheel zoom
   useEffect(() => {
@@ -300,25 +343,40 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     const onWheel = (e) => {
       e.preventDefault();
       const r = el.getBoundingClientRect();
-      const cx = e.clientX - r.left;
-      const cy = e.clientY - r.top;
-      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-      zoomAt(cx, cy, factor);
+      zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, [zoomAt]);
 
-  const selectedNode = selectedNodeId ? (layout.byId.get(selectedNodeId) || layout.fullById?.get(selectedNodeId)) : null;
-  const childrenOf = (id) => layout.fullChildren?.get(id) || layout.children.get(id) || [];
-  const parentsOf = (id) => layout.fullParents?.get(id) || layout.parents.get(id) || [];
+  // ── Derived helpers ──────────────────────────────────────────────────────────
+  const selectedNode = selectedNodeId
+    ? (layout.byId.get(selectedNodeId) || layout.fullById?.get(selectedNodeId))
+    : null;
+
+  const childrenOf = useCallback(
+    (id) => layout.fullChildren?.get(id) || layout.children.get(id) || [],
+    [layout],
+  );
+  const parentsOf = useCallback(
+    (id) => layout.fullParents?.get(id) || layout.parents.get(id) || [],
+    [layout],
+  );
+
+  // ── Stable node interaction handlers (won't invalidate SkillNode memo) ───────
+  const handleNodeClick = useCallback((id) => setSelectedNodeId((prev) => (prev === id ? null : id)), []);
+  const handleNodeMouseEnter = useCallback((id) => setHoveredNodeId(id), []);
+  const handleNodeMouseLeave = useCallback(() => setHoveredNodeId(null), []);
+  const handleNodeKeyDown = useCallback((e, id) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedNodeId(id); }
+  }, []);
 
   const activeClusterTitle = selectedCluster !== 'all' ? clusterTitle(selectedCluster) : null;
   const subtitle = selectedCluster !== 'all'
-    ? `Viewing ${activeClusterTitle} \u00b7 ${layout.nodesList.length} skills \u00b7 ${layout.islands[0]?.localMax ? layout.islands[0].localMax + 1 : 1} layers`
+    ? `Viewing ${activeClusterTitle} · ${layout.nodesList.length} skills · ${layout.islands[0]?.localMax ? layout.islands[0].localMax + 1 : 1} layers`
     : (graph.isLive
-      ? `${graph.clusterCount} cluster sub-graphs \u00b7 ${graph.edgeCount} prerequisite links \u00b7 longest path ${graph.maxLayer + 1} levels`
-      : 'Preview dataset \u2014 take the diagnostic to map your own graph');
+      ? `${graph.clusterCount} cluster sub-graphs · ${graph.edgeCount} prerequisite links · longest path ${graph.maxLayer + 1} levels`
+      : 'Preview dataset — take the diagnostic to map your own graph');
 
   return (
     <div className="sg-component-root flex flex-col gap-3 w-full" style={{ minHeight: typeof height === 'number' ? `${height}px` : height }}>
@@ -385,10 +443,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                 </>
               ) : (
                 <>
-                  <span
-                    className="sg-cluster-dot"
-                    style={{ background: `hsl(${clusterHue(selectedCluster)} 62% 55%)` }}
-                  />
+                  <span className="sg-cluster-dot" style={{ background: `hsl(${clusterHue(selectedCluster)} 62% 55%)` }} />
                   <span className="sg-cluster-btn-text">{clusterTitle(selectedCluster)}</span>
                   <span className="sg-cluster-count-pill">
                     {clusterOptions.find((c) => c.key === selectedCluster)?.count || layout.nodesList.length}
@@ -428,9 +483,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                   </div>
                   <div className="sg-cluster-item-right">
                     <span className="sg-cluster-count-pill">{graph.nodes.length}</span>
-                    {selectedCluster === 'all' && (
-                      <span className="sg-cluster-check">&#10003;</span>
-                    )}
+                    {selectedCluster === 'all' && <span className="sg-cluster-check">&#10003;</span>}
                   </div>
                 </button>
 
@@ -450,17 +503,12 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                       onClick={() => handleClusterChange(c.key)}
                     >
                       <div className="sg-cluster-item-left">
-                        <span
-                          className="sg-cluster-dot"
-                          style={{ background: `hsl(${clusterHue(c.key)} 62% 55%)` }}
-                        />
+                        <span className="sg-cluster-dot" style={{ background: `hsl(${clusterHue(c.key)} 62% 55%)` }} />
                         <span className="sg-cluster-item-name">{c.title}</span>
                       </div>
                       <div className="sg-cluster-item-right">
                         <span className="sg-cluster-count-pill">{c.count}</span>
-                        {isSelected && (
-                          <span className="sg-cluster-check">&#10003;</span>
-                        )}
+                        {isSelected && <span className="sg-cluster-check">&#10003;</span>}
                       </div>
                     </button>
                   );
@@ -502,13 +550,11 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
+        {/* World — transform driven directly via DOM ref; no React re-render on pan/zoom */}
         <div
           className="sg-world"
-          style={{
-            width: layout.worldW,
-            height: layout.worldH,
-            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-          }}
+          ref={worldRef}
+          style={{ width: layout.worldW, height: layout.worldH }}
         >
           {/* Cluster island cards */}
           {layout.islands.map((island, idx) => (
@@ -519,25 +565,19 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
             >
               <div className="sg-i-head">
                 <span className="sg-i-title">
-                  <span
-                    className="sg-i-dot"
-                    style={{ background: `hsl(${clusterHue(island.cluster)} 62% 55%)` }}
-                  />
+                  <span className="sg-i-dot" style={{ background: `hsl(${clusterHue(island.cluster)} 62% 55%)` }} />
                   {clusterTitle(island.cluster)}
                 </span>
                 <div className="sg-i-head-actions">
                   <span className="sg-i-meta">
                     {island.islandNodes.length} skills
-                    {island.localMax > 0 ? ` \u00b7 ${island.localMax + 1} layers` : ''}
+                    {island.localMax > 0 ? ` · ${island.localMax + 1} layers` : ''}
                   </span>
                   {selectedCluster === 'all' ? (
                     <button
                       type="button"
                       className="sg-i-focus-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleClusterChange(island.cluster);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); handleClusterChange(island.cluster); }}
                       title={`Focus on ${clusterTitle(island.cluster)} block`}
                     >
                       Focus
@@ -546,10 +586,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                     <button
                       type="button"
                       className="sg-i-focus-btn active"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleClusterChange('all');
-                      }}
+                      onClick={(e) => { e.stopPropagation(); handleClusterChange('all'); }}
                       title="Show all blocks together"
                     >
                       Show all
@@ -588,12 +625,11 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                 (hoveredNodeId && (edge.from === hoveredNodeId || edge.to === hoveredNodeId)) ||
                 (selectedNodeId && (edge.from === selectedNodeId || edge.to === selectedNodeId));
               const isDim = (hoveredNodeId || selectedNodeId) && !isHot;
-
               return (
                 <path
                   key={`${edge.from}->${edge.to}`}
                   d={edge.d}
-                  className={`sg-edge to-${edge.status} ${edge.cross ? 'cross' : ''} ${isHot ? 'hot' : ''} ${isDim ? 'dim' : ''}`}
+                  className={`sg-edge to-${edge.status}${edge.cross ? ' cross' : ''}${isHot ? ' hot' : ''}${isDim ? ' dim' : ''}`}
                   style={{ animationDelay: `${140 + edge.layer * 110}ms` }}
                   markerEnd={`url(#sg-arrow-${edge.status})`}
                 />
@@ -604,7 +640,6 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
           {/* Nodes Container */}
           <div id="sg-nodes-container">
             {layout.nodesList.map((n, i) => {
-              const stateIcon = n.status === 'mastered' ? 'check' : n.status === 'frontier' ? 'flame' : 'lock';
               const isSelected = selectedNodeId === n.id;
               const isConnected =
                 hoveredNodeId &&
@@ -627,37 +662,18 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               }
 
               return (
-                <div
+                <SkillNode
                   key={n.id}
-                  className={`sg-node ${n.status} ${isSelected ? 'active' : ''} ${isDim ? 'dim' : ''}`}
-                  style={{
-                    left: `${n.x}px`,
-                    top: `${n.y}px`,
-                    animationDelay: `${Math.min((n.layer || 0) * 110, 700) + (i % 5) * 70}ms`,
-                  }}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={n.label}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedNodeId((prev) => (prev === n.id ? null : n.id));
-                  }}
-                  onMouseEnter={() => setHoveredNodeId(n.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSelectedNodeId(n.id);
-                    }
-                  }}
-                >
-                  <div className="sg-n-icon">{ICONS[n.icon] || ICONS.box}</div>
-                  <div className="sg-n-text">
-                    <div className="sg-n-label">{n.label}</div>
-                    <div className="sg-n-sub">{subText}</div>
-                  </div>
-                  <div className="sg-n-state">{ICONS[stateIcon]}</div>
-                </div>
+                  n={n}
+                  isSelected={isSelected}
+                  isDim={!!isDim}
+                  subText={subText}
+                  animDelay={`${Math.min((n.layer || 0) * 110, 700) + (i % 5) * 70}ms`}
+                  onClick={() => handleNodeClick(n.id)}
+                  onMouseEnter={() => handleNodeMouseEnter(n.id)}
+                  onMouseLeave={handleNodeMouseLeave}
+                  onKeyDown={(e) => handleNodeKeyDown(e, n.id)}
+                />
               );
             })}
           </div>
@@ -673,10 +689,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               title="Show all blocks together"
               aria-label="Show all blocks"
             >
-              <span
-                className="sg-zoom-reset-dot"
-                style={{ background: `hsl(${clusterHue(selectedCluster)} 62% 55%)` }}
-              />
+              <span className="sg-zoom-reset-dot" style={{ background: `hsl(${clusterHue(selectedCluster)} 62% 55%)` }} />
               <span className="sg-zoom-reset-text">{clusterTitle(selectedCluster)}</span>
               <span className="sg-zoom-reset-x">&#10005;</span>
             </button>
@@ -709,18 +722,14 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
             </svg>
           </button>
-          <span className="sg-zlabel">{Math.round(transform.scale * 100)}%</span>
+          <span className="sg-zlabel">{zoomLabel}%</span>
         </div>
 
         {/* Detail Panel */}
         <aside className={`sg-panel ${selectedNode ? 'open' : ''}`}>
           {selectedNode && (
             <>
-              <button
-                className="sg-panel-close"
-                onClick={() => setSelectedNodeId(null)}
-                aria-label="Close"
-              >
+              <button className="sg-panel-close" onClick={() => setSelectedNodeId(null)} aria-label="Close">
                 &#10005;
               </button>
               <div className={`sg-p-badge ${selectedNode.status}`}>
@@ -818,13 +827,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               <button
                 className={`sg-p-cta ${selectedNode.status}`}
                 onClick={() => {
-                  if (selectedNode.status === 'frontier') {
-                    navigate('/roadmap');
-                  } else if (selectedNode.status === 'locked') {
-                    navigate('/assessment');
-                  } else {
-                    navigate('/roadmap');
-                  }
+                  navigate(selectedNode.status === 'locked' ? '/assessment' : '/roadmap');
                 }}
               >
                 {selectedNode.status === 'mastered'

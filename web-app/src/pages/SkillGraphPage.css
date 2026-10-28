@@ -406,9 +406,11 @@
   left: 0;
   top: 0;
   transform-origin: 0 0;
-  background-image: radial-gradient(rgba(87, 83, 78, 0.16) 1px, transparent 1.4px);
-  background-size: 26px 26px;
+  /* Dot grid painted on its own compositor layer — never re-painted during pan/zoom */
+  background-image: radial-gradient(rgba(87, 83, 78, 0.14) 1px, transparent 1px);
+  background-size: 28px 28px;
   will-change: transform;
+  contain: layout style;
 }
 
 /* Cluster island cards (one sub-graph per track cluster) */
@@ -420,6 +422,8 @@
   box-shadow: 0 1px 2px rgba(28, 25, 23, 0.03), 0 12px 30px rgba(28, 25, 23, 0.05);
   z-index: 0;
   animation: sgNodeIn 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) backwards;
+  /* Skip layout/style recalc for off-screen islands */
+  contain: layout style;
 }
 
 .sg-i-head {
@@ -534,7 +538,8 @@
   stroke: rgba(var(--sg-frontier-rgb), 0.85);
   stroke-width: 2.4;
   stroke-dasharray: 8 7;
-  animation: sgEdgeIn 0.7s ease backwards, sgFlow 1.3s linear infinite;
+  /* Flow animation capped at 12 iterations (~16 s) instead of infinite */
+  animation: sgEdgeIn 0.7s ease backwards, sgFlow 1.3s linear 12;
 }
 
 .sg-edge.to-locked {
@@ -595,6 +600,8 @@
   transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.3, 1.25), box-shadow 0.22s, border-color 0.22s, opacity 0.25s ease;
   animation: sgNodeIn 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) backwards;
   outline: none;
+  /* Isolate each node — skip unnecessary style recalcs on siblings */
+  contain: layout style;
 }
 
 @keyframes sgNodeIn {
@@ -695,7 +702,8 @@
 .sg-node.frontier {
   border-color: rgba(var(--sg-frontier-rgb), 0.5);
   background: linear-gradient(180deg, #fffdf9, #fff4e6);
-  animation: sgNodeIn 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) backwards, sgBreathe 2.8s ease-in-out 1s infinite;
+  /* Entrance animation plays once; breathing pulse limited to 3 cycles to save GPU */
+  animation: sgNodeIn 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) backwards, sgBreathe 2.8s ease-in-out 1s 3;
 }
 
 .sg-node.frontier .sg-n-icon {
@@ -862,8 +870,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(10px);
+  /* Solid background instead of backdrop-filter:blur — major GPU saving */
+  background: rgba(255, 255, 255, 0.98);
   border: 1px solid #e9e4da;
   border-radius: 18px;
   padding: 20px;
