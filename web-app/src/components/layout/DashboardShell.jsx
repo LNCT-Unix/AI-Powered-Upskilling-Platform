@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { Menu, Bell, LogOut, Globe, X, Search } from 'lucide-react';
+import { Menu, Bell, LogOut, X, Search } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
-import { useLanguage } from '../../hooks/useLanguage';
 
 export default function DashboardShell() {
   const [mobileOpen, setMobileOpen]       = useState(false);
   const [notificationsOpen, setNotifOpen] = useState(false);
   const navigate  = useNavigate();
   const { user, logout } = useAuth();
-  const { language, setLanguage } = useLanguage();
 
   const handleLogout = async () => { await logout(); navigate('/'); };
 
@@ -89,23 +87,8 @@ export default function DashboardShell() {
             </div>
           </div>
 
-          {/* Right: language + notifications + user avatar */}
+          {/* Right: notifications + user avatar */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Language Pill */}
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#E8E0CC] bg-white/90 px-3 py-1.5 text-xs text-slate-700 shadow-2xs">
-              <Globe size={13} className="text-slate-400" />
-              <select
-                value={language}
-                onChange={e => setLanguage(e.target.value)}
-                aria-label="Choose language"
-                className="bg-transparent outline-none cursor-pointer font-semibold text-slate-700"
-              >
-                <option value="en">English</option>
-                <option value="hi">हिन्दी</option>
-                <option value="hinglish">Hinglish</option>
-              </select>
-            </div>
-
             {/* Notification bell */}
             <div className="relative">
               <button

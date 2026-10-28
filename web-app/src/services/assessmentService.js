@@ -1,7 +1,11 @@
 import { apiClient } from './api';
 
+// Fixed UUID for Backend Engineering track matching backend seed
 export const BACKEND_TRACK_ID = '00000000-0000-0000-0000-000000000001';
 
+/**
+ * @deprecated Legacy mapping kept for temporary backward compatibility during step-by-step migration.
+ */
 export const TRACK_UUID_MAP = {
   backend: BACKEND_TRACK_ID,
   fullstack: BACKEND_TRACK_ID,
@@ -9,6 +13,11 @@ export const TRACK_UUID_MAP = {
   devops: BACKEND_TRACK_ID,
 };
 
+/**
+ * Ensures a valid UUID is returned for track references.
+ * @param {string} id - Track slug or UUID.
+ * @returns {string}
+ */
 export function normalizeTrackId(id) {
   if (!id) return BACKEND_TRACK_ID;
   if (TRACK_UUID_MAP[id]) return TRACK_UUID_MAP[id];
@@ -18,22 +27,66 @@ export function normalizeTrackId(id) {
 
 export const assessmentService = {
   /**
-   * Start a new test or resume an existing active one for a track.
-   * Directly queries the Spring Boot gateway API: POST /api/v1/assessments
-   * @param {string} trackId - UUID of the learning track.
-   * @returns {Promise<AssessmentState>}
+   * Fetch all active learning tracks for the onboarding dropdown.
+   * Endpoint: GET /api/v1/assessments/tracks
+   * @returns {Promise<Array<{trackId: string, slug: string, name: string}>>}
    */
-  async startOrResume(trackId) {
-    const validTrackId = normalizeTrackId(trackId);
-    return apiClient('/api/v1/assessments', {
-      method: 'POST',
-      body: { trackId: validTrackId },
+  async getTracks() {
+    return apiClient('/api/v1/assessments/tracks', {
+      method: 'GET',
     });
   },
 
   /**
+   * Fetch all skills of a given track for the onboarding pre-selection checklist.
+   * Endpoint: GET /api/v1/assessments/tracks/{trackId}/skills
+   * @param {string} trackId - UUID of the track.
+   * @returns {Promise<Array<{skillId: string, slug: string, name: string, cluster: string, difficulty: number}>>}
+   */
+  async getSkillsForTrack(trackId) {
+    if (!trackId) {
+      throw new Error('Track ID is required');
+    }
+    return apiClient(`/api/v1/assessments/tracks/${trackId}/skills`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Start a new assessment (or resume existing active test) with initial theta = 0.0.
+   * Learner-declared known skills are passed to calibrate the test and graph unlock.
+   * Endpoint: POST /api/v1/assessments
+   * @param {string} trackId - UUID of the learning track.
+   * @param {string[]} [knownSkillSlugs=[]] - Slugs of skills the user is comfortable with.
+   * @returns {Promise<AssessmentState>}
+   */
+  async startAssessment(trackId, knownSkillSlugs = []) {
+    if (!trackId) {
+      throw new Error('Track ID is required');
+    }
+    return apiClient('/api/v1/assessments', {
+      method: 'POST',
+      body: {
+        trackId,
+        knownSkillSlugs: Array.isArray(knownSkillSlugs) ? knownSkillSlugs : [],
+      },
+    });
+  },
+
+  /**
+   * Backward-compatible alias for starting or resuming tests.
+   * @param {string} trackId - Track slug or UUID.
+   * @param {string[]} [knownSkillSlugs=[]] - Optional declared skills.
+   * @returns {Promise<AssessmentState>}
+   */
+  async startOrResume(trackId, knownSkillSlugs = []) {
+    const validTrackId = normalizeTrackId(trackId);
+    return this.startAssessment(validTrackId, knownSkillSlugs);
+  },
+
+  /**
    * Fetch current state by assessment ID (for page reloads or active sessions).
-   * Directly queries the Spring Boot gateway API: GET /api/v1/assessments/{id}
+   * Endpoint: GET /api/v1/assessments/{id}
    * @param {string} assessmentId - UUID of the assessment.
    * @returns {Promise<AssessmentState>}
    */
@@ -48,7 +101,7 @@ export const assessmentService = {
 
   /**
    * Submit an answer to the current question.
-   * Directly queries the Spring Boot gateway API: POST /api/v1/assessments/{id}/responses
+   * Endpoint: POST /api/v1/assessments/{id}/responses
    * @param {string} assessmentId - UUID of the assessment.
    * @param {string} itemId - UUID of the current question.
    * @param {number} selectedOption - 0-indexed integer corresponding to choice.
@@ -65,13 +118,30 @@ export const assessmentService = {
   },
 
   /**
-   * Retrieve final score and skill results once status is COMPLETED.
-   * Directly queries the Spring Boot gateway API: GET /api/v1/assessments/{id}/result
+   * Retrieve legacy summary result once status is COMPLETED.
+   * Endpoint: GET /api/v1/assessments/{id}/result
    * @param {string} assessmentId - UUID of the completed assessment.
    * @returns {Promise<AssessmentResultView>}
    */
   async getResult(assessmentId) {
     return apiClient(`/api/v1/assessments/${assessmentId}/result`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Retrieve the full comprehensive post-assessment report once COMPLETED.
+   * Includes per-question answer breakdown (answers given, correct answers, skill tested)
+   * and the unlocked skills list to update the competency graph.
+   * Endpoint: GET /api/v1/assessments/{id}/report
+   * @param {string} assessmentId - UUID of the completed assessment.
+   * @returns {Promise<AssessmentReport>}
+   */
+  async getReport(assessmentId) {
+    if (!assessmentId) {
+      throw new Error('Assessment ID is required');
+    }
+    return apiClient(`/api/v1/assessments/${assessmentId}/report`, {
       method: 'GET',
     });
   },

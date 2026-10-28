@@ -193,8 +193,9 @@ export default function AuthView({ initialMode = 'login' }) {
       }
       setVerificationPending(null);
       setVerificationOtp('');
-      showToast('Email verified! Redirecting to your dashboard…');
-      navigate('/dashboard', { replace: true });
+      showToast(hasCompletedOnboarding ? 'Email verified! Redirecting to dashboard…' : 'Email verified! Redirecting to onboarding…');
+      const postVerifyDestination = location.state?.from?.pathname || (hasCompletedOnboarding ? '/dashboard' : '/onboarding');
+      navigate(postVerifyDestination, { replace: true });
     } catch (err) {
       setError(err.message || 'That verification code is invalid or expired.');
     } finally {
