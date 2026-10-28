@@ -171,6 +171,7 @@ skills:
   description: Dirty reads, phantom reads, optimistic and pessimistic locking
   prerequisites:
   - transactions-acid
+  - concurrency-basics
 - slug: replication-sharding
   name: Replication and sharding
   cluster: databases
@@ -216,6 +217,7 @@ skills:
   description: Keeping keys out of code, environment config
   prerequisites:
   - git-basics
+  - linux-cli-basics
 - slug: web-security-owasp
   name: Common web vulnerabilities
   cluster: security
@@ -231,6 +233,7 @@ skills:
   description: Throttling, quotas and brute-force defence
   prerequisites:
   - rest-api-design
+  - caching-basics
 - slug: oauth2-oidc
   name: OAuth 2.0 and OpenID Connect
   cluster: security
@@ -253,6 +256,7 @@ skills:
   description: Inversion of control and wiring components
   prerequisites:
   - oop-modular-design
+  - solid-principles
 - slug: solid-principles
   name: SOLID and clean design
   cluster: architecture
@@ -328,6 +332,7 @@ skills:
   description: Moving slow work off the request path
   prerequisites:
   - async-programming
+  - redis-in-memory
 - slug: message-queues
   name: Message queues and event streaming
   cluster: async-distributed
@@ -387,6 +392,7 @@ skills:
   description: Metrics, traces and finding failures across services
   prerequisites:
   - logging-monitoring
+  - monolith-vs-microservices
 - slug: docker-basics
   name: Docker and containers
   cluster: devops
@@ -402,6 +408,7 @@ skills:
   prerequisites:
   - git-basics
   - unit-testing
+  - docker-basics
 - slug: cloud-deployment
   name: Cloud deployment basics
   cluster: devops
@@ -410,6 +417,7 @@ skills:
   prerequisites:
   - docker-basics
   - networking-basics
+  - secrets-management
 - slug: container-orchestration
   name: Container orchestration
   cluster: devops
