@@ -17,6 +17,7 @@ import com.unix.aiupskilling.assessment.repository.SkillRepository;
 import com.unix.aiupskilling.assessment.repository.TrackRepository;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -218,7 +219,7 @@ public class AssessmentService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Assessment not finished yet");
         }
 
-        List<SkillResult> skills = buildSkillResults(assessmentId);
+        List<SkillResult> skills = buildSkillResults(assessmentId, a.getTrackId());
         return new ResultView(a.getId(), a.getLevel(), a.getTheta(),
                 a.getItemsAdministered(), a.getCorrectCount(), skills);
     }
@@ -268,7 +269,7 @@ public class AssessmentService {
         }
 
         // Build full skill graph state
-        List<SkillResult> skillResults = buildSkillResults(assessmentId);
+        List<SkillResult> skillResults = buildSkillResults(assessmentId, a.getTrackId());
 
         // unlockedSkills = all skills that are now accessible (MASTERED or FRONTIER)
         List<SkillResult> unlocked = skillResults.stream()
@@ -388,7 +389,15 @@ public class AssessmentService {
     }
 
     /** Reads back the saved skill results for an assessment as DTOs. */
-    private List<SkillResult> buildSkillResults(UUID assessmentId) {
+    private List<SkillResult> buildSkillResults(UUID assessmentId, UUID trackId) {
+        // Pre-fetch track skills with prerequisites in a single joined query to avoid N+1 queries
+        Map<UUID, Set<UUID>> prereqMap = new HashMap<>();
+        if (trackId != null) {
+            for (Skill s : skillRepo.findByTrackIdWithPrerequisites(trackId)) {
+                prereqMap.put(s.getId(), s.getPrerequisites() != null ? new HashSet<>(s.getPrerequisites()) : Collections.emptySet());
+            }
+        }
+
         List<SkillResult> skills = new ArrayList<>();
         for (AssessmentSkillResult r : skillResultRepo
                 .findByAssessmentIdOrderBySkillClusterAscSkillDifficultyAsc(assessmentId)) {
@@ -398,9 +407,7 @@ public class AssessmentService {
             sr.setName(r.getSkill().getName());
             sr.setCluster(r.getSkill().getCluster());
             sr.setState(r.getState());
-            sr.setPrerequisites(r.getSkill().getPrerequisites() != null
-                    ? new HashSet<>(r.getSkill().getPrerequisites())
-                    : new HashSet<>());
+            sr.setPrerequisites(prereqMap.getOrDefault(r.getSkill().getId(), Collections.emptySet()));
             skills.add(sr);
         }
         return skills;
