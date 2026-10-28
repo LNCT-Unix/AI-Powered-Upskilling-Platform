@@ -1,6 +1,10 @@
 import { apiClient, setAccessToken } from './api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL !== undefined ? import.meta.env.VITE_API_BASE_URL : 'http://localhost:8080';
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_TARGET ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:8080';
+
 const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
 
 const MOCK_USER = {
@@ -11,13 +15,13 @@ const MOCK_USER = {
 };
 
 export const authService = {
-  // 1. Initiate OAuth Redirects
+  // 1. Initiate OAuth Redirects (must navigate directly to backend domain for JSESSIONID session preservation)
   loginWithGoogle() {
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
+    window.location.href = `${BACKEND_URL}/oauth2/authorization/google`;
   },
 
   loginWithGitHub() {
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/github`;
+    window.location.href = `${BACKEND_URL}/oauth2/authorization/github`;
   },
 
   // 2. Exchange One-Time Code for JWT Access Token

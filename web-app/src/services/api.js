@@ -1,10 +1,33 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL !== undefined ? import.meta.env.VITE_API_BASE_URL : 'http://localhost:8080';
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-let inMemoryToken = null;
+// In dev mode when running from localhost/Vite, prefer relative paths ('')
+// so requests route through the Vite proxy to preserve same-origin HttpOnly cookies
+const isCrossDomainDev =
+  import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
+  rawBaseUrl &&
+  !rawBaseUrl.includes(window.location.host);
+
+const API_BASE_URL = isCrossDomainDev || !rawBaseUrl ? '' : rawBaseUrl;
+
+const TOKEN_KEY = 'skillpath_access_token';
+
+let inMemoryToken = typeof window !== 'undefined' ? sessionStorage.getItem(TOKEN_KEY) : null;
 let refreshPromise = null;
 
 export const setAccessToken = (token) => {
   inMemoryToken = token;
+  if (typeof window !== 'undefined') {
+    try {
+      if (token) {
+        sessionStorage.setItem(TOKEN_KEY, token);
+      } else {
+        sessionStorage.removeItem(TOKEN_KEY);
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  }
 };
 
 export const getAccessToken = () => inMemoryToken;
@@ -16,8 +39,9 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
     'Content-Type': 'application/json',
   };
 
-  if (inMemoryToken) {
-    defaultHeaders.Authorization = `Bearer ${inMemoryToken}`;
+  const activeToken = inMemoryToken || (typeof window !== 'undefined' ? sessionStorage.getItem(TOKEN_KEY) : null);
+  if (activeToken) {
+    defaultHeaders.Authorization = `Bearer ${activeToken}`;
   }
 
   const config = {
@@ -27,7 +51,7 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
       ...defaultHeaders,
       ...headers,
     },
-    credentials: 'include', // Ensures HttpOnly refresh_token cookie is sent across ports
+    credentials: 'include', // Ensures HttpOnly refresh_token cookie is sent
   };
 
   if (body) {
