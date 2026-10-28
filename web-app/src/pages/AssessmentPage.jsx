@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -16,6 +16,9 @@ import {
   ChevronUp,
   Tag,
   Network,
+  Server,
+  Check,
+  Search,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -25,6 +28,18 @@ import { assessmentService, BACKEND_TRACK_ID } from '../services/assessmentServi
 
 const ASSESSMENT_ID_KEY = 'skillpath_assessment_id';
 const ASSESSMENT_RESULT_KEY = 'skillpath_assessment_result';
+
+const CLUSTER_NAMES = {
+  foundations: 'Foundations & CS',
+  'web-apis': 'Web APIs & Protocols',
+  databases: 'Databases & Modeling',
+  security: 'Security & Auth',
+  architecture: 'Architecture & Patterns',
+  performance: 'Performance & Caching',
+  'async-distributed': 'Async & Distributed Systems',
+  'quality-observability': 'Testing & Observability',
+  devops: 'DevOps & Cloud',
+};
 
 export default function AssessmentPage() {
   const navigate = useNavigate();
@@ -39,9 +54,20 @@ export default function AssessmentPage() {
     }
   });
 
+  // Pre-test configuration questionnaire state
+  const [isConfiguring, setIsConfiguring] = useState(false);
+  const [tracks, setTracks] = useState([]);
+  const [selectedTrackId, setSelectedTrackId] = useState(BACKEND_TRACK_ID);
+  const [selectedTrack, setSelectedTrack] = useState(null);
+  const [skillsList, setSkillsList] = useState([]);
+  const [loadingConfig, setLoadingConfig] = useState(false);
+  const [selectedSkillSlugs, setSelectedSkillSlugs] = useState(new Set());
+  const [skillSearch, setSkillSearch] = useState('');
+
   const [selectedOption, setSelectedOption] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [preparingReport, setPreparingReport] = useState(false);
   const [error, setError] = useState(null);
   const [expandedQuestions, setExpandedQuestions] = useState({});
   const [skillFilter, setSkillFilter] = useState('all');
@@ -99,10 +125,15 @@ export default function AssessmentPage() {
             setAssessmentState(state);
 
             if (state.done || state.status === 'COMPLETED') {
-              const report = await fetchFinalReport(savedId);
-              if (ignore) return;
-              setResult(report);
-              localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+              setPreparingReport(true);
+              try {
+                const report = await fetchFinalReport(savedId);
+                if (ignore) return;
+                setResult(report);
+                localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+              } finally {
+                if (!ignore) setPreparingReport(false);
+              }
             }
             setLoading(false);
             return;
@@ -111,35 +142,30 @@ export default function AssessmentPage() {
           }
         }
 
-        // 2. Otherwise start a new test using track & declared skills from onboarding profile
-        const profile = (() => {
+        // 2. If a completed result exists in localStorage and no active test in session
+        const savedResult = localStorage.getItem(ASSESSMENT_RESULT_KEY);
+        if (savedResult) {
           try {
-            return JSON.parse(localStorage.getItem('skillpath_onboarding_profile') || '{}');
+            const parsed = JSON.parse(savedResult);
+            if (parsed && (parsed.skills || parsed.answered)) {
+              if (ignore) return;
+              setResult(parsed);
+              setLoading(false);
+              return;
+            }
           } catch {
-            return {};
+            // ignore
           }
-        })();
+        }
 
-        const targetTrackId = profile.trackId || BACKEND_TRACK_ID;
-        const declaredSkills = Array.isArray(profile.knownSkillSlugs) ? profile.knownSkillSlugs : [];
-
-        const state = await assessmentService.startAssessment(targetTrackId, declaredSkills);
-        if (ignore) return;
-        setAssessmentState(state);
-        sessionStorage.setItem(ASSESSMENT_ID_KEY, state.assessmentId);
-
-        if (state.done || state.status === 'COMPLETED') {
-          const report = await fetchFinalReport(state.assessmentId);
-          if (ignore) return;
-          setResult(report);
-          localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+        // 3. Otherwise: ask the questions (Track and Skills) before starting any test!
+        if (!ignore) {
+          setIsConfiguring(true);
+          setLoading(false);
         }
       } catch (err) {
         if (!ignore) {
           setError(err.message || 'Unable to connect to diagnostic engine.');
-        }
-      } finally {
-        if (!ignore) {
           setLoading(false);
         }
       }
@@ -151,6 +177,145 @@ export default function AssessmentPage() {
       ignore = true;
     };
   }, []);
+
+  // Load tracks and track skills whenever configuration mode is active
+  useEffect(() => {
+    if (!isConfiguring) return;
+    let ignore = false;
+
+    async function loadTracksAndSkills() {
+      try {
+        setLoadingConfig(true);
+        const tracksData = await assessmentService.getTracks();
+        if (ignore) return;
+
+        let activeTrackId = selectedTrackId || BACKEND_TRACK_ID;
+        if (Array.isArray(tracksData) && tracksData.length > 0) {
+          setTracks(tracksData);
+          const found = tracksData.find((t) => t.trackId === activeTrackId);
+          if (found) {
+            setSelectedTrack(found);
+          } else {
+            activeTrackId = tracksData[0].trackId;
+            setSelectedTrackId(activeTrackId);
+            setSelectedTrack(tracksData[0]);
+          }
+        }
+
+        const skillsData = await assessmentService.getSkillsForTrack(activeTrackId);
+        if (ignore) return;
+        if (Array.isArray(skillsData)) {
+          setSkillsList(skillsData);
+        }
+      } catch (err) {
+        console.warn('Unable to load tracks or skills:', err);
+      } finally {
+        if (!ignore) {
+          setLoadingConfig(false);
+        }
+      }
+    }
+
+    loadTracksAndSkills();
+
+    return () => {
+      ignore = true;
+    };
+  }, [isConfiguring]);
+
+  const handleTrackChange = async (e) => {
+    const tId = e.target.value;
+    setSelectedTrackId(tId);
+    const found = tracks.find((t) => t.trackId === tId);
+    setSelectedTrack(found || null);
+    setSelectedSkillSlugs(new Set());
+    try {
+      setLoadingConfig(true);
+      const skillsData = await assessmentService.getSkillsForTrack(tId);
+      if (Array.isArray(skillsData)) {
+        setSkillsList(skillsData);
+      }
+    } catch (err) {
+      console.warn('Unable to load track skills:', err);
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
+
+  const toggleSkill = (slug) => {
+    setSelectedSkillSlugs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
+  };
+
+  const handleClearSkills = () => {
+    setSelectedSkillSlugs(new Set());
+  };
+
+  // Group and filter skills by cluster for the checklist
+  const groupedSkills = useMemo(() => {
+    const searchLower = skillSearch.trim().toLowerCase();
+    const filtered = skillsList.filter((s) => {
+      if (!searchLower) return true;
+      return (
+        s.name.toLowerCase().includes(searchLower) ||
+        (s.cluster && s.cluster.toLowerCase().includes(searchLower))
+      );
+    });
+
+    const groups = {};
+    filtered.forEach((s) => {
+      const c = s.cluster || 'general';
+      if (!groups[c]) groups[c] = [];
+      groups[c].push(s);
+    });
+
+    return groups;
+  }, [skillsList, skillSearch]);
+
+  const handleStartTestWithSkills = async (declaredSkills) => {
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const activeTrackId = selectedTrackId || BACKEND_TRACK_ID;
+      const skillsToDeclare = Array.isArray(declaredSkills) ? declaredSkills : Array.from(selectedSkillSlugs);
+
+      const profile = {
+        trackId: activeTrackId,
+        trackSlug: selectedTrack?.slug || 'backend-engineering',
+        trackName: selectedTrack?.name || 'Backend Engineering',
+        knownSkillSlugs: skillsToDeclare,
+      };
+      localStorage.setItem('skillpath_onboarding_profile', JSON.stringify(profile));
+
+      const state = await assessmentService.startAssessment(activeTrackId, skillsToDeclare);
+      setAssessmentState(state);
+      sessionStorage.setItem(ASSESSMENT_ID_KEY, state.assessmentId);
+      setIsConfiguring(false);
+
+      if (state.done || state.status === 'COMPLETED') {
+        setPreparingReport(true);
+        try {
+          const report = await fetchFinalReport(state.assessmentId);
+          setResult(report);
+          localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+        } finally {
+          setPreparingReport(false);
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to start diagnostic test. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Submit answer for current question
   const handleSubmitAnswer = async () => {
@@ -171,9 +336,14 @@ export default function AssessmentPage() {
 
       // Check if assessment completed
       if (updatedState.done || updatedState.status === 'COMPLETED') {
-        const report = await fetchFinalReport(updatedState.assessmentId);
-        setResult(report);
-        localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+        setPreparingReport(true);
+        try {
+          const report = await fetchFinalReport(updatedState.assessmentId);
+          setResult(report);
+          localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+        } finally {
+          setPreparingReport(false);
+        }
       }
     } catch (err) {
       // Gracefully recover if 409 Conflict (e.g. out of order response or already submitted)
@@ -188,9 +358,15 @@ export default function AssessmentPage() {
           setAssessmentState(freshState);
           setSelectedOption(null);
           if (freshState.done || freshState.status === 'COMPLETED') {
-            const report = await fetchFinalReport(freshState.assessmentId);
-            setResult(report);
-            localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+            setPreparingReport(true);
+            try {
+              const report = await fetchFinalReport(freshState.assessmentId);
+              setResult(report);
+              localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+            } finally {
+              setPreparingReport(false);
+            }
+            return;
           }
           return;
         } catch {
@@ -203,43 +379,19 @@ export default function AssessmentPage() {
     }
   };
 
-  const handleRetest = async () => {
+  const handleRetest = () => {
     sessionStorage.removeItem(ASSESSMENT_ID_KEY);
     localStorage.removeItem(ASSESSMENT_RESULT_KEY);
+    setAssessmentState(null);
     setResult(null);
     setSelectedOption(null);
-    setLoading(true);
     setError(null);
-
-    try {
-      const profile = (() => {
-        try {
-          return JSON.parse(localStorage.getItem('skillpath_onboarding_profile') || '{}');
-        } catch {
-          return {};
-        }
-      })();
-
-      const targetTrackId = profile.trackId || BACKEND_TRACK_ID;
-      const declaredSkills = Array.isArray(profile.knownSkillSlugs) ? profile.knownSkillSlugs : [];
-
-      const state = await assessmentService.startAssessment(targetTrackId, declaredSkills);
-      setAssessmentState(state);
-      sessionStorage.setItem(ASSESSMENT_ID_KEY, state.assessmentId);
-
-      if (state.done || state.status === 'COMPLETED') {
-        const report = await fetchFinalReport(state.assessmentId);
-        setResult(report);
-        localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
-      }
-    } catch (err) {
-      setError(err.message || 'Unable to connect to diagnostic engine.');
-    } finally {
-      setLoading(false);
-    }
+    setSelectedSkillSlugs(new Set());
+    setPreparingReport(false);
+    setIsConfiguring(true);
   };
 
-  const isCompleted = result !== null || assessmentState?.done || assessmentState?.status === 'COMPLETED';
+  const isCompleted = !isConfiguring && (result !== null || assessmentState?.done || assessmentState?.status === 'COMPLETED');
 
   // Loading state
   if (loading) {
@@ -299,10 +451,20 @@ export default function AssessmentPage() {
       {/* Header */}
       <div className="border-b border-slate-200/80 pb-5">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-          {isCompleted ? 'Initial Skill Report & Gap Analysis' : 'Diagnostic Knowledge Assessment'}
+          {preparingReport || (isCompleted && !result)
+            ? 'Finalizing Diagnostic Evaluation'
+            : isConfiguring
+            ? 'Diagnostic Screening Setup'
+            : isCompleted
+            ? 'Initial Skill Report & Gap Analysis'
+            : 'Diagnostic Knowledge Assessment'}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          {isCompleted
+          {preparingReport || (isCompleted && !result)
+            ? 'Your adaptive assessment has concluded. Calibrating your ability score and preparing your final report.'
+            : isConfiguring
+            ? 'Select your specialization track and mark the skills you already know before starting your adaptive test.'
+            : isCompleted
             ? 'Your ability parameter (θ) has converged. Verified strengths and frontier gaps are mapped below.'
             : 'Question difficulty dynamically calibrates after every answer based on your performance.'}
         </p>
@@ -315,7 +477,250 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {!isCompleted && currentQ ? (
+      {preparingReport || (isCompleted && !result) ? (
+        /* Preparing Diagnostic Report Screen */
+        <Card className="text-center py-12 px-6 sm:px-10 space-y-6 shadow-sm border-indigo-100 bg-white">
+          <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+            {/* Pulsing ring background */}
+            <div className="absolute inset-0 rounded-full bg-indigo-500/15 animate-ping" />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-600 shadow-sm">
+              <Sparkles size={32} className="animate-pulse text-indigo-600" />
+            </div>
+          </div>
+
+          <div className="space-y-2 max-w-md mx-auto">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-100">
+              <Loader2 size={12} className="animate-spin text-indigo-600" />
+              Adaptive Test Complete
+            </span>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              Preparing Your Diagnostic Skill Report...
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+              Our diagnostic engine is calculating your final ability parameter (θ), verifying correct answers, and unlocking your personalized skill graph frontier.
+            </p>
+          </div>
+
+          {/* Stepped progress indicators */}
+          <div className="max-w-sm mx-auto rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-left space-y-2.5 text-xs">
+            <div className="flex items-center gap-2.5 text-emerald-700 font-semibold">
+              <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
+              <span>Assessment responses submitted & recorded</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-indigo-700 font-semibold">
+              <Loader2 size={15} className="shrink-0 animate-spin text-indigo-600" />
+              <span>Calibrating theta (θ) ability estimate & frontier nodes...</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-slate-400 font-medium">
+              <div className="h-3.5 w-3.5 rounded-full border border-slate-300 grid place-items-center shrink-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+              </div>
+              <span>Generating per-question breakdown & skill tree</span>
+            </div>
+          </div>
+        </Card>
+      ) : isConfiguring ? (
+        /* Pre-Test Configuration Stage: Questions for Track and Comfortable Skills */
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/60 via-white to-purple-50/40 p-6 sm:p-8 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
+                Diagnostic Calibration Setup
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-indigo-100 text-[11px] font-semibold text-indigo-800 shadow-2xs">
+                <Sparkles size={12} className="text-indigo-600" />
+                IRT Baseline θ = 0.0
+              </span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Pre-Assessment Calibration Questions
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
+              Before your adaptive diagnostic test begins, select your target track and identify the concepts you already feel comfortable with. This calibrates your initial ability baseline and maps your frontier skills.
+            </p>
+          </div>
+
+          {/* Question 1: Track Selection */}
+          <Card className="space-y-4 shadow-sm">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <span className="grid h-6 w-6 place-items-center rounded-lg bg-indigo-600 text-xs font-bold text-white">
+                1
+              </span>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                  Select Your Engineering Track
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Which career specialization are you currently targeting?
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label htmlFor="assessment-track-select" className="block text-xs font-semibold text-slate-700">
+                Available Curriculum Track
+              </label>
+              <div className="relative">
+                <select
+                  id="assessment-track-select"
+                  value={selectedTrackId}
+                  onChange={handleTrackChange}
+                  disabled={loadingConfig}
+                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 text-xs sm:text-sm font-semibold text-slate-900 outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 shadow-xs cursor-pointer disabled:bg-slate-50"
+                >
+                  {tracks.map((t) => (
+                    <option key={t.trackId} value={t.trackId}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={18}
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+              </div>
+
+              {/* Selected Track Preview */}
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/20 p-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-600 text-white shadow-xs">
+                    <Server size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                      {selectedTrack?.name || 'Backend Engineering'}
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      REST APIs • Relational DBs • Concurrency • Microservices
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="indigo" size="sm">
+                  Active Track
+                </Badge>
+              </div>
+            </div>
+          </Card>
+
+          {/* Question 2: Known Skills Checklist */}
+          <Card className="space-y-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-6 w-6 place-items-center rounded-lg bg-indigo-600 text-xs font-bold text-white">
+                  2
+                </span>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    Which skills are you already comfortable in?
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Select familiar skills to skip introductory questions and unlock frontier dependencies.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  {selectedSkillSlugs.size} selected
+                </span>
+                {selectedSkillSlugs.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearSkills}
+                    className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Search filter */}
+            <div className="relative">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={skillSearch}
+                onChange={(e) => setSkillSearch(e.target.value)}
+                placeholder="Search skills (e.g. Git, SQL, REST, Docker)..."
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition shadow-2xs"
+              />
+            </div>
+
+            {/* Loading or Cluster Chips */}
+            {loadingConfig ? (
+              <div className="py-8 flex flex-col items-center justify-center space-y-2 text-slate-400">
+                <Loader2 size={24} className="animate-spin text-indigo-600" />
+                <span className="text-xs">Loading curriculum skills...</span>
+              </div>
+            ) : Object.keys(groupedSkills).length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-6">No matching skills found.</p>
+            ) : (
+              <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
+                {Object.entries(groupedSkills).map(([clusterKey, items]) => (
+                  <div key={clusterKey} className="space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      {CLUSTER_NAMES[clusterKey] || clusterKey}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {items.map((s) => {
+                        const isSelected = selectedSkillSlugs.has(s.slug);
+                        return (
+                          <button
+                            key={s.slug}
+                            type="button"
+                            onClick={() => toggleSkill(s.slug)}
+                            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition cursor-pointer ${
+                              isSelected
+                                ? 'border-indigo-600 bg-indigo-50 text-indigo-900 ring-1 ring-indigo-500/20'
+                                : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div
+                              className={`grid h-4 w-4 place-items-center rounded ${
+                                isSelected ? 'bg-indigo-600 text-white' : 'border border-slate-300'
+                              }`}
+                            >
+                              {isSelected && <Check size={11} strokeWidth={3} />}
+                            </div>
+                            <span>{s.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Action Footer */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => {
+                setSelectedSkillSlugs(new Set());
+                handleStartTestWithSkills([]);
+              }}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline transition cursor-pointer"
+            >
+              I am starting from scratch (skip skill selection)
+            </button>
+
+            <Button
+              variant="indigo"
+              size="lg"
+              disabled={submitting || loadingConfig}
+              loading={submitting}
+              onClick={() => handleStartTestWithSkills(Array.from(selectedSkillSlugs))}
+              className="shadow-sm"
+            >
+              Start Diagnostic Screening Test <ArrowRight size={16} />
+            </Button>
+          </div>
+        </div>
+      ) : !isCompleted && currentQ ? (
         <>
           {/* Progress Tracker Card */}
           <Card className="space-y-3">

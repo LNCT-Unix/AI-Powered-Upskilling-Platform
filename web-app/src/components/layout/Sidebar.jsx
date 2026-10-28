@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 const LEARNER_NAV = [
   { path: '/dashboard',  label: 'Dashboard',          icon: LayoutDashboard },
-  { path: '/roadmap',    label: 'My Roadmap',          icon: Map },
+  { path: '/roadmap',    label: 'My Roadmap',          icon: Map, badge: 'Soon' },
   { path: '/assessment', label: 'Diagnostic Test',     icon: ClipboardCheck },
   { path: '/graph',      label: 'Practice & Tests',    icon: FlaskConical },
   { path: '/analytics',  label: 'Progress & Weakness', icon: BarChart2 },
