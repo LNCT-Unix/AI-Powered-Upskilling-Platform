@@ -211,15 +211,7 @@ export default function AssessmentPage() {
     <div className="mx-auto max-w-3xl p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="border-b border-slate-200/80 pb-5">
-        <div className="flex items-center gap-2">
-          <Badge variant="indigo" icon={Sparkles}>
-            COMPUTERIZED ADAPTIVE TESTING (CAT)
-          </Badge>
-          <span className="text-xs font-medium text-slate-500">
-            Item Response Theory (IRT) · Spring Boot Gateway
-          </span>
-        </div>
-        <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
           {isCompleted ? 'Initial Skill Report & Gap Analysis' : 'Diagnostic Knowledge Assessment'}
         </h1>
         <p className="mt-1 text-sm text-slate-500">

@@ -486,14 +486,48 @@ export const clusterHue = (cluster) =>
   [...(cluster || 'core')].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) % 100000, 7) % 360;
 
 export function computeLayout(graph, clusterFilter = 'all') {
-  const isFiltered = clusterFilter && clusterFilter !== 'all';
-  const matchingNodes = isFiltered
-    ? graph.nodes.filter((n) => n.cluster === clusterFilter)
-    : graph.nodes;
-  const activeNodes = matchingNodes.length > 0 ? matchingNodes : graph.nodes;
+  let activeNodes;
+  let isFiltered = false;
+  if (Array.isArray(clusterFilter) || clusterFilter instanceof Set) {
+    const selectedSet = new Set(clusterFilter);
+    activeNodes = graph.nodes.filter((n) => selectedSet.has(n.cluster));
+    isFiltered = true;
+  } else if (clusterFilter && clusterFilter !== 'all') {
+    activeNodes = graph.nodes.filter((n) => n.cluster === clusterFilter);
+    isFiltered = true;
+  } else {
+    activeNodes = graph.nodes.slice();
+  }
+
+  const fullById = new Map(graph.nodes.map((n) => [n.id, n]));
+  const fullChildren = new Map(Array.from(fullById.keys()).map((id) => [id, []]));
+  const fullParents = new Map(Array.from(fullById.keys()).map((id) => [id, []]));
+  graph.edges.forEach(({ from, to }) => {
+    fullChildren.get(from)?.push(to);
+    fullParents.get(to)?.push(from);
+  });
+
+  if (activeNodes.length === 0) {
+    return {
+      byId: new Map(),
+      fullById,
+      islands: [],
+      nodesList: [],
+      edgePaths: [],
+      children: new Map(),
+      parents: new Map(),
+      fullChildren,
+      fullParents,
+      worldW: 400 + LAYOUT.PAD_X,
+      worldH: 200 + LAYOUT.PAD_Y,
+      isFiltered: true,
+      selectedCluster: clusterFilter,
+      nodeW: LAYOUT.NODE_W,
+      nodeH: LAYOUT.NODE_H,
+    };
+  }
 
   const byId = new Map(activeNodes.map((n) => [n.id, n]));
-  const fullById = new Map(graph.nodes.map((n) => [n.id, n]));
   const clusters = new Map();
   activeNodes.forEach((n) => {
     if (!clusters.has(n.cluster)) clusters.set(n.cluster, []);
@@ -558,14 +592,6 @@ export function computeLayout(graph, clusterFilter = 'all') {
 
   const children = new Map(Array.from(byId.keys()).map((id) => [id, []]));
   const parents = new Map(Array.from(byId.keys()).map((id) => [id, []]));
-  const fullChildren = new Map(Array.from(fullById.keys()).map((id) => [id, []]));
-  const fullParents = new Map(Array.from(fullById.keys()).map((id) => [id, []]));
-
-  // Record relationships across the entire graph for complete traversal
-  graph.edges.forEach(({ from, to }) => {
-    fullChildren.get(from)?.push(to);
-    fullParents.get(to)?.push(from);
-  });
 
   const edgePaths = [];
   const maxBottom = Math.max(maxRowBottom, ...islandDefs.map((d) => d.y + d.height), 200);

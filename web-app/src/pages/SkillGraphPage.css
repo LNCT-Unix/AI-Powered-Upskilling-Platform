@@ -165,7 +165,8 @@
   box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), 0 1px 2px rgba(28, 25, 23, 0.2);
 }
 
-.sg-cluster-all-icon {
+.sg-cluster-all-icon,
+.sg-cluster-blocks-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,7 +174,8 @@
 }
 
 .sg-cluster-all-icon svg,
-.sg-cluster-all-icon-sm svg {
+.sg-cluster-all-icon-sm svg,
+.sg-cluster-blocks-icon svg {
   width: 14px;
   height: 14px;
 }
@@ -273,6 +275,20 @@
 .sg-cluster-menu-item.selected {
   background: #f0eee7;
   font-weight: 650;
+}
+
+.sg-cluster-checkbox-row {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sg-cluster-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #4f46e5;
+  cursor: pointer;
+  margin: 0;
+  flex: none;
 }
 
 .sg-cluster-item-left {
@@ -486,15 +502,43 @@
 }
 
 .sg-i-focus-btn:hover {
-  color: var(--sg-text);
-  border-color: var(--sg-line-strong);
-  background: #f7f5ef;
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fef2f2;
 }
 
-.sg-i-focus-btn.active {
-  background: #4f46e5;
-  color: #ffffff;
-  border-color: #4f46e5;
+.sg-empty-blocks-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.sg-empty-blocks-icon svg {
+  width: 44px;
+  height: 44px;
+  color: var(--sg-faint);
+  opacity: 0.6;
+}
+
+.sg-empty-blocks-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sg-text);
+}
+
+.sg-empty-blocks-desc {
+  font-size: 13px;
+  color: var(--sg-muted);
+  max-width: 320px;
+  line-height: 1.45;
 }
 
 #sg-edges-svg {

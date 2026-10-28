@@ -206,34 +206,50 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     return Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title));
   }, [graph.nodes]);
 
-  // Default cluster: prioritise frontier, then first cluster
-  const defaultCluster = useMemo(() => {
-    if (initialCluster) return initialCluster;
-    if (graph.nodes.length === 0) return 'all';
+  // Default checked blocks: select any 3 individual blocks
+  const defaultSelectedClusters = useMemo(() => {
+    if (clusterOptions.length === 0) return [];
     const frontierNode = graph.nodes.find((n) => n.status === 'frontier');
-    if (frontierNode?.cluster) return frontierNode.cluster;
-    return clusterOptions[0]?.key || graph.nodes[0]?.cluster || 'all';
-  }, [initialCluster, graph.nodes, clusterOptions]);
+    const preferredCluster = initialCluster || frontierNode?.cluster;
+    if (preferredCluster && clusterOptions.some((c) => c.key === preferredCluster)) {
+      const remaining = clusterOptions.filter((c) => c.key !== preferredCluster).map((c) => c.key);
+      return [preferredCluster, ...remaining.slice(0, 2)];
+    }
+    return clusterOptions.slice(0, 3).map((c) => c.key);
+  }, [clusterOptions, initialCluster, graph.nodes]);
 
-  const [selectedCluster, setSelectedCluster] = useState(() => defaultCluster);
+  const [selectedClusters, setSelectedClusters] = useState(() => defaultSelectedClusters);
 
   useEffect(() => {
-    if (!userSelectedClusterRef.current && defaultCluster && defaultCluster !== 'all') {
-      setSelectedCluster(defaultCluster);
+    if (!userSelectedClusterRef.current && defaultSelectedClusters.length > 0) {
+      setSelectedClusters(defaultSelectedClusters);
     }
-  }, [defaultCluster]);
+  }, [defaultSelectedClusters]);
 
-  const layout = useMemo(() => computeLayout(graph, selectedCluster), [graph, selectedCluster]);
+  const layout = useMemo(() => computeLayout(graph, selectedClusters), [graph, selectedClusters]);
 
-  const handleClusterChange = useCallback((newCluster) => {
+  const handleToggleCluster = useCallback((clusterKey) => {
     userSelectedClusterRef.current = true;
-    setSelectedCluster(newCluster);
-    setIsDropdownOpen(false);
-    if (selectedNodeId && newCluster !== 'all') {
+    setSelectedClusters((prev) => {
+      const isChecked = prev.includes(clusterKey);
+      return isChecked ? prev.filter((k) => k !== clusterKey) : [...prev, clusterKey];
+    });
+  }, []);
+
+  const handleEnsureClusterVisible = useCallback((clusterKey) => {
+    userSelectedClusterRef.current = true;
+    setSelectedClusters((prev) => (prev.includes(clusterKey) ? prev : [...prev, clusterKey]));
+  }, []);
+
+  // Deselect node if its parent block gets unchecked
+  useEffect(() => {
+    if (selectedNodeId) {
       const node = graph.nodes.find((n) => n.id === selectedNodeId);
-      if (node && node.cluster !== newCluster) setSelectedNodeId(null);
+      if (node && !selectedClusters.includes(node.cluster)) {
+        setSelectedNodeId(null);
+      }
     }
-  }, [selectedNodeId, graph.nodes]);
+  }, [selectedClusters, selectedNodeId, graph.nodes]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -279,11 +295,11 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     return () => { clearTimeout(timer); window.removeEventListener('resize', fitView); };
   }, [fitView]);
 
-  // Re-center on cluster change
+  // Re-center on cluster selection change
   useEffect(() => {
     const timer = setTimeout(fitView, 50);
     return () => clearTimeout(timer);
-  }, [selectedCluster, fitView]);
+  }, [selectedClusters, fitView]);
 
   // ── Zoom ─────────────────────────────────────────────────────────────────────
   const zoomAt = useCallback((cx, cy, factor) => {
@@ -371,12 +387,9 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedNodeId(id); }
   }, []);
 
-  const activeClusterTitle = selectedCluster !== 'all' ? clusterTitle(selectedCluster) : null;
-  const subtitle = selectedCluster !== 'all'
-    ? `Viewing ${activeClusterTitle} · ${layout.nodesList.length} skills · ${layout.islands[0]?.localMax ? layout.islands[0].localMax + 1 : 1} layers`
-    : (graph.isLive
-      ? `${graph.clusterCount} cluster sub-graphs · ${graph.edgeCount} prerequisite links · longest path ${graph.maxLayer + 1} levels`
-      : 'Preview dataset — take the diagnostic to map your own graph');
+  const subtitle = selectedClusters.length > 0
+    ? `Showing ${selectedClusters.length} block${selectedClusters.length > 1 ? 's' : ''} · ${layout.nodesList.length} skills · ${layout.edgePaths.length} prerequisite links`
+    : 'No blocks selected — check blocks from the dropdown to view skills';
 
   return (
     <div className="sg-component-root flex flex-col gap-3 w-full" style={{ minHeight: typeof height === 'number' ? `${height}px` : height }}>
@@ -426,30 +439,25 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               onClick={() => setIsDropdownOpen((prev) => !prev)}
               aria-haspopup="listbox"
               aria-expanded={isDropdownOpen}
-              title="Filter by skill block or show all"
+              title="Filter visible skill blocks"
             >
-              {selectedCluster === 'all' ? (
-                <>
-                  <span className="sg-cluster-all-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                    </svg>
-                  </span>
-                  <span className="sg-cluster-btn-text">Show All Blocks</span>
-                  <span className="sg-cluster-count-pill">{graph.nodes.length}</span>
-                </>
-              ) : (
-                <>
-                  <span className="sg-cluster-dot" style={{ background: `hsl(${clusterHue(selectedCluster)} 62% 55%)` }} />
-                  <span className="sg-cluster-btn-text">{clusterTitle(selectedCluster)}</span>
-                  <span className="sg-cluster-count-pill">
-                    {clusterOptions.find((c) => c.key === selectedCluster)?.count || layout.nodesList.length}
-                  </span>
-                </>
-              )}
+              <span className="sg-cluster-blocks-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                  <polyline points="2 17 12 22 22 17" />
+                  <polyline points="2 12 12 17 22 12" />
+                </svg>
+              </span>
+              <span className="sg-cluster-btn-text">
+                {selectedClusters.length === 0
+                  ? 'No Blocks Selected'
+                  : selectedClusters.length === 1
+                  ? clusterTitle(selectedClusters[0])
+                  : `${selectedClusters.length} Blocks Visible`}
+              </span>
+              <span className="sg-cluster-count-pill">
+                {selectedClusters.length} / {clusterOptions.length}
+              </span>
               <svg className="sg-dropdown-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
@@ -457,60 +465,39 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
 
             {isDropdownOpen && (
               <div className="sg-cluster-menu" role="listbox">
-                <div className="sg-cluster-menu-header">Graph View Options</div>
+                <div className="sg-cluster-menu-header">
+                  <span>Individual Blocks ({selectedClusters.length}/{clusterOptions.length} visible)</span>
+                </div>
 
-                {/* Show All Together Option */}
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={selectedCluster === 'all'}
-                  className={`sg-cluster-menu-item ${selectedCluster === 'all' ? 'selected' : ''}`}
-                  onClick={() => handleClusterChange('all')}
-                >
-                  <div className="sg-cluster-item-left">
-                    <span className="sg-cluster-all-icon-sm">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                      </svg>
-                    </span>
-                    <div className="sg-cluster-item-titles">
-                      <span className="sg-cluster-item-name">Show all together</span>
-                      <span className="sg-cluster-item-sub">All blocks &amp; cross-prerequisite links</span>
-                    </div>
-                  </div>
-                  <div className="sg-cluster-item-right">
-                    <span className="sg-cluster-count-pill">{graph.nodes.length}</span>
-                    {selectedCluster === 'all' && <span className="sg-cluster-check">&#10003;</span>}
-                  </div>
-                </button>
-
-                <div className="sg-cluster-menu-divider" />
-                <div className="sg-cluster-menu-header">Individual Blocks ({clusterOptions.length})</div>
-
-                {/* Individual Cluster Blocks */}
+                {/* Individual Cluster Blocks with Checkboxes */}
                 {clusterOptions.map((c) => {
-                  const isSelected = selectedCluster === c.key;
+                  const isChecked = selectedClusters.includes(c.key);
                   return (
-                    <button
+                    <label
                       key={c.key}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      className={`sg-cluster-menu-item ${isSelected ? 'selected' : ''}`}
-                      onClick={() => handleClusterChange(c.key)}
+                      className={`sg-cluster-menu-item sg-cluster-checkbox-row ${isChecked ? 'selected' : ''}`}
+                      onClick={(e) => {
+                        // Prevent synthetic double-fire when clicking the label
+                        if (e.target.tagName !== 'INPUT') {
+                          e.preventDefault();
+                          handleToggleCluster(c.key);
+                        }
+                      }}
                     >
+                      <input
+                        type="checkbox"
+                        className="sg-cluster-checkbox"
+                        checked={isChecked}
+                        onChange={() => handleToggleCluster(c.key)}
+                      />
                       <div className="sg-cluster-item-left">
                         <span className="sg-cluster-dot" style={{ background: `hsl(${clusterHue(c.key)} 62% 55%)` }} />
                         <span className="sg-cluster-item-name">{c.title}</span>
                       </div>
                       <div className="sg-cluster-item-right">
                         <span className="sg-cluster-count-pill">{c.count}</span>
-                        {isSelected && <span className="sg-cluster-check">&#10003;</span>}
                       </div>
-                    </button>
+                    </label>
                   );
                 })}
               </div>
@@ -573,25 +560,17 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                     {island.islandNodes.length} skills
                     {island.localMax > 0 ? ` · ${island.localMax + 1} layers` : ''}
                   </span>
-                  {selectedCluster === 'all' ? (
-                    <button
-                      type="button"
-                      className="sg-i-focus-btn"
-                      onClick={(e) => { e.stopPropagation(); handleClusterChange(island.cluster); }}
-                      title={`Focus on ${clusterTitle(island.cluster)} block`}
-                    >
-                      Focus
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="sg-i-focus-btn active"
-                      onClick={(e) => { e.stopPropagation(); handleClusterChange('all'); }}
-                      title="Show all blocks together"
-                    >
-                      Show all
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="sg-i-focus-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleCluster(island.cluster);
+                    }}
+                    title={`Hide ${clusterTitle(island.cluster)} block`}
+                  >
+                    Hide
+                  </button>
                 </div>
               </div>
             </div>
@@ -679,21 +658,23 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
           </div>
         </div>
 
+        {/* Empty state when no blocks are checked */}
+        {layout.nodesList.length === 0 && (
+          <div className="sg-empty-blocks-overlay">
+            <div className="sg-empty-blocks-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 17 12 22 22 17" />
+                <polyline points="2 12 12 17 22 12" />
+              </svg>
+            </div>
+            <div className="sg-empty-blocks-title">No Blocks Visible</div>
+            <div className="sg-empty-blocks-desc">Check one or more blocks from the dropdown above to display skills on the graph.</div>
+          </div>
+        )}
+
         {/* Zoom Controls */}
         <div className="sg-zoomctl">
-          {selectedCluster !== 'all' && (
-            <button
-              type="button"
-              className="sg-zoom-reset-block"
-              onClick={() => handleClusterChange('all')}
-              title="Show all blocks together"
-              aria-label="Show all blocks"
-            >
-              <span className="sg-zoom-reset-dot" style={{ background: `hsl(${clusterHue(selectedCluster)} 62% 55%)` }} />
-              <span className="sg-zoom-reset-text">{clusterTitle(selectedCluster)}</span>
-              <span className="sg-zoom-reset-x">&#10005;</span>
-            </button>
-          )}
           <button
             onClick={() => {
               if (!stageRef.current) return;
@@ -764,20 +745,20 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                   {parentsOf(selectedNode.id).length > 0 ? (
                     parentsOf(selectedNode.id).map((parentId) => {
                       const p = layout.byId.get(parentId) || layout.fullById?.get(parentId);
-                      const isCrossCluster = p && selectedCluster !== 'all' && p.cluster !== selectedCluster;
+                      const isHiddenCluster = p && !selectedClusters.includes(p.cluster);
                       return (
                         <button
                           key={parentId}
                           onClick={() => {
-                            if (p && selectedCluster !== 'all' && p.cluster !== selectedCluster) {
-                              handleClusterChange(p.cluster);
+                            if (p && !selectedClusters.includes(p.cluster)) {
+                              handleEnsureClusterVisible(p.cluster);
                             }
                             setSelectedNodeId(parentId);
                           }}
                           title={p ? `${p.label} (${clusterTitle(p.cluster)})` : parentId}
                         >
                           {p?.label || parentId}
-                          {isCrossCluster && (
+                          {isHiddenCluster && (
                             <span className="sg-other-cluster-badge">
                               &nbsp;&bull; {clusterTitle(p.cluster)}
                             </span>
@@ -797,20 +778,20 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                   {childrenOf(selectedNode.id).length > 0 ? (
                     childrenOf(selectedNode.id).map((childId) => {
                       const c = layout.byId.get(childId) || layout.fullById?.get(childId);
-                      const isCrossCluster = c && selectedCluster !== 'all' && c.cluster !== selectedCluster;
+                      const isHiddenCluster = c && !selectedClusters.includes(c.cluster);
                       return (
                         <button
                           key={childId}
                           onClick={() => {
-                            if (c && selectedCluster !== 'all' && c.cluster !== selectedCluster) {
-                              handleClusterChange(c.cluster);
+                            if (c && !selectedClusters.includes(c.cluster)) {
+                              handleEnsureClusterVisible(c.cluster);
                             }
                             setSelectedNodeId(childId);
                           }}
                           title={c ? `${c.label} (${clusterTitle(c.cluster)})` : childId}
                         >
                           {c?.label || childId}
-                          {isCrossCluster && (
+                          {isHiddenCluster && (
                             <span className="sg-other-cluster-badge">
                               &nbsp;&bull; {clusterTitle(c.cluster)}
                             </span>
