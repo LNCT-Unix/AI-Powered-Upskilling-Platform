@@ -1,9 +1,10 @@
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Map, ClipboardCheck, FlaskConical,
   BarChart2, Briefcase, UserCircle2,
-  Settings, ArrowLeft, Sparkles
+  Settings, LogOut
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 const LEARNER_NAV = [
   { path: '/dashboard',  label: 'Dashboard',          icon: LayoutDashboard },
@@ -51,6 +52,14 @@ function NavItem({ path, label, icon: Icon, badge, onClose }) {
 }
 
 export default function Sidebar({ onClose }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    if (onClose) onClose();
+    await logout();
+    navigate('/');
+  };
   return (
     <div className="flex h-full flex-col bg-white select-none overflow-y-auto border-r border-[#E8E0CC]">
       {/* Logo matching Landing Page */}
@@ -96,28 +105,16 @@ export default function Sidebar({ onClose }) {
           </nav>
         </div>
       </div>
-
-      {/* Pro CTA card inside sidebar */}
-      <div className="px-3 pb-3">
-        <div className="rounded-2xl bg-[#FFEEDD] border border-[#FFD9B8] p-3 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#B45A14]">
-            <Sparkles size={13} className="text-[#FF9838]" />
-            CAT v2.4 Active
-          </div>
-          <p className="text-[10px] text-[#8D8471] mt-0.5">Real-time IRT Ability Calibration</p>
-        </div>
-      </div>
-
-      {/* Footer */}
+      {/* Footer / Log out */}
       <div className="border-t border-[#E8E0CC] p-3">
-        <Link
-          to="/"
-          onClick={onClose}
-          className="flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-[#F7F3E8] hover:text-slate-900 transition-colors"
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="group flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors cursor-pointer"
         >
-          <ArrowLeft size={14} />
-          <span>Back to Landing</span>
-        </Link>
+          <LogOut size={17} className="text-rose-500 shrink-0 group-hover:text-rose-600 transition" />
+          <span>Log out</span>
+        </button>
       </div>
     </div>
   );

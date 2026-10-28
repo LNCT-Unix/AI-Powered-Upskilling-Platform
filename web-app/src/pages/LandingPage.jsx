@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Menu, X, ArrowRight, CheckCircle2, LogOut } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import OctoMascotAnimation from '../components/ui/OctoMascotAnimation';
 import { useAuth } from '../hooks/useAuth';
@@ -8,8 +8,13 @@ import './LandingPage.css';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -88,12 +93,22 @@ export default function LandingPage() {
 
           <div className="hidden sm:flex items-center gap-3">
             {user ? (
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-2 rounded-full bg-[#7C5CFA] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-md shadow-[#7C5CFA]/20"
-              >
-                Go to Dashboard <span className="arr">&rarr;</span>
-              </Link>
+              <div className="flex items-center gap-2.5">
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#7C5CFA] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-md shadow-[#7C5CFA]/20"
+                >
+                  Go to Dashboard <span className="arr">&rarr;</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E0CC] bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50/50 transition cursor-pointer"
+                >
+                  <LogOut size={14} className="text-slate-400 group-hover:text-rose-500" />
+                  <span>Log out</span>
+                </button>
+              </div>
             ) : (
               <>
                 <Link
@@ -137,12 +152,26 @@ export default function LandingPage() {
             </nav>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
               {user ? (
-                <Link
-                  to="/dashboard"
-                  className="w-full text-center rounded-full bg-[#7C5CFA] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8]"
-                >
-                  Go to Dashboard &rarr;
-                </Link>
+                <>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center rounded-full bg-[#7C5CFA] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8]"
+                  >
+                    Go to Dashboard &rarr;
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await handleLogout();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50 cursor-pointer"
+                  >
+                    <LogOut size={15} />
+                    Log out
+                  </button>
+                </>
               ) : (
                 <>
                   <Link
@@ -168,9 +197,6 @@ export default function LandingPage() {
       <main id="top" className="relative overflow-hidden pt-6">
         {/* Heading block */}
         <div className="text-center pt-8 pb-4 px-4 max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#EFEAFC] px-3.5 py-1 text-xs font-bold text-[#7C5CFA] uppercase tracking-wider mb-4 border border-[#7C5CFA]/20">
-            <Sparkles size={13} /> AI-Powered Adaptive Upskilling Platform
-          </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tight">
             Diagnose your gaps,<br />
             build real skills with <span className="text-[#7C5CFA]">octoByte</span>.
@@ -222,7 +248,6 @@ export default function LandingPage() {
               <p>estimate accuracy vs true ability</p>
             </div>
           </div>
-          <div className="stat-note">Numbers from our 1,000-learner diagnostic simulation &mdash; rerun live at launch.</div>
         </div>
 
         {/* ── Cluster Marquee ───────────────────────────── */}
