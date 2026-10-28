@@ -12,7 +12,7 @@ public interface EmailAuthService {
 
     RegistrationAcceptedResponse register(RegisterRequest request, String clientIp);
 
-    void confirmEmail(ConfirmEmailRequest request);
+    AuthTokens confirmEmail(ConfirmEmailRequest request, ClientPlatform platform);
 
     RegistrationAcceptedResponse resendVerification(ResendVerificationRequest request, String clientIp);
 

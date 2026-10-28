@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './AuthPage.css';
 
@@ -14,6 +14,7 @@ export default function AuthView({ initialMode = 'login' }) {
     register,
     loginWithGoogle,
     loginWithGitHub,
+    confirmEmailVerification,
     resendEmailVerification,
     isAuthenticated,
   } = useAuth();
@@ -36,20 +37,15 @@ export default function AuthView({ initialMode = 'login' }) {
   const [error, setError] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [verificationPending, setVerificationPending] = useState(null);
+  const [verificationOtp, setVerificationOtp] = useState('');
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState('');
+  const [resendSeconds, setResendSeconds] = useState(0);
 
   const hasCompletedOnboarding = Boolean(localStorage.getItem('skillpath_onboarding_profile'));
   const defaultDestination = hasCompletedOnboarding ? '/dashboard' : '/onboarding';
   const destination = location.state?.from?.pathname || defaultDestination;
-
-  // Sync mode with route if user navigates back/forward
-  useEffect(() => {
-    if (initialMode && initialMode !== mode) {
-      setMode(initialMode);
-      setError('');
-    }
-  }, [initialMode]);
 
   // If already logged in, redirect
   useEffect(() => {
@@ -57,6 +53,14 @@ export default function AuthView({ initialMode = 'login' }) {
       navigate(destination, { replace: true });
     }
   }, [isAuthenticated, navigate, destination]);
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setResendSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendSeconds]);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -138,6 +142,8 @@ export default function AuthView({ initialMode = 'login' }) {
       if (res?.success) {
         if (res.data?.verificationRequired || !res.data?.accessToken) {
           setVerificationPending(email);
+          setVerificationOtp('');
+          setResendSeconds(60);
         } else {
           showToast('Account created successfully! Redirecting…');
           navigate(destination, { replace: true });
@@ -158,11 +164,41 @@ export default function AuthView({ initialMode = 'login' }) {
     setResendStatus('');
     try {
       await resendEmailVerification(verificationPending);
-      setResendStatus('A new activation link has been sent to your inbox.');
+      setResendStatus('A new 6-digit verification code has been sent to your inbox.');
+      setResendSeconds(60);
     } catch (err) {
       setResendStatus(err.message || 'Failed to resend. Please try again in 60 seconds.');
     } finally {
       setResending(false);
+    }
+  };
+
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    setError('');
+    setResendStatus('');
+
+    const otp = verificationOtp.trim();
+    if (!/^\d{6}$/.test(otp)) {
+      setError('Enter the 6-digit verification code from your email.');
+      return;
+    }
+
+    setVerifyingEmail(true);
+    try {
+      const result = await confirmEmailVerification(verificationPending, otp);
+      if (!result?.success) {
+        setError(result?.error || 'That verification code is invalid or expired.');
+        return;
+      }
+      setVerificationPending(null);
+      setVerificationOtp('');
+      showToast('Email verified! Redirecting to your dashboard…');
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.message || 'That verification code is invalid or expired.');
+    } finally {
+      setVerifyingEmail(false);
     }
   };
 
@@ -329,37 +365,49 @@ export default function AuthView({ initialMode = 'login' }) {
               </div>
               <h1 className="title">Check your inbox</h1>
               <p className="subtitle" style={{ margin: '6px 0 16px' }}>
-                We sent a secure activation link to <strong className="text-[#2F2A3E]">{verificationPending}</strong>. Click the link in your email to activate your account.
+                We sent a 6-digit verification code to <strong className="text-[#2F2A3E]">{verificationPending}</strong>.
               </p>
 
-              {resendStatus && (
+              {(error || resendStatus) && (
                 <div className="flex items-start gap-2 rounded-xl border border-indigo-100 bg-[#EFEAFC] p-3 text-xs text-[#3D2C86] text-left">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[#7C5CFA] mt-0.5" />
-                  <span>{resendStatus}</span>
+                  {error ? <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" /> : <CheckCircle2 className="h-4 w-4 shrink-0 text-[#7C5CFA] mt-0.5" />}
+                  <span>{error || resendStatus}</span>
                 </div>
               )}
 
-              <div className="space-y-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setVerificationPending(null);
-                    handleModeChange('login');
+              <form onSubmit={handleVerifyEmail} className="space-y-3 pt-2">
+                <label htmlFor="verification-otp" className="sr-only">6-digit verification code</label>
+                <input
+                  id="verification-otp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={verificationOtp}
+                  onChange={(e) => {
+                    setVerificationOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                    setError('');
                   }}
-                  className="btn"
-                >
-                  <span>Proceed to Log in</span>
-                  <ArrowRight className="h-4 w-4" />
+                  placeholder="Enter 6-digit code"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-lg font-bold tracking-[0.35em] text-[#2F2A3E] outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#EFEAFC]"
+                  disabled={verifyingEmail}
+                />
+                <button type="submit" disabled={verifyingEmail} className="btn">
+                  {verifyingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  <span>{verifyingEmail ? 'Verifying code…' : 'Verify email'}</span>
                 </button>
+              </form>
 
+              <div className="space-y-3 pt-1">
                 <button
                   type="button"
                   onClick={handleResend}
-                  disabled={resending}
+                  disabled={resending || resendSeconds > 0}
                   className="btn-ghost w-full"
                 >
                   <RotateCcw className={`h-4 w-4 ${resending ? 'animate-spin' : ''}`} />
-                  <span>{resending ? 'Resending email…' : 'Resend verification link'}</span>
+                  <span>
+                    {resending ? 'Resending code…' : resendSeconds > 0 ? `Resend code in ${resendSeconds}s` : 'Resend verification code'}
+                  </span>
                 </button>
               </div>
 

@@ -76,8 +76,11 @@ public class EmailAuthServiceImpl implements EmailAuthService {
 
     @Override
     @Transactional
-    public void confirmEmail(ConfirmEmailRequest request) {
+    public AuthTokens confirmEmail(ConfirmEmailRequest request, ClientPlatform platform) {
         emailVerificationService.verifyOtp(request.getEmail(), request.getOtp());
+        User user = userProvisioningService.findByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidCredentialsException("Account not found", "ACCOUNT_NOT_FOUND"));
+        return authTokenService.issueTokens(user, platform);
     }
 
     @Override
@@ -105,7 +108,9 @@ public class EmailAuthServiceImpl implements EmailAuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    // Login verifies credentials and issues a persisted refresh token, so the
+    // whole operation must run in a read-write transaction.
+    @Transactional
     public AuthTokens login(LoginRequest request, ClientPlatform platform, String clientIp) {
         String normalizedEmail = EmailNormalizer.normalize(request.getEmail());
         rateLimiterService.checkLoginRateLimit(clientIp, normalizedEmail);

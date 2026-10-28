@@ -1,74 +1,35 @@
-import { useEffect, useState, useTransition } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Loader2, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Logo from '../components/ui/Logo';
 import { useAuth } from '../hooks/useAuth';
 
-function extractVerificationToken() {
-  if (typeof window === 'undefined') return null;
-
-  // 1. Try URL fragment (#token=RAW_TOKEN)
-  const hash = window.location.hash;
-  if (hash && hash.includes('token=')) {
-    const match = hash.match(/token=([^&]+)/);
-    if (match && match[1]) return decodeURIComponent(match[1]);
-  }
-
-  // 2. Try URL search parameter (?token=RAW_TOKEN)
-  const params = new URLSearchParams(window.location.search);
-  return params.get('token');
-}
-
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
-  const [, startTransition] = useTransition();
+  const location = useLocation();
   const { confirmEmailVerification } = useAuth();
+  const [email, setEmail] = useState(() => location.state?.email || new URLSearchParams(location.search).get('email') || '');
+  const [otp, setOtp] = useState('');
+  const [status, setStatus] = useState('form');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const [token] = useState(() => extractVerificationToken());
-  const [status, setStatus] = useState(() => (token ? 'processing' : 'error'));
-  const [errorMessage, setErrorMessage] = useState(() =>
-    token ? '' : 'No activation token was found in the link. Please check your email or register again.'
-  );
-
-  useEffect(() => {
-    if (!token || status !== 'processing') return;
-
-    let mounted = true;
-
-    async function verify() {
-      try {
-        const res = await confirmEmailVerification(token);
-        if (!mounted) return;
-
-        if (res.success) {
-          setStatus('success');
-          // Optional smooth auto-redirect after 3 seconds
-          setTimeout(() => {
-            if (mounted) {
-              startTransition(() => {
-                navigate('/login');
-              });
-            }
-          }, 3000);
-        } else {
-          setStatus('error');
-          setErrorMessage(res.message || 'Verification token is invalid or has expired.');
-        }
-      } catch (err) {
-        if (!mounted) return;
-        setStatus('error');
-        setErrorMessage(err.message || 'Unable to confirm verification token. It may have expired.');
-      }
+  async function verify(e) {
+    e.preventDefault();
+    setErrorMessage('');
+    if (!email || !/^\d{6}$/.test(otp)) {
+      setErrorMessage('Enter your email and the 6-digit verification code.');
+      return;
     }
-
-    verify();
-
-    return () => {
-      mounted = false;
-    };
-  }, [token, status, confirmEmailVerification, navigate]);
+    try {
+      await confirmEmailVerification(email.trim(), otp);
+      setStatus('success');
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage(err.message || 'The verification code is invalid or expired.');
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#f5f3ee' }}>
@@ -77,14 +38,15 @@ export default function VerifyEmailPage() {
           <Logo asLink={false} />
         </div>
 
-        {status === 'processing' && (
-          <div className="space-y-3 pt-2">
-            <Loader2 size={36} className="mx-auto animate-spin text-indigo-600" aria-hidden="true" />
-            <h1 className="text-lg font-bold text-slate-900">Activating your account...</h1>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Verifying your security token with the Spring Boot authentication gateway.
-            </p>
-          </div>
+        {status === 'form' && (
+          <form onSubmit={verify} className="space-y-4 pt-2">
+            <h1 className="text-lg font-bold text-slate-900">Verify your email</h1>
+            <p className="text-xs text-slate-500">Enter the 6-digit code sent by the Spring Boot authentication gateway.</p>
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email address" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+            <input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="6-digit code" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-center text-lg tracking-[0.3em]" />
+            <Button type="submit" variant="primary">Verify email</Button>
+            {errorMessage && <p className="text-xs text-rose-600">{errorMessage}</p>}
+          </form>
         )}
 
         {status === 'success' && (
@@ -104,7 +66,7 @@ export default function VerifyEmailPage() {
               </Link>
             </div>
             <p className="text-[11px] text-slate-400 pt-1">
-              Redirecting to sign in automatically in a few seconds...
+              Your email is verified. Sign in to continue.
             </p>
           </div>
         )}

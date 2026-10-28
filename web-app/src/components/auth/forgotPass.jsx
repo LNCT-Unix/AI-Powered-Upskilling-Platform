@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Loader2, AlertCircle, ArrowLeft, KeyRound } from 'lucide-react';
 import Logo from '../ui/Logo';
+import { authService } from '../../services/authService';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -12,22 +13,12 @@ function validateEmail(value) {
   return '';
 }
 
-// Default API call. Replace the URL with your backend endpoint,
-// or pass your own function through the `onSendOtp` prop.
 async function defaultSendOtp(email) {
-  const res = await fetch('/auth/forgot-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  if (!res.ok) {
-    throw new Error('Could not send the OTP. Please try again.');
-  }
+  return authService.requestPasswordReset(email);
 }
 
 export default function ForgotPass({
   onSendOtp = defaultSendOtp, // async (email) => void
-  verifyOtpHref = '/verify-otp', // where to go after the OTP is sent
   signInHref = '/login',
 }) {
   const navigate = useNavigate();
@@ -37,6 +28,11 @@ export default function ForgotPass({
   const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const [step, setStep] = useState('email');
+  const [otp, setOtp] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   function handleChange(e) {
     const value = e.target.value;
@@ -63,9 +59,57 @@ export default function ForgotPass({
     try {
       const cleanEmail = email.trim();
       await onSendOtp(cleanEmail);
-      navigate(verifyOtpHref, { state: { email: cleanEmail } });
+      setEmail(cleanEmail);
+      setStep('otp');
     } catch (err) {
       setFormError(err.message || 'Could not send the OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+
+  }
+
+  async function handleVerifyOtp(e) {
+    e.preventDefault();
+    setFormError('');
+    if (!/^\d{6}$/.test(otp)) {
+      setFormError('Enter the 6-digit reset code from your email.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await authService.verifyPasswordResetOtp(email.trim(), otp);
+      setResetToken(response?.data?.resetToken);
+      setStep('password');
+    } catch (err) {
+      setFormError(err.message || 'The reset code is invalid or expired.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(e) {
+    e.preventDefault();
+    setFormError('');
+    if (newPassword.length < 8) {
+      setFormError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setFormError('Passwords do not match.');
+      return;
+    }
+    if (!resetToken) {
+      setFormError('Your reset session has expired. Please request a new code.');
+      setStep('email');
+      return;
+    }
+    setLoading(true);
+    try {
+      await authService.resetPassword(email.trim(), resetToken, newPassword);
+      navigate(signInHref, { replace: true, state: { resetSuccess: true } });
+    } catch (err) {
+      setFormError(err.message || 'Unable to reset your password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -107,7 +151,7 @@ export default function ForgotPass({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {step === 'email' && <form onSubmit={handleSubmit} noValidate className="space-y-4">
             {/* Email input */}
             <div>
               <label htmlFor="email" className="mb-1.5 block text-xs font-semibold text-slate-700">
@@ -156,7 +200,40 @@ export default function ForgotPass({
                 <span>Send OTP</span>
               )}
             </button>
-          </form>
+          </form>}
+
+          {step === 'otp' && (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <p className="text-sm text-slate-500">Enter the 6-digit code sent to <strong>{email}</strong>.</p>
+              <input
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="6-digit code"
+                className="w-full rounded-lg border border-slate-200 px-3 py-3 text-center text-lg tracking-[0.3em]"
+                disabled={loading}
+              />
+              <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Verify code
+              </button>
+              <button type="button" onClick={() => setStep('email')} className="w-full text-xs font-semibold text-indigo-600">Use a different email</button>
+            </form>
+          )}
+
+          {step === 'password' && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <p className="text-sm text-slate-500">Choose a new password for <strong>{email}</strong>.</p>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" disabled={loading} />
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm" disabled={loading} />
+              <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Reset password
+              </button>
+            </form>
+          )}
 
           <p className="mt-6 text-center text-xs text-slate-500">
             <Link

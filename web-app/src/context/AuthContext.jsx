@@ -85,6 +85,23 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const confirmEmailVerification = useCallback(async (email, otp) => {
+    setIsLoading(true);
+    try {
+      const result = await authService.confirmEmailVerification(email, otp);
+      if (result?.data?.accessToken && result?.data?.user) {
+        setTokenState(result.data.accessToken);
+        setUser(result.data.user);
+        return { success: true, data: result.data };
+      }
+      return { success: false, error: 'Invalid verification response' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -106,7 +123,7 @@ export function AuthProvider({ children }) {
     loginWithGitHub: authService.loginWithGitHub,
     logout,
     handleOAuthCallback,
-    confirmEmailVerification: authService.confirmEmailVerification,
+    confirmEmailVerification,
     resendEmailVerification: authService.resendEmailVerification,
   };
 

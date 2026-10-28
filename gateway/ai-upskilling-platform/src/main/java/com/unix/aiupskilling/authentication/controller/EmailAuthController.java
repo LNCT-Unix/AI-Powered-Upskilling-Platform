@@ -7,6 +7,7 @@ import com.unix.aiupskilling.authentication.dto.request.RegisterRequest;
 import com.unix.aiupskilling.authentication.dto.request.ResendVerificationRequest;
 import com.unix.aiupskilling.authentication.dto.response.AuthTokens;
 import com.unix.aiupskilling.authentication.dto.response.AuthTokensResponse;
+import com.unix.aiupskilling.authentication.dto.response.EmailVerificationResponse;
 import com.unix.aiupskilling.authentication.dto.response.RegistrationAcceptedResponse;
 import com.unix.aiupskilling.authentication.model.enums.ClientPlatform;
 import com.unix.aiupskilling.authentication.security.oauth2.OAuthCookieHelper;
@@ -20,7 +21,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -43,11 +43,25 @@ public class EmailAuthController {
     }
 
     @PostMapping({"/email-verification/confirm", "/email-verification/verify-otp"})
-    public ResponseEntity<ApiResponse<Map<String, Boolean>>> confirm(
-            @Valid @RequestBody ConfirmEmailRequest request) {
+    public ResponseEntity<ApiResponse<EmailVerificationResponse>> confirm(
+            @Valid @RequestBody ConfirmEmailRequest request,
+            @RequestHeader(value = "X-Client-Platform", required = false) String platformHeader,
+            HttpServletResponse httpResponse) {
 
-        emailAuthService.confirmEmail(request);
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("emailVerified", true), "Email verified successfully"));
+        boolean isMobile = "mobile".equalsIgnoreCase(platformHeader);
+        ClientPlatform platform = isMobile ? ClientPlatform.MOBILE : ClientPlatform.WEB;
+        AuthTokens tokens = emailAuthService.confirmEmail(request, platform);
+        if (!isMobile) {
+            OAuthCookieHelper.setCookie(
+                    httpResponse,
+                    OAuthCookieHelper.REFRESH_TOKEN_COOKIE,
+                    tokens.getRefreshToken(),
+                    "/api/auth",
+                    authProperties.getJwt().getRefreshTokenTtlSeconds()
+            );
+            tokens.setRefreshToken(null);
+        }
+        return ResponseEntity.ok(ApiResponse.ok(EmailVerificationResponse.from(tokens), "Email verified successfully"));
     }
 
     @PostMapping("/email-verification/resend")

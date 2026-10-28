@@ -66,17 +66,39 @@ export const authService = {
     });
   },
 
-  // 8. Confirm Email Verification Token
-  async confirmEmailVerification(token) {
-    return apiClient('/api/auth/email-verification/confirm', {
-      body: { token },
+  // 8. Confirm the six-digit email verification OTP
+  async confirmEmailVerification(email, otp) {
+    const response = await apiClient('/api/auth/email-verification/confirm', {
+      body: { email, otp },
     });
+    if (response?.data?.accessToken) {
+      setAccessToken(response.data.accessToken);
+    }
+    return response;
   },
 
   // 9. Resend Verification Email
   async resendEmailVerification(email) {
     return apiClient('/api/auth/email-verification/resend', {
       body: { email },
+    });
+  },
+
+  async requestPasswordReset(email) {
+    return apiClient('/api/auth/forgot-password', {
+      body: { email },
+    });
+  },
+
+  async verifyPasswordResetOtp(email, otp) {
+    return apiClient('/api/auth/verify-reset-otp', {
+      body: { email, otp },
+    });
+  },
+
+  async resetPassword(email, resetToken, newPassword) {
+    return apiClient('/api/auth/reset-password', {
+      body: { email, resetToken, newPassword },
     });
   },
 
