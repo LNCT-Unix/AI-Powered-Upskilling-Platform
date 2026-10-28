@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ArrowRight, CheckCircle2, LogOut } from 'lucide-react';
+import { Menu, X, ArrowRight, CheckCircle2, LogOut, MessageSquare, Sparkles, BrainCircuit, Network, GraduationCap, GitPullRequest, Briefcase } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import OctoMascotAnimation from '../components/ui/OctoMascotAnimation';
+import LandingChatbot from '../components/feature/LandingChatbot';
+import { ASSIGNED_QUESTIONS } from '../data/chatbotQuestions';
 import { useAuth } from '../hooks/useAuth';
 import './LandingPage.css';
 
@@ -89,6 +91,10 @@ export default function LandingPage() {
             <a href="#graph" className="hover:text-slate-900 transition">Skill graph</a>
             <a href="#features" className="hover:text-slate-900 transition">Platform features</a>
             <a href="#projects" className="hover:text-slate-900 transition">Lab &amp; Career</a>
+            <a href="#faq" className="hover:text-slate-900 transition flex items-center gap-1">
+              <span>FAQ</span>
+              <span className="text-[10px] bg-[#EFEAFC] text-[#7C5CFA] font-bold px-1.5 py-0.5 rounded-full">AI</span>
+            </a>
           </nav>
 
           <div className="hidden sm:flex items-center gap-3">
@@ -149,6 +155,7 @@ export default function LandingPage() {
               <a href="#graph" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Skill graph</a>
               <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Platform features</a>
               <a href="#projects" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Project Lab &amp; Career</a>
+              <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">AI FAQ Bot</a>
             </nav>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
               {user ? (
@@ -217,6 +224,15 @@ export default function LandingPage() {
             >
               See how it works
             </a>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('octobyte:open-chat'))}
+              className="inline-flex items-center gap-2 rounded-full bg-[#EFEAFC] border border-[#7C5CFA]/30 px-6 py-3.5 text-sm font-bold text-[#6244E8] hover:bg-[#E2D8FA] transition shadow-xs cursor-pointer"
+            >
+              <MessageSquare size={16} />
+              <span>Ask Octo AI</span>
+              <span className="text-base">🐙</span>
+            </button>
           </div>
           <div className="mt-4 text-xs text-slate-500 font-medium">
             Free for learners &middot; Seeded with 56 Backend skills across 9 core clusters &middot; Takes ~4 minutes
@@ -475,6 +491,83 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Interactive FAQ & AI Chatbot Showcase ─────── */}
+      <section className="section" id="faq">
+        <div className="landing-container">
+          <div className="sec-head">
+            <span className="kicker reveal">Interactive Assistant</span>
+            <h2 className="reveal" style={{ '--d': '.08s' }}>Common Questions? Ask Octo AI</h2>
+            <p className="sec-sub reveal" style={{ '--d': '.16s' }}>
+              Select any of the 6 core questions below for instant scientific explanations, or chat with Octo directly.
+            </p>
+          </div>
+
+          <div className="stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginTop: '36px' }}>
+            {ASSIGNED_QUESTIONS.map((q, idx) => {
+              const IconComp = {
+                BrainCircuit,
+                Network,
+                GraduationCap,
+                GitPullRequest,
+                Briefcase,
+                CheckCircle2,
+              }[q.icon] || Sparkles;
+
+              return (
+                <div
+                  key={q.id}
+                  className="stat reveal flex flex-col justify-between text-left cursor-pointer group"
+                  style={{ '--d': `${idx * 0.08}s` }}
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent('octobyte:open-chat', {
+                        detail: { questionId: q.id },
+                      })
+                    )
+                  }
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EFEAFC] text-[#6244E8] px-3 py-1 text-xs font-bold">
+                        <IconComp size={13} />
+                        {q.badge}
+                      </span>
+                      <span className="text-xs font-extrabold text-[#FF9838]">Q{idx + 1}</span>
+                    </div>
+                    <h3 className="text-base font-bold text-[#2F2A3E] group-hover:text-[#7C5CFA] transition-colors leading-snug mb-2">
+                      {q.question}
+                    </h3>
+                    <p className="text-xs text-[#6E6880] leading-relaxed line-clamp-3">
+                      {q.answer.replace(/[*#•-]/g, '').trim()}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-[#E8E0CC]/80 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#7C5CFA] group-hover:text-[#6244E8]">
+                      <span>Ask Octo in Chat</span>
+                      <ArrowRight size={13} />
+                    </span>
+                    <span className="text-[11px] text-[#8D8471] font-semibold">{q.tag}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-9 text-center">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('octobyte:open-chat'))}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#7C5CFA] to-[#6244E8] px-7 py-3.5 text-sm font-bold text-white hover:opacity-95 transition shadow-lg shadow-[#7C5CFA]/25 cursor-pointer"
+            >
+              <MessageSquare size={16} />
+              <span>Open AI Chatbot with 6 Assigned Questions</span>
+              <span className="text-base">💬</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ──────────────────────────────────────── */}
       <section className="cta-wrap" id="cta">
         <div className="landing-container">
@@ -545,6 +638,9 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ── Octo AI Landing Chatbot ───────────────────── */}
+      <LandingChatbot />
     </div>
   );
 }
