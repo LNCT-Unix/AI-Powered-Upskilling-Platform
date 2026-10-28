@@ -68,64 +68,11 @@ export const SEED_BACKEND_PREREQS = {
   'container-orchestration': ['docker-basics', 'load-balancing'],
 };
 
-export const SEED_SLUG_BY_SKILL_ID = {
-  '26a42514-d3df-3878-a487-9dbe1541d761': 'programming-basics',
-  '8f5784a6-359c-3f86-9293-c2cdb5302302': 'core-data-structures',
-  '3b4fefd0-eb85-3c11-bb11-407ca5c1fc70': 'git-basics',
-  '703d38df-a127-3ee8-81cc-e08f5edb8af6': 'linux-cli-basics',
-  'caa40c77-d817-3f9e-b0aa-fde3ae4ec4a3': 'error-handling',
-  '40d5cca9-87d0-377f-b682-0f04c246d3bc': 'oop-modular-design',
-  'eeff4de8-63f3-3133-abb8-f9b4927611a6': 'networking-basics',
-  '9e54ff99-b6a9-319b-a01d-ec536db28d85': 'http-basics',
-  '000986e0-4827-322a-85e8-cd2cdda9943b': 'json-serialization',
-  '79b2e9c2-87fb-377d-b6e4-389c789e16e5': 'rest-api-design',
-  '80ed19f8-da89-3753-a342-069c68760b78': 'input-validation-errors',
-  'e5988fac-adf3-36bc-8ca0-c80e0118426c': 'api-docs-openapi',
-  '53b73062-a751-3f71-9f10-187ce7d1f66b': 'pagination-versioning',
-  '6147e69f-afd4-3620-a8a3-40dced3d9985': 'realtime-communication',
-  '79e362bf-db7f-3f96-8977-462ab388ca83': 'sql-basics',
-  '4785bb25-7adb-367c-80bd-ade5300113e9': 'sql-joins-aggregation',
-  'c9289f91-c8db-3ee8-bb65-76ec14cae88b': 'relational-modeling',
-  '5e70a4fa-6e68-39f1-9dbe-6a53e350546d': 'orm-data-access',
-  '520416f7-b6bc-377d-8348-e96d43060d20': 'nosql-basics',
-  'c1085a99-721f-3147-afdc-5984bd3584d9': 'schema-migrations',
-  'e301966d-45fc-3be7-87b9-3c23eacbea85': 'indexing-query-performance',
-  '64b2815b-c4ec-3bf5-adc8-9d475830e90c': 'transactions-acid',
-  '7b1f3ab3-0b17-3055-8f37-0516f6b9540d': 'isolation-concurrency',
-  '3efc577e-8ef7-3a1e-8604-cbb5275ab845': 'replication-sharding',
-  'eb9b5b52-7987-3cfc-8724-2a1e54faee8e': 'password-hashing',
-  '2f82916b-8bc3-36cf-b0cc-35fc2e70f94a': 'sessions-cookies',
-  'aaf5c703-a94f-3cc3-b909-216933ed1a49': 'jwt-auth',
-  '5c6ab2b1-2100-337f-918d-f434bb6708c7': 'authorization-rbac',
-  '12ac4e0b-61bb-323a-908c-2cf8a1a0b04d': 'secrets-management',
-  '4b85ecf7-c5f7-361a-9748-d32234890a9e': 'web-security-owasp',
-  '9c0853df-465e-3d5c-b7fc-d26f31c16207': 'rate-limiting',
-  '2acb5676-92d7-3efb-b4ec-afefd043da39': 'oauth2-oidc',
-  'da754eec-78f5-3b1f-9c60-241dcae74fa5': 'layered-architecture',
-  '3be6abf6-4658-318f-86b4-a219c8c8550b': 'dependency-injection',
-  'a6296bbc-6809-3b64-983d-eda80d3f648b': 'solid-principles',
-  '7f09a2b5-3a7f-3cc6-a1a4-6a4564509fc7': 'design-patterns',
-  '34520bf9-8ce2-3d32-91eb-1f346c469af6': 'monolith-vs-microservices',
-  '8c3db95f-2c65-3c40-b620-cc420fccbdf3': 'system-design-scalability',
-  '265606a1-c676-325b-b474-577fc3e23c33': 'caching-basics',
-  '60e46021-ee1f-3eec-92be-56c8cee30153': 'redis-in-memory',
-  'c528a3b2-5c61-3675-b4b7-85b676c6f337': 'load-balancing',
-  '106c29cc-5aec-3591-9c9c-32576f3765d5': 'concurrency-basics',
-  'a6239add-965f-3dac-9150-13b1bbb140ad': 'async-programming',
-  '2c2256a1-8406-339f-a117-780396827b45': 'background-jobs',
-  '7788163c-5caa-3a72-ab22-10e1a8b36fb6': 'message-queues',
-  'b527904a-1f18-30a5-b47e-8d33748c018f': 'idempotency-retries',
-  '6d107837-6678-3fd2-834f-f64538d830c8': 'distributed-consistency',
-  'd2f8c361-a116-3d28-a8e7-59aa1d26f16c': 'unit-testing',
-  'a8a4fb25-ceed-3c3d-908f-b99f3f81c2aa': 'test-doubles',
-  '78a81edb-233b-3e37-ac95-1a704f2263f8': 'api-integration-testing',
-  'd27c0b15-62c3-35e8-99cd-8df3e45b4eb9': 'logging-monitoring',
-  '3877a850-d6f0-3849-a987-76c5d501bc5f': 'observability-tracing',
-  'eda11238-d419-345b-aa1d-2ddc3e03d89e': 'docker-basics',
-  '84318154-9479-36ae-aa18-577f0fcc34b1': 'ci-cd-basics',
-  '26cf4657-e02e-3393-8c73-66aed673a640': 'cloud-deployment',
-  '26715e53-f440-3e09-bb90-8522b209fafa': 'container-orchestration',
-};
+/**
+ * @deprecated Backend returns first-class `s.slug` directly on skill and report endpoints.
+ * Retained as empty object for backward compatibility with any legacy imports.
+ */
+export const SEED_SLUG_BY_SKILL_ID = {};
 
 const CLUSTER_TITLES = {
   'web-apis': 'Web Services & REST APIs',
@@ -173,6 +120,7 @@ function emptyModel() {
 function normalizePrereqList(value) {
   if (value == null) return [];
   if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+  if (value instanceof Set) return Array.from(value).map((v) => String(v).trim()).filter(Boolean);
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value);
@@ -192,60 +140,91 @@ export function buildGraphModel(skills) {
 
   const nodes = [];
   const byId = new Map();
-  const bySeedSlug = new Map();
+  const bySkillId = new Map();
+  const bySlug = new Map();
   const byNameSlug = new Map();
 
   usable.forEach((s, index) => {
-    const id = String(s.skillId || s.slug || s.id || s.name || `skill-${index}`);
+    // Primary identifier: prefer first-class slug from backend, then skillId/id
+    const slug = s.slug || toSkillSlug(s.name);
+    const skillId = s.skillId ? String(s.skillId) : (s.id ? String(s.id) : null);
+    const id = slug || skillId || `skill-${index}`;
+
+    // Map backend state: MASTERED -> unlocked, FRONTIER -> frontier, LOCKED -> locked
     const rawStatus = String(s.state || 'locked').toLowerCase();
     const status = rawStatus === 'mastered' ? 'unlocked' : rawStatus;
+
     const nameSlug = toSkillSlug(s.name);
-    let seedSlug = SEED_SLUG_BY_SKILL_ID[id] || null;
-    if (!seedSlug && SEED_BACKEND_PREREQS[nameSlug]) seedSlug = nameSlug;
     const prereqRefs = normalizePrereqList(s.prerequisites);
+
     const node = {
       id,
-      seedSlug,
+      skillId,
+      slug,
+      seedSlug: slug,
       nameSlug,
       label: s.name || s.slug || id,
       cluster: (s.cluster || '').toString() || 'core',
       icon: iconFor(s.name || s.slug || id, clusterTitle(s.cluster)),
       status: ['unlocked', 'frontier', 'locked'].includes(status) ? status : 'locked',
-      progress: status === 'frontier' ? Math.min(90, Math.max(15, Math.round(Number(s.progress) || 50))) : 0,
-      desc: s.description
-        || `${s.name || s.slug || id} competency in ${(s.cluster || 'backend').toString()} — evaluated by the adaptive IRT diagnostic.`,
+      progress:
+        status === 'frontier'
+          ? Math.min(90, Math.max(15, Math.round(Number(s.progress) || 50)))
+          : status === 'unlocked'
+          ? 100
+          : 0,
+      desc:
+        s.description ||
+        `${s.name || s.slug || id} competency in ${(s.cluster || 'backend').toString()} — evaluated by the adaptive IRT diagnostic.`,
       prereqRefs,
       prerequisites: [],
       order: index,
     };
+
     nodes.push(node);
     byId.set(node.id, node);
-    if (node.seedSlug) bySeedSlug.set(node.seedSlug, node);
-    byNameSlug.set(node.nameSlug, node);
+    if (skillId) bySkillId.set(skillId, node);
+    if (slug) bySlug.set(slug, node);
+    byNameSlug.set(nameSlug, node);
   });
 
+  // Resolve UUID or slug reference to node ID
   const resolveRef = (ref) => {
     if (ref == null || ref === '') return null;
-    const rawStr = String(ref);
-    if (byId.has(rawStr)) return rawStr;
+    const rawStr = String(ref).trim();
+    if (byId.has(rawStr)) return byId.get(rawStr).id;
+    if (bySkillId.has(rawStr)) return bySkillId.get(rawStr).id;
+    if (bySlug.has(rawStr)) return bySlug.get(rawStr).id;
     const refSlug = toSkillSlug(rawStr);
-    return bySeedSlug.get(refSlug)?.id || byNameSlug.get(refSlug)?.id || null;
+    if (bySlug.has(refSlug)) return bySlug.get(refSlug).id;
+    if (byNameSlug.has(refSlug)) return byNameSlug.get(refSlug).id;
+    return null;
   };
 
   const edgeSet = new Set();
   const edges = [];
+
   const attach = (node) => {
     const parents = [];
+
+    // 1. First-class backend prerequisites (UUIDs or slugs)
     node.prereqRefs.forEach((ref) => {
       const parentId = resolveRef(ref);
-      if (parentId && parentId !== node.id) parents.push(parentId);
+      if (parentId && parentId !== node.id && !parents.includes(parentId)) {
+        parents.push(parentId);
+      }
     });
-    if (parents.length === 0 && node.seedSlug && SEED_BACKEND_PREREQS[node.seedSlug]) {
-      SEED_BACKEND_PREREQS[node.seedSlug].forEach((slug) => {
-        const parentId = bySeedSlug.get(slug)?.id;
-        if (parentId && parentId !== node.id) parents.push(parentId);
+
+    // 2. Fallback to SEED_BACKEND_PREREQS if backend didn't supply prerequisites for this node
+    if (parents.length === 0 && node.slug && SEED_BACKEND_PREREQS[node.slug]) {
+      SEED_BACKEND_PREREQS[node.slug].forEach((prereqSlug) => {
+        const parentId = resolveRef(prereqSlug);
+        if (parentId && parentId !== node.id && !parents.includes(parentId)) {
+          parents.push(parentId);
+        }
       });
     }
+
     parents.forEach((parentId) => {
       const key = `${parentId}\u0000${node.id}`;
       if (!edgeSet.has(key)) {
@@ -258,18 +237,20 @@ export function buildGraphModel(skills) {
 
   nodes.forEach(attach);
 
+  // Global fallback if no edges could be constructed
   if (edges.length === 0) {
     nodes.forEach((node) => {
-      node.prereqRefs = [];
       node.prerequisites = [];
     });
     edgeSet.clear();
     nodes.forEach((node) => {
-      if (!node.seedSlug || !SEED_BACKEND_PREREQS[node.seedSlug]) return;
-      SEED_BACKEND_PREREQS[node.seedSlug].forEach((slug) => {
-        const parentId = bySeedSlug.get(slug)?.id;
+      if (!node.slug || !SEED_BACKEND_PREREQS[node.slug]) return;
+      SEED_BACKEND_PREREQS[node.slug].forEach((slug) => {
+        const parentId = resolveRef(slug);
         if (parentId && parentId !== node.id) {
-          node.prerequisites.push(parentId);
+          if (!node.prerequisites.includes(parentId)) {
+            node.prerequisites.push(parentId);
+          }
           const key = `${parentId}\u0000${node.id}`;
           if (!edgeSet.has(key)) {
             edgeSet.add(key);
