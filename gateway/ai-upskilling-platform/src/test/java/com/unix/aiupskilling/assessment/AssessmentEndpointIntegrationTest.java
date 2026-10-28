@@ -387,11 +387,19 @@ class AssessmentEndpointIntegrationTest {
         var resultJson = objectMapper.readTree(resultView.getResponse().getContentAsString());
         assertThat(resultJson.get("skills").size()).isEqualTo(2);
 
-        // Verify skill results contain both skills with valid state
+        // Verify skill results contain both skills with valid state and prerequisites
         List<String> states = List.of("MASTERED", "FRONTIER", "LOCKED");
         for (var skillNode : resultJson.get("skills")) {
             assertThat(states).contains(skillNode.get("state").asText());
             assertThat(skillNode.get("name").asText()).isNotEmpty();
+            assertThat(skillNode.has("prerequisites")).isTrue();
+            assertThat(skillNode.get("prerequisites").isArray()).isTrue();
+
+            if (skillNode.get("skillId").asText().equals(skillAdvanced.getId().toString())) {
+                List<String> prereqs = new ArrayList<>();
+                skillNode.get("prerequisites").forEach(p -> prereqs.add(p.asText()));
+                assertThat(prereqs).contains(skillBasics.getId().toString());
+            }
         }
     }
 }

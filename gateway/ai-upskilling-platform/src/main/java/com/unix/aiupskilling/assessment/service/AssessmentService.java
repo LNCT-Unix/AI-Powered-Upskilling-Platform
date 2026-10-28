@@ -174,6 +174,9 @@ public class AssessmentService {
             sr.setName(r.getSkill().getName());
             sr.setCluster(r.getSkill().getCluster());
             sr.setState(r.getState());
+            sr.setPrerequisites(r.getSkill().getPrerequisites() != null
+                    ? new HashSet<>(r.getSkill().getPrerequisites())
+                    : new HashSet<>());
             skills.add(sr);
         }
 

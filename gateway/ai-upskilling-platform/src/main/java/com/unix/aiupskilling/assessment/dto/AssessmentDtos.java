@@ -1,7 +1,9 @@
 package com.unix.aiupskilling.assessment.dto;
 
 import jakarta.validation.constraints.NotNull;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -116,14 +118,20 @@ public final class AssessmentDtos {
         private String name;
         private String cluster;
         private String state;   // MASTERED, FRONTIER or LOCKED
+        private Set<UUID> prerequisites = new HashSet<>();
 
         public SkillResult() {}
 
         public SkillResult(UUID skillId, String name, String cluster, String state) {
+            this(skillId, name, cluster, state, new HashSet<>());
+        }
+
+        public SkillResult(UUID skillId, String name, String cluster, String state, Set<UUID> prerequisites) {
             this.skillId = skillId;
             this.name = name;
             this.cluster = cluster;
             this.state = state;
+            this.prerequisites = prerequisites != null ? prerequisites : new HashSet<>();
         }
 
         public UUID getSkillId() { return skillId; }
@@ -134,6 +142,8 @@ public final class AssessmentDtos {
         public void setCluster(String cluster) { this.cluster = cluster; }
         public String getState() { return state; }
         public void setState(String state) { this.state = state; }
+        public Set<UUID> getPrerequisites() { return prerequisites; }
+        public void setPrerequisites(Set<UUID> prerequisites) { this.prerequisites = prerequisites; }
     }
 
     /** Final result, only available once the assessment is COMPLETED. */
