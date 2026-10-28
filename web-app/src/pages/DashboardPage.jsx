@@ -19,128 +19,7 @@ import {
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
-
-/* ── Interactive Skill Graph ───────────────────────────────── */
-function DynamicSkillGraph({ skills = [] }) {
-  if (skills.length === 0) {
-    return (
-      <div className="py-12 text-center text-xs text-[#8D8471]">
-        No skill nodes available. Complete your diagnostic test to generate your live graph.
-      </div>
-    );
-  }
-
-  const nodes = skills.slice(0, 7).map((s, idx) => ({
-    ...s,
-    x: 65 + (idx % 4) * 135,
-    y: idx < 4 ? 65 : 145,
-  }));
-
-  return (
-    <div className="w-full overflow-x-auto py-2">
-      <svg
-        viewBox="0 0 580 210"
-        className="w-full"
-        style={{ minWidth: 440, maxHeight: 195 }}
-        aria-label="Skill dependency visualization"
-        role="img"
-      >
-        <defs>
-          <linearGradient id="activeNodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2FBF8F" />
-            <stop offset="100%" stopColor="#1F7A55" />
-          </linearGradient>
-          <linearGradient id="frontierGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFEEDD" />
-            <stop offset="100%" stopColor="#FFF1E2" />
-          </linearGradient>
-        </defs>
-
-        {/* Connector lines between consecutive nodes */}
-        {nodes.map((node, i) => {
-          if (i === nodes.length - 1) return null;
-          const next = nodes[i + 1];
-          const isConnectedMastered = node.state === 'MASTERED' && next.state === 'MASTERED';
-          const isConnectedFrontier = next.state === 'FRONTIER';
-          return (
-            <line
-              key={`line-${node.skillId || i}`}
-              x1={node.x}
-              y1={node.y}
-              x2={next.x}
-              y2={next.y}
-              stroke={isConnectedMastered ? '#2FBF8F' : isConnectedFrontier ? '#FF9838' : '#DCD2BC'}
-              strokeWidth={isConnectedMastered ? '2.5' : '1.8'}
-              strokeDasharray={!isConnectedMastered ? '5 5' : undefined}
-            />
-          );
-        })}
-
-        {/* Node circles */}
-        {nodes.map((node, i) => {
-          const isMastered = node.state === 'MASTERED';
-          const isFrontier = node.state === 'FRONTIER';
-
-          const circleColor = isMastered ? 'url(#activeNodeGrad)' : isFrontier ? 'url(#frontierGrad)' : '#F7F3E8';
-          const strokeColor = isMastered ? '#2FBF8F' : isFrontier ? '#FF9838' : '#E8E0CC';
-          const textColor = isMastered ? '#1F7A55' : isFrontier ? '#B45A14' : '#8D8471';
-
-          return (
-            <g key={node.skillId || `node-${i}`} className="group cursor-pointer">
-              {isFrontier && (
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={26}
-                  fill="none"
-                  stroke="#FF9838"
-                  strokeWidth="1.6"
-                  strokeDasharray="4 4"
-                  className="animate-spin"
-                  style={{ transformOrigin: `${node.x}px ${node.y}px`, animationDuration: '8s' }}
-                />
-              )}
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={21}
-                fill={circleColor}
-                stroke={strokeColor}
-                strokeWidth={isFrontier ? '2.5' : '1.6'}
-                className="transition-all filter drop-shadow-xs group-hover:scale-105"
-                style={{ transformOrigin: `${node.x}px ${node.y}px` }}
-              />
-              {isMastered ? (
-                <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="800">
-                  ✓
-                </text>
-              ) : isFrontier ? (
-                <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#FF9838" fontSize="12" fontWeight="800">
-                  ⚡
-                </text>
-              ) : (
-                <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#8D8471" fontSize="11">
-                  🔒
-                </text>
-              )}
-              <text
-                x={node.x}
-                y={node.y + 36}
-                textAnchor="middle"
-                fontSize="10"
-                fontWeight="700"
-                fill={textColor}
-                fontFamily="Inter, sans-serif"
-              >
-                {node.name.length > 14 ? `${node.name.slice(0, 13)}…` : node.name}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
+import InteractiveSkillGraph from '../components/graph/InteractiveSkillGraph';
 
 /* ── Pretty Stat Card matching Landing Page ───────────────── */
 function StatCard({ label, value, sub, icon: Icon, badgeBg, iconColor, onClick }) {
@@ -362,7 +241,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
-              <DynamicSkillGraph skills={skills} />
+              <InteractiveSkillGraph skills={skills} height={480} showHeader={false} />
             </div>
 
             {/* ── Verified Competencies Grid ── */}
