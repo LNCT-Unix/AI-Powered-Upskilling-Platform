@@ -231,7 +231,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2.5 text-[11px] font-bold flex-wrap">
                   <span className="flex items-center gap-1.5 rounded-full bg-[#E7F8EF] px-2.5 py-1 border border-[#BFE9D2] text-[#1F7A55]">
-                    <span className="h-2 w-2 rounded-full bg-[#2FBF8F]" /> Mastered ({completedCount})
+                    <span className="h-2 w-2 rounded-full bg-[#2FBF8F]" /> Unlocked ({completedCount})
                   </span>
                   <span className="flex items-center gap-1.5 rounded-full bg-[#FFEEDD] px-2.5 py-1 border border-[#FFD9B8] text-[#B45A14]">
                     <span className="h-2 w-2 rounded-full bg-[#FF9838] animate-pulse" /> Frontier ({frontierSkills.length})

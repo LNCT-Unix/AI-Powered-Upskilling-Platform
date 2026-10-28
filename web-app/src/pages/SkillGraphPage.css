@@ -10,8 +10,10 @@
   --sg-text: #292524;
   --sg-muted: #78716c;
   --sg-faint: #a8a29e;
-  --sg-mastered: #0d9488;
-  --sg-mastered-rgb: 13, 148, 136;
+  --sg-unlocked: #16a34a;
+  --sg-unlocked-rgb: 22, 163, 74;
+  --sg-mastered: var(--sg-unlocked);
+  --sg-mastered-rgb: var(--sg-unlocked-rgb);
   --sg-frontier: #ea580c;
   --sg-frontier-rgb: 234, 88, 12;
   --sg-locked: #a8a29e;
@@ -555,8 +557,9 @@
   z-index: 2;
 }
 
+.sg-arrow-fill-unlocked,
 .sg-arrow-fill-mastered {
-  fill: rgba(var(--sg-mastered-rgb), 0.6);
+  fill: rgba(var(--sg-unlocked-rgb), 0.6);
 }
 
 .sg-arrow-fill-frontier {
@@ -574,8 +577,9 @@
   animation: sgEdgeIn 0.7s ease backwards;
 }
 
+.sg-edge.to-unlocked,
 .sg-edge.to-mastered {
-  stroke: rgba(var(--sg-mastered-rgb), 0.45);
+  stroke: rgba(var(--sg-unlocked-rgb), 0.45);
 }
 
 .sg-edge.to-frontier {
@@ -723,23 +727,27 @@
   height: 10.5px;
 }
 
-/* Mastered Node */
+/* Unlocked Node */
+.sg-node.unlocked,
 .sg-node.mastered {
-  border-color: rgba(var(--sg-mastered-rgb), 0.35);
+  border-color: rgba(var(--sg-unlocked-rgb), 0.35);
 }
 
+.sg-node.unlocked .sg-n-icon,
 .sg-node.mastered .sg-n-icon {
-  background: #f0fdfa;
-  color: var(--sg-mastered);
+  background: #f0fdf4;
+  color: var(--sg-unlocked);
 }
 
+.sg-node.unlocked .sg-n-state,
 .sg-node.mastered .sg-n-state {
-  background: #ccfbf1;
-  color: var(--sg-mastered);
+  background: #dcfce7;
+  color: var(--sg-unlocked);
 }
 
+.sg-node.unlocked .sg-n-sub,
 .sg-node.mastered .sg-n-sub {
-  color: rgba(var(--sg-mastered-rgb), 0.85);
+  color: rgba(var(--sg-unlocked-rgb), 0.85);
 }
 
 /* Frontier Node */
@@ -794,8 +802,10 @@
 }
 
 /* Filter Dimming */
-.sg-stage[data-filter="mastered"] .sg-node:not(.mastered),
-.sg-stage[data-filter="mastered"] .sg-edge:not(.to-mastered),
+.sg-stage[data-filter="unlocked"] .sg-node:not(.unlocked):not(.mastered),
+.sg-stage[data-filter="unlocked"] .sg-edge:not(.to-unlocked):not(.to-mastered),
+.sg-stage[data-filter="mastered"] .sg-node:not(.mastered):not(.unlocked),
+.sg-stage[data-filter="mastered"] .sg-edge:not(.to-mastered):not(.to-unlocked),
 .sg-stage[data-filter="frontier"] .sg-node:not(.frontier),
 .sg-stage[data-filter="frontier"] .sg-edge:not(.to-frontier),
 .sg-stage[data-filter="locked"] .sg-node:not(.locked),
@@ -969,9 +979,10 @@
   height: 11px;
 }
 
+.sg-p-badge.unlocked,
 .sg-p-badge.mastered {
-  background: #f0fdfa;
-  color: var(--sg-mastered);
+  background: #f0fdf4;
+  color: var(--sg-unlocked);
 }
 
 .sg-p-badge.frontier {
@@ -1105,9 +1116,10 @@
   filter: brightness(1.05);
 }
 
+.sg-p-cta.unlocked,
 .sg-p-cta.mastered {
-  background: linear-gradient(135deg, #2dd4bf, #0d9488);
-  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.28);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
 }
 
 .sg-p-cta.locked {

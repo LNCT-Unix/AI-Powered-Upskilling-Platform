@@ -135,10 +135,12 @@ const ICONS = {
    change, not when any other node is hovered / selected.
    =============================================================== */
 const SkillNode = memo(function SkillNode({ n, isSelected, isDim, subText, onClick, onMouseEnter, onMouseLeave, onKeyDown, animDelay }) {
-  const stateIcon = n.status === 'mastered' ? 'check' : n.status === 'frontier' ? 'flame' : 'lock';
+  const isUnlocked = n.status === 'unlocked' || n.status === 'mastered';
+  const stateIcon = isUnlocked ? 'check' : n.status === 'frontier' ? 'flame' : 'lock';
+  const statusClass = isUnlocked ? 'unlocked' : n.status;
   return (
     <div
-      className={`sg-node ${n.status}${isSelected ? ' active' : ''}${isDim ? ' dim' : ''}`}
+      className={`sg-node ${statusClass}${isSelected ? ' active' : ''}${isDim ? ' dim' : ''}`}
       style={{ left: `${n.x}px`, top: `${n.y}px`, animationDelay: animDelay }}
       tabIndex={0}
       role="button"
@@ -265,8 +267,11 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
 
   // Counts for status filters
   const counts = useMemo(() => {
-    const res = { mastered: 0, frontier: 0, locked: 0 };
-    layout.nodesList.forEach((n) => { if (res[n.status] !== undefined) res[n.status]++; });
+    const res = { unlocked: 0, frontier: 0, locked: 0 };
+    layout.nodesList.forEach((n) => {
+      const st = n.status === 'mastered' ? 'unlocked' : n.status;
+      if (res[st] !== undefined) res[st]++;
+    });
     return res;
   }, [layout]);
 
@@ -387,6 +392,37 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedNodeId(id); }
   }, []);
 
+  if (graph.nodes.length === 0) {
+    return (
+      <div
+        className="sg-component-root flex items-center justify-center w-full rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center"
+        style={{ minHeight: typeof height === 'number' ? `${height}px` : height }}
+      >
+        <div className="max-w-md space-y-3">
+          <div className="h-12 w-12 rounded-2xl bg-[#EFEAFC] border border-[#7C5CFA]/20 flex items-center justify-center mx-auto text-[#7C5CFA]">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+            </svg>
+          </div>
+          <h3 className="text-base font-bold text-slate-900">No Assessment Data Available</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Take the adaptive diagnostic test to calibrate your ability level and generate your skill dependency graph.
+          </p>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => navigate('/assessment')}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#7C5CFA] px-4 py-2 text-xs font-bold text-white hover:bg-[#6244E8] transition cursor-pointer shadow-sm"
+            >
+              Take Diagnostic Test
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const subtitle = selectedClusters.length > 0
     ? `Showing ${selectedClusters.length} block${selectedClusters.length > 1 ? 's' : ''} · ${layout.nodesList.length} skills · ${layout.edgePaths.length} prerequisite links`
     : 'No blocks selected — check blocks from the dropdown to view skills';
@@ -413,8 +449,8 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
 
           <div className="sg-legend">
             <div className="sg-chip">
-              <span className="sg-dot" style={{ background: 'var(--sg-mastered)' }} />
-              Mastered &nbsp;<b>{counts.mastered}</b>
+              <span className="sg-dot" style={{ background: 'var(--sg-unlocked, #16a34a)' }} />
+              Unlocked &nbsp;<b>{counts.unlocked}</b>
             </div>
             <div className="sg-chip">
               <span className="sg-dot" style={{ background: 'var(--sg-frontier)' }} />
@@ -507,7 +543,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
           <div className="sg-filters">
             {[
               ['all', 'All', layout.nodesList.length],
-              ['mastered', 'Mastered', counts.mastered],
+              ['unlocked', 'Unlocked', counts.unlocked],
               ['frontier', 'Frontier', counts.frontier],
               ['locked', 'Locked', counts.locked],
             ].map(([key, label, count]) => (
@@ -584,7 +620,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
             viewBox={`0 0 ${layout.worldW} ${layout.worldH}`}
           >
             <defs>
-              {['mastered', 'frontier', 'locked'].map((status) => (
+              {['unlocked', 'mastered', 'frontier', 'locked'].map((status) => (
                 <marker
                   key={status}
                   id={`sg-arrow-${status}`}
@@ -604,13 +640,14 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                 (hoveredNodeId && (edge.from === hoveredNodeId || edge.to === hoveredNodeId)) ||
                 (selectedNodeId && (edge.from === selectedNodeId || edge.to === selectedNodeId));
               const isDim = (hoveredNodeId || selectedNodeId) && !isHot;
+              const edgeStatus = edge.status === 'mastered' ? 'unlocked' : edge.status;
               return (
                 <path
                   key={`${edge.from}->${edge.to}`}
                   d={edge.d}
-                  className={`sg-edge to-${edge.status}${edge.cross ? ' cross' : ''}${isHot ? ' hot' : ''}${isDim ? ' dim' : ''}`}
+                  className={`sg-edge to-${edgeStatus}${edge.cross ? ' cross' : ''}${isHot ? ' hot' : ''}${isDim ? ' dim' : ''}`}
                   style={{ animationDelay: `${140 + edge.layer * 110}ms` }}
-                  markerEnd={`url(#sg-arrow-${edge.status})`}
+                  markerEnd={`url(#sg-arrow-${edgeStatus})`}
                 />
               );
             })}
@@ -629,8 +666,8 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
 
               const parentSkills = parentsOf(n.id);
               let subText = '';
-              if (n.status === 'mastered') {
-                subText = 'Completed';
+              if (n.status === 'unlocked' || n.status === 'mastered') {
+                subText = 'Unlocked';
               } else if (n.status === 'frontier') {
                 subText = `${n.progress || 50}% complete`;
               } else {
@@ -713,11 +750,11 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               <button className="sg-panel-close" onClick={() => setSelectedNodeId(null)} aria-label="Close">
                 &#10005;
               </button>
-              <div className={`sg-p-badge ${selectedNode.status}`}>
-                {ICONS[selectedNode.status === 'mastered' ? 'check' : selectedNode.status === 'frontier' ? 'flame' : 'lock']}
+              <div className={`sg-p-badge ${selectedNode.status === 'unlocked' || selectedNode.status === 'mastered' ? 'unlocked' : selectedNode.status}`}>
+                {ICONS[(selectedNode.status === 'unlocked' || selectedNode.status === 'mastered') ? 'check' : selectedNode.status === 'frontier' ? 'flame' : 'lock']}
                 <span>
-                  {selectedNode.status === 'mastered'
-                    ? 'Mastered'
+                  {selectedNode.status === 'unlocked' || selectedNode.status === 'mastered'
+                    ? 'Unlocked'
                     : selectedNode.status === 'frontier'
                     ? 'Frontier — in progress'
                     : 'Locked'}
@@ -806,12 +843,12 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               </div>
 
               <button
-                className={`sg-p-cta ${selectedNode.status}`}
+                className={`sg-p-cta ${selectedNode.status === 'unlocked' || selectedNode.status === 'mastered' ? 'unlocked' : selectedNode.status}`}
                 onClick={() => {
                   navigate(selectedNode.status === 'locked' ? '/assessment' : '/roadmap');
                 }}
               >
-                {selectedNode.status === 'mastered'
+                {selectedNode.status === 'unlocked' || selectedNode.status === 'mastered'
                   ? 'Review notes'
                   : selectedNode.status === 'frontier'
                   ? 'Continue learning'

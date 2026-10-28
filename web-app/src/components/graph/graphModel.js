@@ -153,92 +153,20 @@ export function clusterTitle(cluster) {
     .join(' ');
 }
 
-const CANONICAL_NODES = [
-  { id: 'programming', label: 'Programming Basics', status: 'mastered', cluster: 'foundations', desc: 'Syntax, control flow, functions and problem decomposition. Every other node in this graph quietly depends on it.' },
-  { id: 'linux', label: 'Linux & Shell', status: 'mastered', cluster: 'foundations', desc: 'Filesystems, permissions, processes, pipes and shell scripting. The daily working environment where backend services run.' },
-  { id: 'dsa', label: 'Data Structures', status: 'mastered', cluster: 'foundations', desc: 'Arrays, linked lists, stacks, queues, hash maps and trees — the core vocabulary for efficient data management.' },
-  { id: 'oop', label: 'OOP Principles', status: 'mastered', cluster: 'foundations', desc: 'Encapsulation, inheritance, polymorphism and composition. The direct foundation for clean architecture and modular design.' },
-  { id: 'http', label: 'HTTP & REST APIs', status: 'mastered', cluster: 'web-apis', desc: 'Methods, status codes, headers, authentication and REST resource design. The contract between clients and microservices.' },
-  { id: 'git', label: 'Git & Code Review', status: 'mastered', cluster: 'foundations', desc: 'Branching, merging, rebasing, pull requests and code review workflow. The essential team collaboration backbone.' },
-  { id: 'sql', label: 'SQL & Data Modeling', status: 'mastered', cluster: 'databases', desc: 'Joins, indexes, transactions and schema design. Database optimization and relational table modeling.' },
-  { id: 'algo', label: 'Algorithms & Big-O', status: 'mastered', cluster: 'foundations', desc: 'Sorting, searching, recursion and algorithmic complexity analysis before writing high-scale code.' },
-  { id: 'solid', label: 'SOLID & Clean Code', status: 'frontier', progress: 68, cluster: 'architecture', desc: 'Single responsibility, open-closed, Liskov substitution, interface segregation and dependency inversion.' },
-  { id: 'layered', label: 'Layered Architecture', status: 'frontier', progress: 45, cluster: 'architecture', desc: 'Controllers, services, repositories and clean boundaries to build modular, maintainable systems.' },
-  { id: 'di', label: 'Dependency Injection', status: 'frontier', progress: 30, cluster: 'architecture', desc: 'Inversion of Control (IoC), decoupling constructors, and enabling mockable unit test suites.' },
-  { id: 'conc', label: 'Concurrency Basics', status: 'frontier', progress: 52, cluster: 'async-distributed', desc: 'Threads, locks, race conditions, atomic operations and thread-safe collections in backend services.' },
-  { id: 'patterns', label: 'Common Design Patterns', status: 'locked', cluster: 'architecture', desc: 'Strategy, Observer, Factory, Adapter, and Decorator patterns for recurring software engineering challenges.' },
-  { id: 'mono', label: 'Monolith vs Microservices', status: 'locked', cluster: 'architecture', desc: 'Trade-offs between modular monoliths and distributed services. Service boundaries and data ownership.' },
-  { id: 'sysdesign', label: 'System Design Basics', status: 'locked', cluster: 'architecture', desc: 'High-availability architecture, load balancing, database replication, partitioning, and horizontal scaling.' },
-  { id: 'testing', label: 'Testing & CI Pipelines', status: 'locked', cluster: 'quality-observability', desc: 'Unit testing, mocking test doubles, integration tests, and automated build deployment pipelines.' },
-  { id: 'caching', label: 'Caching Strategies', status: 'locked', cluster: 'performance', desc: 'Cache-aside, write-through, TTL invalidation, Redis in-memory storage, and cache stampede prevention.' },
-  { id: 'mq', label: 'Message Queues', status: 'locked', cluster: 'async-distributed', desc: 'Asynchronous event streaming, producers, consumers, broker delivery guarantees, and dead-letter queues.' },
-  { id: 'dist', label: 'Distributed Systems', status: 'locked', cluster: 'async-distributed', desc: 'CAP theorem, distributed transactions, consensus protocols, idempotency, and eventual consistency.' },
-  { id: 'obs', label: 'Observability & Tracing', status: 'locked', cluster: 'quality-observability', desc: 'Structured logs, metric aggregation, APM tracing, alerting, and real-time operational telemetry.' },
-];
-
-const CANONICAL_EDGES = [
-  ['programming', 'dsa'], ['programming', 'oop'], ['programming', 'http'], ['programming', 'git'],
-  ['linux', 'http'], ['linux', 'conc'],
-  ['dsa', 'sql'], ['dsa', 'algo'], ['dsa', 'conc'],
-  ['oop', 'solid'], ['oop', 'layered'], ['oop', 'di'],
-  ['http', 'layered'],
-  ['solid', 'patterns'], ['di', 'patterns'], ['solid', 'testing'], ['git', 'testing'],
-  ['layered', 'mono'], ['layered', 'sysdesign'], ['conc', 'sysdesign'], ['conc', 'dist'],
-  ['mono', 'mq'], ['sysdesign', 'caching'], ['sysdesign', 'dist'], ['testing', 'obs'],
-];
-
 export function iconFor(name = '', cluster = '') {
   const text = `${name} ${cluster}`;
   for (const [re, icon] of ICON_HINTS) if (re.test(text)) return icon;
   return 'box';
 }
 
-function canonicalModel() {
-  const nodes = CANONICAL_NODES.map((n) => ({
-    id: n.id,
-    label: n.label,
-    cluster: n.cluster,
-    icon: iconFor(n.label, clusterTitle(n.cluster)),
-    status: n.status,
-    progress: n.progress || (n.status === 'frontier' ? 50 : 0),
-    desc: n.desc,
-    prerequisites: [],
-    layer: 0,
-  }));
-  const byId = new Map(nodes.map((n) => [n.id, n]));
-  const parentRefs = new Map(nodes.map((n) => [n.id, []]));
-  const edges = [];
-  CANONICAL_EDGES.forEach(([from, to]) => {
-    if (byId.has(from) && byId.has(to) && from !== to) {
-      edges.push({ from, to });
-      parentRefs.get(to).push(from);
-    }
-  });
-  const layerById = new Map();
-  const visiting = new Set();
-  const layerOf = (id) => {
-    if (layerById.has(id)) return layerById.get(id);
-    if (visiting.has(id)) return 0;
-    visiting.add(id);
-    let layer = 0;
-    (parentRefs.get(id) || []).forEach((p) => {
-      layer = Math.max(layer, layerOf(p) + 1);
-    });
-    visiting.delete(id);
-    layerById.set(id, layer);
-    return layer;
-  };
-  nodes.forEach((n) => {
-    n.layer = layerOf(n.id);
-    n.prerequisites = parentRefs.get(n.id).slice();
-  });
+function emptyModel() {
   return {
-    nodes,
-    edges,
+    nodes: [],
+    edges: [],
     isLive: false,
-    clusterCount: new Set(nodes.map((n) => n.cluster)).size,
-    edgeCount: edges.length,
-    maxLayer: nodes.reduce((m, n) => Math.max(m, n.layer), 0),
+    clusterCount: 0,
+    edgeCount: 0,
+    maxLayer: 0,
   };
 }
 
@@ -260,7 +188,7 @@ function normalizePrereqList(value) {
 export function buildGraphModel(skills) {
   const list = Array.isArray(skills) ? skills : [];
   const usable = list.filter(Boolean);
-  if (usable.length === 0) return { ...canonicalModel(), isLive: false };
+  if (usable.length === 0) return emptyModel();
 
   const nodes = [];
   const byId = new Map();
@@ -269,7 +197,8 @@ export function buildGraphModel(skills) {
 
   usable.forEach((s, index) => {
     const id = String(s.skillId || s.slug || s.id || s.name || `skill-${index}`);
-    const status = String(s.state || 'locked').toLowerCase();
+    const rawStatus = String(s.state || 'locked').toLowerCase();
+    const status = rawStatus === 'mastered' ? 'unlocked' : rawStatus;
     const nameSlug = toSkillSlug(s.name);
     let seedSlug = SEED_SLUG_BY_SKILL_ID[id] || null;
     if (!seedSlug && SEED_BACKEND_PREREQS[nameSlug]) seedSlug = nameSlug;
@@ -281,7 +210,7 @@ export function buildGraphModel(skills) {
       label: s.name || s.slug || id,
       cluster: (s.cluster || '').toString() || 'core',
       icon: iconFor(s.name || s.slug || id, clusterTitle(s.cluster)),
-      status: ['mastered', 'frontier', 'locked'].includes(status) ? status : 'locked',
+      status: ['unlocked', 'frontier', 'locked'].includes(status) ? status : 'locked',
       progress: status === 'frontier' ? Math.min(90, Math.max(15, Math.round(Number(s.progress) || 50))) : 0,
       desc: s.description
         || `${s.name || s.slug || id} competency in ${(s.cluster || 'backend').toString()} — evaluated by the adaptive IRT diagnostic.`,
