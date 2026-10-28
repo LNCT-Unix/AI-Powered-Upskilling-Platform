@@ -83,7 +83,7 @@ public class AssessmentDataLoader implements ApplicationRunner {
         log.info("Loading Backend Engineering track and skills from {}", SEED_PATH);
 
         // 1. Seed Track
-        Track track = new Track(BACKEND_TRACK_ID, "ACTIVE");
+        Track track = new Track(BACKEND_TRACK_ID, "backend-engineering", "Backend Engineering", "ACTIVE");
         trackRepo.save(track);
 
         // 2. Load YAML and seed all Skills + DAG Prerequisites
@@ -101,47 +101,153 @@ public class AssessmentDataLoader implements ApplicationRunner {
         // 3. Seed Assessment Question Pool if empty
         if (itemRepo.count() == 0) {
             log.info("Seeding initial question pool for track {}...", BACKEND_TRACK_ID);
+
+            // -2.0 to -1.0: Foundations
+            seedQuestion(BACKEND_TRACK_ID, -2.0,
+                    "In Git, which command creates and switches to a new branch in a single step?",
+                    List.of("git branch <name>", "git checkout -b <name>", "git merge <name>", "git commit -b <name>"),
+                    1, "git-basics");
+
+            seedQuestion(BACKEND_TRACK_ID, -1.8,
+                    "Which Linux command is used to display current running processes with CPU and memory usage?",
+                    List.of("ls", "top", "chmod", "curl"),
+                    1, "linux-cli-basics");
+
+            seedQuestion(BACKEND_TRACK_ID, -1.5,
+                    "Which HTTP status code category represents client-side errors?",
+                    List.of("2xx", "3xx", "4xx", "5xx"),
+                    2, "http-basics");
+
+            seedQuestion(BACKEND_TRACK_ID, -1.3,
+                    "Which SQL clause is used to filter records before any grouping occurs?",
+                    List.of("HAVING", "ORDER BY", "WHERE", "GROUP BY"),
+                    2, "sql-basics");
+
+            seedQuestion(BACKEND_TRACK_ID, -1.0,
+                    "Which OOP principle emphasizes bundling data and methods that operate on that data while hiding internal states?",
+                    List.of("Inheritance", "Encapsulation", "Polymorphism", "Abstraction"),
+                    1, "oop-modular-design");
+
+            // -0.8 to -0.1: Early Intermediate
             seedQuestion(BACKEND_TRACK_ID, -0.8,
-                    "What is the time complexity of looking up a key in a standard HashMap on average?",
-                    List.of("O(1)", "O(n)", "O(log n)", "O(n^2)"), 0);
+                    "What is the average time complexity of looking up a key in a standard hash table?",
+                    List.of("O(1)", "O(n)", "O(log n)", "O(n^2)"),
+                    0, "core-data-structures");
+
+            seedQuestion(BACKEND_TRACK_ID, -0.6,
+                    "What is the primary purpose of unit testing?",
+                    List.of("Testing the entire system end-to-end", "Validating individual components or functions in isolation", "Measuring server load capacity", "Testing third-party API integration"),
+                    1, "unit-testing");
 
             seedQuestion(BACKEND_TRACK_ID, -0.5,
                     "Which HTTP method is designed to be idempotent and used to replace an existing resource?",
-                    List.of("POST", "PUT", "PATCH", "CONNECT"), 1);
+                    List.of("POST", "PUT", "PATCH", "CONNECT"),
+                    1, "rest-api-design");
+
+            seedQuestion(BACKEND_TRACK_ID, -0.3,
+                    "In SQL, which type of JOIN returns all records from the left table and matched records from the right table?",
+                    List.of("INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL OUTER JOIN"),
+                    1, "sql-joins-aggregation");
 
             seedQuestion(BACKEND_TRACK_ID, -0.2,
-                    "What is the difference between an Exception and an Error in Java?",
-                    List.of("Errors can be caught, Exceptions terminate JVM", "Exceptions can be handled by applications, Errors indicate serious system problems", "They are identical", "Errors are checked at compile time"), 1);
+                    "Why should passwords never be stored using simple MD5 or SHA-256 without a salt and work factor?",
+                    List.of("They are too slow for login systems", "They are susceptible to rainbow table lookups and brute-force GPU attacks", "They produce hashes with varying lengths", "They cannot be decoded back into plain text"),
+                    1, "password-hashing");
 
+            // 0.0 to 0.5: Core Intermediate
             seedQuestion(BACKEND_TRACK_ID, 0.0,
-                    "In RESTful architecture, which HTTP status code represents a successful resource creation?",
-                    List.of("200 OK", "201 Created", "202 Accepted", "204 No Content"), 1);
+                    "In RESTful architecture, which HTTP status code represents successful resource creation?",
+                    List.of("200 OK", "201 Created", "202 Accepted", "204 No Content"),
+                    1, "rest-api-design");
 
             seedQuestion(BACKEND_TRACK_ID, 0.2,
-                    "What does ACID stand for in database transaction management?",
-                    List.of("Atomicity, Consistency, Isolation, Durability", "Action, Commit, Integrity, Data", "Access, Control, Indexing, Distribution", "Asynchronous, Concurrent, Isolated, Durable"), 0);
+                    "What does ACID stand for in relational database transaction management?",
+                    List.of("Atomicity, Consistency, Isolation, Durability", "Action, Commit, Integrity, Data", "Access, Control, Indexing, Distribution", "Asynchronous, Concurrent, Isolated, Durable"),
+                    0, "transactions-acid");
+
+            seedQuestion(BACKEND_TRACK_ID, 0.3,
+                    "In a JWT (JSON Web Token), which part contains the claims such as user ID, roles, and expiration time?",
+                    List.of("Header", "Payload", "Signature", "Footer"),
+                    1, "jwt-auth");
 
             seedQuestion(BACKEND_TRACK_ID, 0.4,
                     "What problem does a database index primarily solve?",
-                    List.of("Reduces disk storage space", "Speeds up data retrieval at the cost of additional write overhead", "Encrypts sensitive column values", "Enforces foreign key relationships"), 1);
+                    List.of("Reduces disk storage space", "Speeds up data retrieval at the cost of additional write overhead", "Encrypts sensitive column values", "Enforces foreign key relationships"),
+                    1, "indexing-query-performance");
 
+            seedQuestion(BACKEND_TRACK_ID, 0.5,
+                    "What is a race condition in concurrent software systems?",
+                    List.of("When two threads run on different CPU cores simultaneously without issue", "When the outcome depends on the non-deterministic timing or interleaving of multiple execution paths", "When a database transaction completes faster than expected", "When a thread enters an infinite loop waiting for network input"),
+                    1, "concurrency-basics");
+
+            // 0.6 to 1.0: Upper Intermediate
             seedQuestion(BACKEND_TRACK_ID, 0.6,
-                    "What is the purpose of connection pooling (e.g. HikariCP) in backend services?",
-                    List.of("Encrypts network traffic between client and server", "Reuses existing database connections to avoid expensive connection handshakes", "Distributes requests across multiple database read replicas", "Caches HTTP responses in memory"), 1);
+                    "What is the Cache-Aside pattern in backend performance engineering?",
+                    List.of("The cache automatically writes through to the database on every update", "The application checks the cache first, loads from the database on a miss, and writes to the cache", "All requests bypass the application layer directly to Redis", "Database logs are copied asynchronously to the cache"),
+                    1, "caching-basics");
+
+            seedQuestion(BACKEND_TRACK_ID, 0.7,
+                    "In database transactions, which ACID property guarantees that all operations within a transaction succeed or none are applied?",
+                    List.of("Atomicity", "Consistency", "Isolation", "Durability"),
+                    0, "transactions-acid");
 
             seedQuestion(BACKEND_TRACK_ID, 0.8,
-                    "Which HTTP header is used to prevent Cross-Site Scripting (XSS) and control external resource loading?",
-                    List.of("Content-Security-Policy", "Access-Control-Allow-Origin", "Cache-Control", "X-Forwarded-For"), 0);
+                    "Which HTTP response header helps defend web applications against Cross-Site Scripting (XSS) by restricting where scripts can load from?",
+                    List.of("Content-Security-Policy", "Access-Control-Allow-Origin", "Cache-Control", "X-Forwarded-For"),
+                    0, "web-security-owasp");
+
+            seedQuestion(BACKEND_TRACK_ID, 0.9,
+                    "Why are background job queues (e.g. Celery, Bull, RabbitMQ) used for tasks like sending emails or processing images?",
+                    List.of("They make web servers communicate via UDP instead of TCP", "They prevent long-running tasks from blocking the HTTP request-response cycle", "They eliminate the need for persistent databases", "They automatically compress static web assets"),
+                    1, "background-jobs");
 
             seedQuestion(BACKEND_TRACK_ID, 1.0,
-                    "In distributed systems, what does the CAP theorem state is impossible to simultaneously provide?",
-                    List.of("Concurrency, Availability, Performance", "Consistency, Availability, Partition Tolerance", "Control, Authentication, Privacy", "Caching, Asynchrony, Persistence"), 1);
+                    "What is the fundamental difference between WebSockets and standard HTTP request-response communication?",
+                    List.of("WebSockets do not support encryption", "WebSockets establish a persistent, full-duplex bidirectional TCP connection", "WebSockets are only supported in mobile browsers", "HTTP requires UDP while WebSockets use TCP"),
+                    1, "realtime-communication");
+
+            // 1.1 to 2.2: Advanced
+            seedQuestion(BACKEND_TRACK_ID, 1.1,
+                    "In message queuing, what does 'at-least-once delivery' guarantee require consumers to implement?",
+                    List.of("Pessimistic table locking", "Idempotency handling to guard against duplicate messages", "Immediate synchronous commit to replicas", "Strict single-threaded FIFO processing"),
+                    1, "message-queues");
+
+            seedQuestion(BACKEND_TRACK_ID, 1.2,
+                    "In OAuth 2.0 authorization code grant flow, what is the purpose of the 'state' parameter?",
+                    List.of("To store the user's password securely", "To prevent Cross-Site Request Forgery (CSRF) attacks during callback", "To specify the database table for user records", "To set the token expiration TTL"),
+                    1, "oauth2-oidc");
+
+            seedQuestion(BACKEND_TRACK_ID, 1.4,
+                    "What makes an HTTP endpoint idempotent according to REST architectural principles?",
+                    List.of("It returns the exact same timestamp on every call", "Making the same request multiple times produces the same server state as making it once", "It requires no authorization headers", "It processes requests asynchronously"),
+                    1, "idempotency-retries");
+
+            seedQuestion(BACKEND_TRACK_ID, 1.5,
+                    "Which database isolation level prevents dirty reads, non-repeatable reads, and phantom reads?",
+                    List.of("Read Uncommitted", "Read Committed", "Repeatable Read", "Serializable"),
+                    3, "isolation-concurrency");
+
+            seedQuestion(BACKEND_TRACK_ID, 1.8,
+                    "In database scaling, what is the key difference between read replication and horizontal sharding?",
+                    List.of("Replication divides rows across databases by key; sharding copies the entire database to replicas", "Replication copies all data to read-only nodes; sharding partitions subsets of data across multiple database nodes", "Replication requires NoSQL; sharding only works with SQL", "There is no difference; they are synonyms"),
+                    1, "replication-sharding");
+
+            seedQuestion(BACKEND_TRACK_ID, 2.0,
+                    "In high-scale system design, what does the CAP theorem state when a network partition occurs?",
+                    List.of("The system must choose between Consistency and Availability", "The system will automatically scale horizontally", "Performance improves due to partitioned parallelism", "Transactions always degrade to Read Uncommitted"),
+                    0, "system-design-scalability");
+
+            seedQuestion(BACKEND_TRACK_ID, 2.2,
+                    "In distributed systems implementing eventual consistency across multiple microservices, what pattern is commonly used to manage multi-step distributed transactions without 2-phase commit?",
+                    List.of("Saga Pattern (choreography or orchestration)", "Singleton Pattern", "Active Record Pattern", "Decorator Pattern"),
+                    0, "distributed-consistency");
 
             log.info("Question pool initialized with {} items.", itemRepo.count());
         }
     }
 
-    private void seedQuestion(UUID trackId, double difficulty, String stem, List<String> options, int correctOption) throws Exception {
+    private void seedQuestion(UUID trackId, double difficulty, String stem, List<String> options,
+                              int correctOption, String skillSlug) throws Exception {
         AssessmentItem item = new AssessmentItem(
                 UUID.randomUUID(),
                 trackId,
@@ -149,7 +255,8 @@ public class AssessmentDataLoader implements ApplicationRunner {
                 stem,
                 mapper.writeValueAsString(options),
                 correctOption,
-                "ACTIVE"
+                "ACTIVE",
+                skillSlug
         );
         itemRepo.save(item);
     }
@@ -183,6 +290,7 @@ public class AssessmentDataLoader implements ApplicationRunner {
         return new Skill(
                 slugToId.get(slug),
                 BACKEND_TRACK_ID,
+                slug,
                 name,
                 cluster,
                 difficulty,

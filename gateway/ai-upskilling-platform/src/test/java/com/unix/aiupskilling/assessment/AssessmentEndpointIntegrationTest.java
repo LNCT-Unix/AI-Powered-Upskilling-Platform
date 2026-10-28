@@ -116,18 +116,18 @@ class AssessmentEndpointIntegrationTest {
         AuthTokens tokens2 = authTokenService.issueTokens(otherUser, ClientPlatform.WEB);
         otherToken = tokens2.getAccessToken();
 
-        // 2. Create tracks
-        activeTrack = trackRepo.save(new Track(UUID.randomUUID(), "ACTIVE"));
-        inactiveTrack = trackRepo.save(new Track(UUID.randomUUID(), "COMING_SOON"));
+        // 2. Create tracks with slug and name
+        activeTrack = trackRepo.save(new Track(UUID.randomUUID(), "backend-engineering", "Backend Engineering", "ACTIVE"));
+        inactiveTrack = trackRepo.save(new Track(UUID.randomUUID(), "frontend-engineering", "Frontend Engineering", "COMING_SOON"));
 
-        // 3. Create skills
-        skillBasics = new Skill(UUID.randomUUID(), activeTrack.getId(), "Core Fundamentals", "core", -0.8, Set.of());
+        // 3. Create skills with slug
+        skillBasics = new Skill(UUID.randomUUID(), activeTrack.getId(), "core-fundamentals", "Core Fundamentals", "core", -0.8, Set.of());
         skillBasics = skillRepo.save(skillBasics);
 
-        skillAdvanced = new Skill(UUID.randomUUID(), activeTrack.getId(), "Advanced Architecture", "architecture", 0.6, Set.of(skillBasics.getId()));
+        skillAdvanced = new Skill(UUID.randomUUID(), activeTrack.getId(), "advanced-architecture", "Advanced Architecture", "architecture", 0.6, Set.of(skillBasics.getId()));
         skillAdvanced = skillRepo.save(skillAdvanced);
 
-        // 4. Seed question pool (10 questions with varying difficulties)
+        // 4. Seed question pool (10 questions with varying difficulties and skill slugs)
         poolItems.clear();
         double[] difficulties = {-0.6, -0.3, 0.0, 0.1, 0.2, 0.35, 0.5, 0.7, 0.85, 1.0};
         for (int i = 0; i < difficulties.length; i++) {
@@ -138,10 +138,35 @@ class AssessmentEndpointIntegrationTest {
                     "Sample question stem " + (i + 1),
                     "[\"Option A\",\"Option B\",\"Option C\",\"Option D\"]",
                     i % 4, // correct option index 0, 1, 2, or 3
-                    "ACTIVE"
+                    "ACTIVE",
+                    difficulties[i] < 0.5 ? "core-fundamentals" : "advanced-architecture"
             );
             poolItems.add(itemRepo.save(item));
         }
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/assessments/tracks lists active tracks for onboarding dropdown")
+    void testListTracks() throws Exception {
+        mockMvc.perform(get("/api/v1/assessments/tracks")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].slug").value("backend-engineering"))
+                .andExpect(jsonPath("$[0].name").value("Backend Engineering"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/assessments/tracks/{trackId}/skills lists skills for pre-selection")
+    void testListSkillsForTrack() throws Exception {
+        mockMvc.perform(get("/api/v1/assessments/tracks/" + activeTrack.getId() + "/skills")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].slug").value("core-fundamentals"))
+                .andExpect(jsonPath("$[0].name").value("Core Fundamentals"))
+                .andExpect(jsonPath("$[1].slug").value("advanced-architecture"));
     }
 
     @Test
@@ -177,9 +202,9 @@ class AssessmentEndpointIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/assessments successfully starts an assessment and returns first question")
+    @DisplayName("POST /api/v1/assessments successfully starts an assessment with theta=0 and returns first question")
     void testStartSuccessful() throws Exception {
-        StartRequest request = new StartRequest(activeTrack.getId());
+        StartRequest request = new StartRequest(activeTrack.getId(), List.of("core-fundamentals"));
         mockMvc.perform(post("/api/v1/assessments")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -268,7 +293,7 @@ class AssessmentEndpointIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/assessments/{id}/result before completion returns 409 Conflict")
+    @DisplayName("GET /api/v1/assessments/{id}/result and /report before completion returns 409 Conflict")
     void testResultBeforeCompletionReturns409() throws Exception {
         StartRequest request = new StartRequest(activeTrack.getId());
         MvcResult startResult = mockMvc.perform(post("/api/v1/assessments")
@@ -282,6 +307,10 @@ class AssessmentEndpointIntegrationTest {
                 .get("assessmentId").asText();
 
         mockMvc.perform(get("/api/v1/assessments/" + assessmentId + "/result")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(get("/api/v1/assessments/" + assessmentId + "/report")
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isConflict());
     }
@@ -319,10 +348,10 @@ class AssessmentEndpointIntegrationTest {
     }
 
     @Test
-    @DisplayName("Full test lifecycle: start, answer until stopped, verify result and skill states")
-    void testCompleteAssessmentLifecycle() throws Exception {
-        // 1. Start test
-        StartRequest request = new StartRequest(activeTrack.getId());
+    @DisplayName("Full test lifecycle: start with known skills, answer adaptively, verify report with question breakdown and unlocked skills")
+    void testCompleteAssessmentLifecycleAndReport() throws Exception {
+        // 1. Start test with pre-selected comfortable skills
+        StartRequest request = new StartRequest(activeTrack.getId(), List.of("core-fundamentals"));
         MvcResult startResult = mockMvc.perform(post("/api/v1/assessments")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -334,7 +363,6 @@ class AssessmentEndpointIntegrationTest {
         String assessmentId = stateJson.get("assessmentId").asText();
 
         // 2. Answer questions in a loop until done
-        // We alternate correct and wrong answers to trigger the level confirmation stop rule (2 direction changes after >= 5 questions)
         boolean done = stateJson.get("done").asBoolean();
         int answerCount = 0;
 
@@ -342,7 +370,7 @@ class AssessmentEndpointIntegrationTest {
             String currentItemId = stateJson.get("question").get("itemId").asText();
             AssessmentItem item = itemRepo.findById(UUID.fromString(currentItemId)).orElseThrow();
 
-            // Alternate between correct and incorrect
+            // Alternate between correct and incorrect to exercise adaptive difficulty
             int selectedOption = (answerCount % 2 == 0)
                     ? item.getCorrectOption()
                     : (item.getCorrectOption() + 1) % 4;
@@ -387,19 +415,41 @@ class AssessmentEndpointIntegrationTest {
         var resultJson = objectMapper.readTree(resultView.getResponse().getContentAsString());
         assertThat(resultJson.get("skills").size()).isEqualTo(2);
 
-        // Verify skill results contain both skills with valid state and prerequisites
-        List<String> states = List.of("MASTERED", "FRONTIER", "LOCKED");
-        for (var skillNode : resultJson.get("skills")) {
-            assertThat(states).contains(skillNode.get("state").asText());
-            assertThat(skillNode.get("name").asText()).isNotEmpty();
-            assertThat(skillNode.has("prerequisites")).isTrue();
-            assertThat(skillNode.get("prerequisites").isArray()).isTrue();
+        // 5. Test NEW REPORT API: GET /api/v1/assessments/{id}/report
+        MvcResult reportView = mockMvc.perform(get("/api/v1/assessments/" + assessmentId + "/report")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assessmentId").value(assessmentId))
+                .andExpect(jsonPath("$.initialTheta").value(0.0))
+                .andExpect(jsonPath("$.finalTheta").isNumber())
+                .andExpect(jsonPath("$.answered").value(answerCount))
+                .andExpect(jsonPath("$.correct").isNumber())
+                .andExpect(jsonPath("$.responses").isArray())
+                .andExpect(jsonPath("$.responses.length()").value(answerCount))
+                .andExpect(jsonPath("$.responses[0].questionStem").isNotEmpty())
+                .andExpect(jsonPath("$.responses[0].options").isArray())
+                .andExpect(jsonPath("$.responses[0].yourAnswer").isNotEmpty())
+                .andExpect(jsonPath("$.responses[0].correctAnswer").isNotEmpty())
+                .andExpect(jsonPath("$.responses[0].correct").isBoolean())
+                .andExpect(jsonPath("$.skills").isArray())
+                .andExpect(jsonPath("$.unlockedSkills").isArray())
+                .andReturn();
 
-            if (skillNode.get("skillId").asText().equals(skillAdvanced.getId().toString())) {
-                List<String> prereqs = new ArrayList<>();
-                skillNode.get("prerequisites").forEach(p -> prereqs.add(p.asText()));
-                assertThat(prereqs).contains(skillBasics.getId().toString());
+        var reportJson = objectMapper.readTree(reportView.getResponse().getContentAsString());
+
+        // Pre-declared skill "core-fundamentals" should be MASTERED
+        boolean coreMastered = false;
+        for (var skillNode : reportJson.get("skills")) {
+            if ("core-fundamentals".equals(skillNode.get("slug").asText())) {
+                assertThat(skillNode.get("state").asText()).isEqualTo("MASTERED");
+                coreMastered = true;
             }
+        }
+        assertThat(coreMastered).isTrue();
+
+        // unlockedSkills must contain non-LOCKED skills
+        for (var unlockedNode : reportJson.get("unlockedSkills")) {
+            assertThat(unlockedNode.get("state").asText()).isNotEqualTo("LOCKED");
         }
     }
 }
