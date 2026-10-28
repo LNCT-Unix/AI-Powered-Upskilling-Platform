@@ -13,6 +13,9 @@ export const TRACK_UUID_MAP = {
   devops: BACKEND_TRACK_ID,
 };
 
+const tracksCache = new Map();
+const skillsCache = new Map();
+
 /**
  * Ensures a valid UUID is returned for track references.
  * @param {string} id - Track slug or UUID.
@@ -32,9 +35,16 @@ export const assessmentService = {
    * @returns {Promise<Array<{trackId: string, slug: string, name: string}>>}
    */
   async getTracks() {
-    return apiClient('/api/v1/assessments/tracks', {
-      method: 'GET',
-    });
+    if (!tracksCache.has('all')) {
+      const request = apiClient('/api/v1/assessments/tracks', {
+        method: 'GET',
+      }).catch((error) => {
+        tracksCache.delete('all');
+        throw error;
+      });
+      tracksCache.set('all', request);
+    }
+    return tracksCache.get('all');
   },
 
   /**
@@ -47,9 +57,16 @@ export const assessmentService = {
     if (!trackId) {
       throw new Error('Track ID is required');
     }
-    return apiClient(`/api/v1/assessments/tracks/${trackId}/skills`, {
-      method: 'GET',
-    });
+    if (!skillsCache.has(trackId)) {
+      const request = apiClient(`/api/v1/assessments/tracks/${trackId}/skills`, {
+        method: 'GET',
+      }).catch((error) => {
+        skillsCache.delete(trackId);
+        throw error;
+      });
+      skillsCache.set(trackId, request);
+    }
+    return skillsCache.get(trackId);
   },
 
   /**

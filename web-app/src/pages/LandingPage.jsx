@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, ArrowRight, CheckCircle2, LogOut, MessageSquare, Sparkles, BrainCircuit, Network, GraduationCap, GitPullRequest, Briefcase } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import OctoMascotAnimation from '../components/ui/OctoMascotAnimation';
-import LandingChatbot from '../components/feature/LandingChatbot';
 import { ASSIGNED_QUESTIONS } from '../data/chatbotQuestions';
 import { useAuth } from '../hooks/useAuth';
 import './LandingPage.css';
+
+const LandingChatbot = lazy(() => import('../components/feature/LandingChatbot'));
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -640,7 +641,9 @@ export default function LandingPage() {
       </footer>
 
       {/* ── Octo AI Landing Chatbot ───────────────────── */}
-      <LandingChatbot />
+      <Suspense fallback={null}>
+        <LandingChatbot />
+      </Suspense>
     </div>
   );
 }
