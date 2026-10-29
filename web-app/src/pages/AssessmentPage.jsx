@@ -10,11 +10,7 @@ import {
   Loader2,
   Compass,
   Zap,
-  XCircle,
   ChevronDown,
-  ChevronUp,
-  Tag,
-  Network,
   Server,
   Check,
   Search,
@@ -22,9 +18,9 @@ import {
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import ScoreRing from '../components/ui/ScoreRing';
 import { assessmentService, BACKEND_TRACK_ID } from '../services/assessmentService';
 import { triggerHaptic } from '../services/hapticsService';
+import './AssessmentReport.css';
 
 const ASSESSMENT_ID_KEY = 'skillpath_assessment_id';
 const ASSESSMENT_RESULT_KEY = 'skillpath_assessment_result';
@@ -70,22 +66,57 @@ export default function AssessmentPage() {
   const [preparingReport, setPreparingReport] = useState(false);
   const [error, setError] = useState(null);
   const [expandedQuestions, setExpandedQuestions] = useState({});
+  const [questionFilter, setQuestionFilter] = useState('all');
 
-  const toggleQuestionExpand = (seq) => {
-    setExpandedQuestions((prev) => ({
-      ...prev,
-      [seq]: prev[seq] === undefined ? false : !prev[seq],
-    }));
-  };
+  const topicRows = useMemo(() => {
+    if (!result) return [];
+    const topics = {};
+    if (Array.isArray(result.responses) && result.responses.length > 0) {
+      result.responses.forEach((resp) => {
+        const name = resp.skillName || resp.skillSlug || 'Core Diagnostic Item';
+        if (!topics[name]) {
+          topics[name] = { name, right: 0, total: 0 };
+        }
+        topics[name].total += 1;
+        if (resp.correct) {
+          topics[name].right += 1;
+        }
+      });
+    }
 
-  const toggleAllQuestions = (expand) => {
-    if (!result?.responses) return;
-    const next = {};
-    result.responses.forEach((_, idx) => {
-      next[idx] = expand;
-    });
-    setExpandedQuestions(next);
-  };
+    if (Object.keys(topics).length === 0 && Array.isArray(result.skills)) {
+      result.skills.forEach((s) => {
+        const name = s.name || s.slug || 'Skill Node';
+        const isMastered = s.state === 'MASTERED' || s.status === 'unlocked';
+        const isFrontier = s.state === 'READY_TO_LEARN' || s.state === 'FRONTIER';
+        topics[name] = {
+          name,
+          right: isMastered ? 1 : isFrontier ? 1 : 0,
+          total: isMastered ? 1 : isFrontier ? 2 : 1,
+        };
+      });
+    }
+
+    return Object.values(topics)
+      .map((t) => ({
+        ...t,
+        pct: t.total > 0 ? Math.round((100 * t.right) / t.total) : 0,
+      }))
+      .sort((a, b) => a.pct - b.pct);
+  }, [result]);
+
+  const topSteps = useMemo(() => {
+    const gaps = topicRows.filter((r) => r.pct < 70).slice(0, 3);
+    if (gaps.length > 0) return gaps;
+    return topicRows.slice(0, 3);
+  }, [topicRows]);
+
+  const filteredResponses = useMemo(() => {
+    const all = result?.responses || [];
+    if (questionFilter === 'good') return all.filter((r) => r.correct);
+    if (questionFilter === 'bad') return all.filter((r) => !r.correct);
+    return all;
+  }, [result?.responses, questionFilter]);
 
   // Helper to safely load comprehensive report or fall back to legacy result
   const fetchFinalReport = async (assessmentId) => {
@@ -425,6 +456,373 @@ export default function AssessmentPage() {
             <RotateCcw size={14} /> Retry Connection
           </Button>
         </Card>
+      </div>
+    );
+  }
+
+  // Initial Skill Report - Layout matching design inspo
+  if (isCompleted && result) {
+    const correctCount =
+      result?.correct ??
+      (Array.isArray(result?.responses) ? result.responses.filter((r) => r.correct).length : 0);
+    const totalCount =
+      (result?.answered ??
+      (Array.isArray(result?.responses) ? result.responses.length : 0)) || 1;
+    const accuracyPct = Math.round((correctCount / totalCount) * 100);
+
+    const thetaVal =
+      typeof result?.finalTheta === 'number'
+        ? result.finalTheta
+        : typeof result?.theta === 'number'
+        ? result.theta
+        : 0;
+    const thetaString = thetaVal > 0 ? `+${thetaVal.toFixed(2)}` : thetaVal.toFixed(2);
+    const abilityBand = thetaVal >= 1.0 ? 'High' : thetaVal >= -0.5 ? 'Moderate' : 'Low';
+    const displayLevel = result?.level
+      ? `${result.level.charAt(0).toUpperCase() + result.level.slice(1).toLowerCase()} level`
+      : 'Beginner level';
+
+    const topicsToImproveCount = topicRows.filter((r) => r.pct < 40).length;
+
+    const getBandInfo = (pct) => {
+      if (pct >= 70) return { key: 'ok', label: 'Strength', color: 'var(--ok)' };
+      if (pct >= 40) return { key: 'mid', label: 'Developing', color: 'var(--mid)' };
+      return { key: 'gap', label: 'Gap', color: 'var(--gap)' };
+    };
+
+    const areAllExpanded =
+      filteredResponses.length > 0 &&
+      filteredResponses.every((resp, idx) => {
+        const qKey = resp.seq !== undefined ? resp.seq : idx;
+        return expandedQuestions[qKey] === true;
+      });
+
+    const handleToggleExpandAll = () => {
+      const nextState = !areAllExpanded;
+      const updated = { ...expandedQuestions };
+      filteredResponses.forEach((resp, idx) => {
+        const qKey = resp.seq !== undefined ? resp.seq : idx;
+        updated[qKey] = nextState;
+      });
+      setExpandedQuestions(updated);
+    };
+
+    return (
+      <div className="skill-report-page">
+        {error && (
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-800 flex items-center gap-2.5">
+            <AlertCircle size={16} className="text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <h1>Initial skill report</h1>
+        <p className="sub">
+          Your diagnostic is complete. Here is where you stand, which topics need work, and what to do next.
+        </p>
+
+        <div className="layout">
+          <div>
+            {/* Summary */}
+            <section className="report-card" aria-labelledby="sum">
+              <div className="summary">
+                <div
+                  className="ring"
+                  style={{ '--p': Math.max(accuracyPct, 4) }}
+                  role="img"
+                  aria-label={`Score ${accuracyPct} out of 100`}
+                >
+                  <div>
+                    <p style={{ margin: 0 }}>
+                      <b>{accuracyPct}</b>
+                      <span>out of 100</span>
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <p className="level" id="sum">
+                    {displayLevel}
+                  </p>
+                  <p className="hint" style={{ margin: '4px 0 0' }}>
+                    You answered <b>{correctCount}</b> of <b>{totalCount}</b> questions correctly.
+                  </p>
+                  <div className="stats">
+                    <div className="stat">
+                      <b>{accuracyPct}%</b>
+                      <span>Accuracy</span>
+                    </div>
+                    <div className="stat">
+                      <b>
+                        {abilityBand}{' '}
+                        <span
+                          className="info"
+                          tabIndex={0}
+                          data-tip={`Your ability score (θ) is ${thetaString}. It estimates skill from how hard the questions you got right were. Higher is better.`}
+                        >
+                          i
+                        </span>
+                      </b>
+                      <span>Ability band</span>
+                    </div>
+                    <div className="stat">
+                      <b>{topicsToImproveCount}</b>
+                      <span>Topics to improve</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Skill breakdown */}
+            <section className="report-card" aria-labelledby="skills">
+              <h2 id="skills">Skill breakdown</h2>
+              <p className="hint">Topics from your diagnostic, weakest first.</p>
+              <div>
+                {topicRows.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-3">No topic data available.</p>
+                ) : (
+                  topicRows.map((r) => {
+                    const band = getBandInfo(r.pct);
+                    return (
+                      <div key={r.name} className="skill">
+                        <span className="name" title={r.name}>
+                          {r.name}
+                        </span>
+                        <div
+                          className="bar"
+                          role="img"
+                          aria-label={`${r.right} of ${r.total} correct`}
+                        >
+                          <i style={{ width: `${Math.max(r.pct, 4)}%`, background: band.color }} />
+                        </div>
+                        <span className={`badge ${band.key}`}>{band.label}</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+
+            {/* Question review */}
+            <section className="report-card" aria-labelledby="rev">
+              <div className="review-head">
+                <div>
+                  <h2 id="rev">Question review</h2>
+                  <p className="hint" style={{ margin: 0 }}>
+                    Open a question to see all options and the correct answer.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div className="tabs" role="group" aria-label="Filter questions">
+                    <button
+                      type="button"
+                      data-f="all"
+                      aria-pressed={questionFilter === 'all'}
+                      onClick={() => setQuestionFilter('all')}
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      data-f="bad"
+                      aria-pressed={questionFilter === 'bad'}
+                      onClick={() => setQuestionFilter('bad')}
+                    >
+                      Incorrect
+                    </button>
+                    <button
+                      type="button"
+                      data-f="good"
+                      aria-pressed={questionFilter === 'good'}
+                      onClick={() => setQuestionFilter('good')}
+                    >
+                      Correct
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={handleToggleExpandAll}
+                  >
+                    {areAllExpanded ? 'Collapse all' : 'Expand all'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                {filteredResponses.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-6 text-center">
+                    No questions match the selected filter.
+                  </p>
+                ) : (
+                  filteredResponses.map((resp, i) => {
+                    const ok = resp.correct;
+                    const k = ok ? 'good' : 'bad';
+                    const qKey = resp.seq !== undefined ? resp.seq : i;
+                    const isOpen = expandedQuestions[qKey] === true;
+
+                    const opts = Array.isArray(resp.options)
+                      ? resp.options
+                      : typeof resp.options === 'string'
+                      ? (() => {
+                          try {
+                            return JSON.parse(resp.options);
+                          } catch {
+                            return [];
+                          }
+                        })()
+                      : [];
+
+                    const userPickedText =
+                      resp.yourAnswer ||
+                      (typeof resp.selectedOption === 'number' && opts[resp.selectedOption]) ||
+                      (resp.selectedOption !== undefined
+                        ? `Option ${String.fromCharCode(65 + resp.selectedOption)}`
+                        : 'No Answer');
+
+                    const correctText =
+                      resp.correctAnswer ||
+                      (typeof resp.correctOption === 'number' && opts[resp.correctOption]) ||
+                      (resp.correctOption !== undefined
+                        ? `Option ${String.fromCharCode(65 + resp.correctOption)}`
+                        : 'Solution');
+
+                    return (
+                      <div key={qKey} className={`q ${isOpen ? 'open' : ''}`}>
+                        <button
+                          type="button"
+                          className="q-row"
+                          aria-expanded={isOpen}
+                          onClick={() =>
+                            setExpandedQuestions((prev) => ({
+                              ...prev,
+                              [qKey]: !prev[qKey],
+                            }))
+                          }
+                        >
+                          <span className={`num ${k}`}>{resp.seq || i + 1}</span>
+                          <span className="q-topic">
+                            {resp.skillName || resp.skillSlug || 'Diagnostic Item'}
+                            <small>{ok ? 'Correct' : 'Incorrect'}</small>
+                          </span>
+                          <span className="q-ans">
+                            {ok ? (
+                              <b className="good">{correctText}</b>
+                            ) : (
+                              <>
+                                You: <b className="bad">{userPickedText}</b> &middot; Correct:{' '}
+                                <b className="good">{correctText}</b>
+                              </>
+                            )}
+                          </span>
+                          <ChevronDown size={16} className="chev" />
+                        </button>
+
+                        <div className="q-body">
+                          <p>{resp.questionStem || 'Question text not available.'}</p>
+                          {opts.length > 0 ? (
+                            opts.map((o, j) => {
+                              const isPick =
+                                j === resp.selectedOption ||
+                                (resp.yourAnswer && resp.yourAnswer === o);
+                              const isAns =
+                                j === resp.correctOption ||
+                                (resp.correctAnswer && resp.correctAnswer === o);
+
+                              const cls = isAns ? 'right' : isPick ? 'wrong' : '';
+                              const tag = isAns
+                                ? isPick
+                                  ? 'Your answer (Correct)'
+                                  : 'Correct answer'
+                                : isPick
+                                ? 'Your answer'
+                                : '';
+
+                              return (
+                                <div key={o || j} className={`opt ${cls}`}>
+                                  <span className="k">{String.fromCharCode(65 + j)}</span>
+                                  <span style={{ flex: 1 }}>{o}</span>
+                                  {tag && <em>{tag}</em>}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="space-y-2 mt-2">
+                              <div className={`opt ${ok ? 'right' : 'wrong'}`}>
+                                <span className="k">{ok ? '✓' : '✗'}</span>
+                                <span style={{ flex: 1 }}>{userPickedText}</span>
+                                <em>Your answer</em>
+                              </div>
+                              {!ok && (
+                                <div className="opt right">
+                                  <span className="k">✓</span>
+                                  <span style={{ flex: 1 }}>{correctText}</span>
+                                  <em>Correct answer</em>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Right rail */}
+          <aside className="rail">
+            <section className="report-card" aria-labelledby="next">
+              <h2 id="next">Next steps</h2>
+              <p className="hint" style={{ margin: 0 }}>
+                Start with your biggest gaps.
+              </p>
+              <ol>
+                {topSteps.map((step, idx) => (
+                  <li key={step.name || idx}>
+                    <span>{idx + 1}</span>
+                    <div>
+                      <b>{step.name}</b>
+                      <small>
+                        {step.right} of {step.total} correct
+                      </small>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <button
+                type="button"
+                className="btn-action primary"
+                onClick={() => navigate('/roadmap')}
+              >
+                Start my roadmap
+              </button>
+              <button
+                type="button"
+                className="btn-action"
+                onClick={() => navigate('/graph')}
+              >
+                Explore skill graph
+              </button>
+              <button
+                type="button"
+                className="text-link"
+                onClick={handleRetest}
+              >
+                Retake diagnostic
+              </button>
+              <button
+                type="button"
+                className="text-link"
+                style={{ marginTop: 6, fontSize: 12 }}
+                onClick={() => window.print()}
+              >
+                Print report
+              </button>
+            </section>
+          </aside>
+        </div>
       </div>
     );
   }
@@ -847,242 +1245,6 @@ export default function AssessmentPage() {
             </div>
           )}
         </>
-      ) : isCompleted && result ? (
-        /* Real CAT Assessment Result View */
-        <div className="space-y-6">
-          {/* Summary Banner */}
-          <Card className="border-indigo-100 bg-white p-6 sm:p-8 space-y-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
-                    DIAGNOSTIC COMPLETE
-                  </span>
-                  {result.stopReason && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                      {result.stopReason.replace(/_/g, ' ')}
-                    </span>
-                  )}
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-                  {result.level || 'INTERMEDIATE'} Learner
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 max-w-lg leading-relaxed">
-                  You answered <strong className="text-slate-900">{result.correct} of {result.answered}</strong> questions correctly.
-                  Ability parameter θ converged at{' '}
-                  <span className="font-mono font-bold text-indigo-600">
-                    {typeof result.theta === 'number'
-                      ? (result.theta > 0 ? `+${result.theta.toFixed(2)}` : result.theta.toFixed(2))
-                      : result.theta}
-                  </span>.
-                </p>
-              </div>
-
-              <ScoreRing
-                score={result.answered ? Math.round((result.correct / result.answered) * 100) : 75}
-                size={96}
-                strokeWidth={8}
-                color="#4f46e5"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
-              <Button
-                variant="indigo"
-                onClick={() => navigate('/graph')}
-                className="shadow-sm"
-              >
-                <Network size={16} /> Explore Updated Skill Graph <ArrowRight size={16} />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/roadmap')}
-              >
-                View Calibrated Roadmap
-              </Button>
-              <Button variant="ghost" onClick={handleRetest}>
-                <RotateCcw size={15} /> Retest Diagnostic
-              </Button>
-            </div>
-          </Card>
-
-          {/* Question-by-Question Breakdown */}
-          {result.responses && result.responses.length > 0 && (
-            <Card className="space-y-5 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                    Question-by-Question Review
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Detailed breakdown of your answers and solutions
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-                    {result.responses.filter((r) => r.correct).length} of {result.responses.length} Correct
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const allExpanded = result.responses.every((_, idx) => expandedQuestions[idx] !== false);
-                      toggleAllQuestions(!allExpanded);
-                    }}
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition px-2 py-1 cursor-pointer"
-                  >
-                    {result.responses.every((_, idx) => expandedQuestions[idx] !== false)
-                      ? 'Collapse All'
-                      : 'Expand All'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {result.responses.map((resp, idx) => {
-                  const isCorrect = resp.correct;
-                  const isExpanded = expandedQuestions[idx] !== false;
-                  const opts = Array.isArray(resp.options)
-                    ? resp.options
-                    : typeof resp.options === 'string'
-                    ? JSON.parse(resp.options)
-                    : [];
-
-                  return (
-                    <div
-                      key={resp.seq || idx}
-                      className={`rounded-2xl border transition-all ${
-                        isCorrect
-                          ? 'border-emerald-100/90 bg-white hover:border-emerald-200'
-                          : 'border-rose-100/90 bg-white hover:border-rose-200'
-                      } shadow-xs overflow-hidden`}
-                    >
-                      {/* Accordion Header */}
-                      <button
-                        type="button"
-                        onClick={() => toggleQuestionExpand(idx)}
-                        className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 text-left bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer"
-                      >
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="grid h-6 w-6 place-items-center rounded-lg bg-slate-200/80 text-xs font-bold text-slate-700">
-                            {resp.seq || idx + 1}
-                          </span>
-                          <Badge
-                            variant={isCorrect ? 'emerald' : 'rose'}
-                            size="sm"
-                            icon={isCorrect ? CheckCircle2 : XCircle}
-                          >
-                            {isCorrect ? 'Correct' : 'Incorrect'}
-                          </Badge>
-                          {(resp.skillName || resp.skillSlug) && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50/80 border border-indigo-100/80 text-[11px] font-medium text-indigo-700">
-                              <Tag size={11} className="shrink-0" />
-                              <span className="truncate max-w-[200px] sm:max-w-xs">
-                                {resp.skillName || resp.skillSlug}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="text-slate-400 hover:text-slate-600 shrink-0">
-                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                        </div>
-                      </button>
-
-                      {/* Accordion Body */}
-                      {isExpanded && (
-                        <div className="p-4 sm:p-5 space-y-4 border-t border-slate-100">
-                          <p className="text-sm font-semibold text-slate-900 leading-snug">
-                            {resp.questionStem}
-                          </p>
-
-                          {/* Options List */}
-                          <div className="grid gap-2">
-                            {opts.map((option, optIdx) => {
-                              const isSelectedByUser = optIdx === resp.selectedOption;
-                              const isCorrectAnswer = optIdx === resp.correctOption;
-
-                              let optionClasses = 'border-slate-100 bg-slate-50/40 text-slate-600';
-                              let badgeElement = null;
-
-                              if (isSelectedByUser && isCorrectAnswer) {
-                                optionClasses =
-                                  'border-emerald-300 bg-emerald-50/60 text-emerald-900 font-medium ring-1 ring-emerald-300';
-                                badgeElement = (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
-                                    <CheckCircle2 size={12} /> Your Choice (Correct)
-                                  </span>
-                                );
-                              } else if (isSelectedByUser && !isCorrectAnswer) {
-                                optionClasses =
-                                  'border-rose-300 bg-rose-50/60 text-rose-900 font-medium ring-1 ring-rose-300';
-                                badgeElement = (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full shrink-0">
-                                    <XCircle size={12} /> Your Choice
-                                  </span>
-                                );
-                              } else if (isCorrectAnswer) {
-                                optionClasses =
-                                  'border-emerald-200 border-dashed bg-emerald-50/30 text-emerald-800 font-medium';
-                                badgeElement = (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full shrink-0">
-                                    <CheckCircle2 size={12} /> Correct Solution
-                                  </span>
-                                );
-                              }
-
-                              return (
-                                <div
-                                  key={option}
-                                  className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-xs sm:text-sm ${optionClasses}`}
-                                >
-                                  <div className="flex items-center gap-2.5">
-                                    <span
-                                      className={`grid h-6 w-6 place-items-center rounded-lg text-xs font-bold shrink-0 ${
-                                        isSelectedByUser
-                                          ? isCorrectAnswer
-                                            ? 'bg-emerald-600 text-white'
-                                            : 'bg-rose-600 text-white'
-                                          : isCorrectAnswer
-                                          ? 'border border-emerald-300 bg-emerald-100 text-emerald-800'
-                                          : 'border border-slate-200 bg-white text-slate-500'
-                                      }`}
-                                    >
-                                      {String.fromCharCode(65 + optIdx)}
-                                    </span>
-                                    <span>{option}</span>
-                                  </div>
-                                  {badgeElement}
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          {/* Detail Note */}
-                          <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
-                            <span>
-                              Your answer:{' '}
-                              <strong className={isCorrect ? 'text-emerald-700' : 'text-rose-700'}>
-                                {resp.yourAnswer || `Option ${String.fromCharCode(65 + resp.selectedOption)}`}
-                              </strong>
-                            </span>
-                            {!isCorrect && (
-                              <span>
-                                Correct answer:{' '}
-                                <strong className="text-emerald-700">
-                                  {resp.correctAnswer || `Option ${String.fromCharCode(65 + resp.correctOption)}`}
-                                </strong>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          )}
-        </div>
       ) : (
         <Card className="text-center py-10 space-y-3">
           <Compass size={32} className="mx-auto text-slate-400" />
