@@ -2,7 +2,7 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Map, ClipboardCheck, FlaskConical,
   BarChart2, Briefcase, UserCircle2,
-  Settings, LogOut
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -10,14 +10,10 @@ const LEARNER_NAV = [
   { path: '/dashboard',  label: 'Dashboard',          icon: LayoutDashboard },
   { path: '/roadmap',    label: 'My Roadmap',          icon: Map, badge: 'Soon' },
   { path: '/assessment', label: 'Diagnostic Test',     icon: ClipboardCheck },
-  { path: '/graph',      label: 'Practice & Tests',    icon: FlaskConical },
+  { path: '/graph',      label: 'Skill Graph',         icon: FlaskConical },
   { path: '/analytics',  label: 'Progress & Weakness', icon: BarChart2 },
   { path: '/career',     label: 'Careers Hub',         icon: Briefcase },
   { path: '/projects',   label: 'Profile & Badges',    icon: UserCircle2 },
-];
-
-const ADMIN_NAV = [
-  { path: '/dashboard', label: 'Admin Dashboard', icon: Settings, badge: 'MVP' },
 ];
 
 function NavItem({ path, label, icon: Icon, badge, onClose }) {
@@ -88,18 +84,6 @@ export default function Sidebar({ onClose }) {
           </p>
           <nav className="space-y-1" aria-label="Learner navigation">
             {LEARNER_NAV.map((item) => (
-              <NavItem key={item.path} {...item} onClose={onClose} />
-            ))}
-          </nav>
-        </div>
-
-        {/* Institute Admin section */}
-        <div>
-          <p className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-            Institute Admin
-          </p>
-          <nav className="space-y-1" aria-label="Admin navigation">
-            {ADMIN_NAV.map((item) => (
               <NavItem key={item.path} {...item} onClose={onClose} />
             ))}
           </nav>

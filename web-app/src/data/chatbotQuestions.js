@@ -30,12 +30,10 @@ export const ASSIGNED_QUESTIONS = [
     answer: `The Skill Graph is an interactive **Directed Acyclic Graph (DAG)** modeling 56 backend engineering competencies across 9 core clusters:
 
 • **9 Core Clusters**: Foundations, Web APIs, Databases, Security, Architecture & Design, Performance, Async & Distributed Systems, Quality & Observability, and DevOps.
-• **Color-Coded Mastery States**:
-  - 🟢 **Mastered**: Confirmed through diagnostic or project verification.
-  - 🟡 **In Progress**: Currently active in your roadmap sprint.
-  - 🔵 **Ready to Learn**: Prerequisites are met and unlocked.
+• **Color-Coded Statuses**:
+  - 🟢 **Ready to Learn**: Confirmed through diagnostic or project verification, ready for study.
   - ⚪ **Locked**: Requires earlier prerequisite skills before unlocking.
-• **Prerequisite Integrity**: Ensures you master core database indexing and HTTP fundamentals before jumping into microservices or distributed locks.`,
+• **Prerequisite Integrity**: Ensures you learn core database indexing and HTTP fundamentals before jumping into microservices or distributed locks.`,
     actions: [
       { label: 'Explore Skill Graph', route: '/graph', primary: true },
       { label: 'See Cluster List', anchor: '#graph' }
@@ -120,7 +118,7 @@ export const INTENT_KEYWORDS = [
     questionId: 'cat-assessment'
   },
   {
-    keywords: ['graph', 'dag', 'skill', 'cluster', 'prerequisite', 'mastered', 'visual', 'node'],
+    keywords: ['graph', 'dag', 'skill', 'cluster', 'prerequisite', 'ready', 'visual', 'node'],
     questionId: 'skill-graph'
   },
   {

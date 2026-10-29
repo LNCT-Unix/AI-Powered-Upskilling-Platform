@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { Menu, Bell, LogOut, X, Search } from 'lucide-react';
+import { Menu, Bell, LogOut, X } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
@@ -75,16 +75,6 @@ export default function DashboardShell() {
                 <span className="text-[#7C5CFA]">Byte</span>
               </span>
             </Link>
-
-            {/* Search bar with warm pill styling */}
-            <div className="relative hidden sm:flex flex-1 max-w-md">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input
-                type="search"
-                placeholder="Search competencies, roadmaps, career benchmarks..."
-                className="w-full rounded-full border border-[#E8E0CC] bg-white/95 py-2 pl-9 pr-4 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#7C5CFA] focus:bg-white focus:ring-2 focus:ring-[#7C5CFA]/20 transition shadow-2xs"
-              />
-            </div>
           </div>
 
           {/* Right: notifications + user avatar */}
