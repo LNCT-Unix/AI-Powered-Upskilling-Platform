@@ -1,0 +1,29 @@
+{
+  "name": "ai-upskilling-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-platform native mobile application for AI-Powered Upskilling Platform",
+  "scripts": {
+    "sync": "cap sync",
+    "copy": "cap copy",
+    "open:android": "cap open android",
+    "run:android": "cap run android",
+    "build:web": "npm run --prefix ../web-app build",
+    "build:mobile": "npm run build:web && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/browser": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/network": "^7.0.0",
+    "@capacitor/preferences": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}
+

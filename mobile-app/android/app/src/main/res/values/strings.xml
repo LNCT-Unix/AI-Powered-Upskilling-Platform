@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">octoByte</string>
+    <string name="title_activity_main">octoByte</string>
+    <string name="package_name">com.unix.aiupskilling</string>
+    <string name="custom_url_scheme">com.unix.aiupskilling</string>
+</resources>

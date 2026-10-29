@@ -1,0 +1,23 @@
+{
+  "appId": "com.unix.aiupskilling",
+  "appName": "octoByte",
+  "webDir": "../web-app/dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#F7F3E8",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#F7F3E8"
+    }
+  }
+}
+
