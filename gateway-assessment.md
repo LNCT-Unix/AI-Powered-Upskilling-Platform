@@ -1,4 +1,12 @@
-# Gateway Assessment - Extracted Code and Documentation
+# Gateway Assessment - Extracted Code and Historical Sprint Specifications
+
+> **Implementation Status (October 2026):** **FULLY IMPLEMENTED & ACTIVE IN PRODUCTION**  
+> **Production Codebase:** [gateway/ai-upskilling-platform/src/main/java/com/unix/aiupskilling/assessment/](gateway/ai-upskilling-platform/src/main/java/com/unix/aiupskilling/assessment/)  
+> **Live Enhancements:** Pre-test calibration (knownSkillSlugs), indexed candidate selection query (AssessmentItemRepository.findNext), joined query optimization for prerequisites, and comprehensive post-test reporting (GET /api/v1/assessments/{id}/report).  
+> **Documentation Reference:** [docs/api/GATEWAY_API_REFERENCE.md](docs/api/GATEWAY_API_REFERENCE.md) and [gateway/README.md](gateway/README.md).  
+> *Note: The code blocks below preserve the foundational sprint notes and reference algorithms.*
+
+---
 
 ## File: INTEGRATION.md
 

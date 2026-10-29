@@ -1,8 +1,8 @@
 # Frontend Design Specification & Design System — AI-Powered Upskilling Platform
 
-**Document Status:** Approved Design System & UI/UX Specification (v1.0)  
+**Document Status:** Approved Design System & UI/UX Specification (v2.0)  
 **Role:** Product Designer & Design Systems Engineer  
-**Aesthetic Persona:** *Deep Craft Learning* — A disciplined, high-density, career-focused technical workspace combining the editorial polish of Linear/Stripe with the pedagogical clarity of Duolingo/Coursera.
+**Aesthetic Persona:** *Deep Craft Learning* — A disciplined, high-density, career-focused technical workspace combining the editorial polish of Linear/Stripe with the pedagogical clarity of Duolingo/Coursera.  
 
 ---
 
@@ -51,6 +51,7 @@ Our color system is built on high-contrast, accessible ratios (WCAG AAA for text
 
   /* Diagnostic State Colors (Workflow-Driven) */
   --color-state-mastered: #059669;      /* Verified mastery (Green) */
+  --color-state-ready: #16a34a;         /* Ready to learn / Unlocked (Emerald) */
   --color-state-learning: #2563eb;      /* In progress (Blue) */
   --color-state-revision: #d97706;      /* Weak subtopic / Remediation loop (Amber) */
   --color-state-locked: #94a3b8;        /* Prerequisite unfulfilled (Slate) */
@@ -91,11 +92,11 @@ Our color system is built on high-contrast, accessible ratios (WCAG AAA for text
 - **Primary:** `bg-emerald-700 text-white hover:bg-emerald-800 active:scale-[0.99] font-medium text-sm px-4 py-2.5 rounded-xl shadow-sm focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 transition-all`
 - **Secondary:** `bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200 font-medium text-sm px-4 py-2.5 rounded-xl transition-all`
 - **Outline / Ghost:** `border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm px-4 py-2.5 rounded-xl`
-- **Action Highlight (Diagnostic / Assessment):** `bg-amber-500 text-slate-950 hover:bg-amber-400 font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm`
+- **Action Highlight (Diagnostic / Assessment):** `bg-indigo-600 text-white hover:bg-indigo-700 font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm`
 - **Disabled State:** `opacity-50 cursor-not-allowed pointer-events-none`
 
 ### 3.2 Badges & Status Chips (`Badge.jsx`)
-- **Verified / Mastered:** `bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 font-medium` (with `CheckCircle2` icon).
+- **Ready to Learn / Mastered:** `bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 font-medium` (with `CheckCircle2` icon).
 - **Needs Revision / Gap:** `bg-amber-50 text-amber-800 border border-amber-200 text-xs px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 font-medium` (with `AlertCircle` icon).
 - **In Progress:** `bg-blue-50 text-blue-800 border border-blue-200 text-xs px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 font-medium` (with `Clock` icon).
 - **Prerequisite Locked:** `bg-slate-100 text-slate-600 border border-slate-200 text-xs px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 font-medium` (with `Lock` icon).
@@ -105,99 +106,53 @@ Our color system is built on high-contrast, accessible ratios (WCAG AAA for text
 - **Visual Rhythm:** Generous internal padding (`p-5` to `p-6`), crisp divider lines (`divide-y divide-slate-100`), distinct header/body/footer partitions.
 - **Interactive Variant:** Subtle upward translate on hover (`hover:-translate-y-0.5 transition-transform duration-200`) with high-contrast active borders.
 
-### 3.4 Progress & Diagnostic Indicators
-- **Linear Milestone Progress:** Multi-segment bar representing *Mastered* (Emerald), *In Revision* (Amber), *Remaining* (Slate 200).
-- **Topological Node Indicator:** Connected nodes displaying progress ring and prerequisite links.
-
 ---
 
-## 4. Screen-by-Screen UX & Layout Redesign
+## 4. Screen-by-Screen UX & Layout Design
 
 ### 4.1 Public Landing Page (`/`)
-- **Above the Fold:**
+- **Hero Section:**
   - High-impact headline: *"Stop Guessing Your Skills. Get a Verified, Adaptive Roadmap to Job Readiness."*
   - Dual CTA: Primary `[Take 5-Min Diagnostic Test]` and Secondary `[Explore Sample Roadmap]`.
-  - Replaces third-party Pinterest URL with the local optimized hero asset `src/assets/hero.png` framed inside a realistic product preview shell.
-- **Workflow Journey Section (The 6 Phases):**
-  - Interactive tabs showing the genuine learner progression: *1. Diagnose -> 2. Personalize -> 3. Learn -> 4. Adapt -> 5. Verify -> 6. Career*.
+  - Local hero graphic (`src/assets/hero.png`) framed in product preview shell.
+- **Embedded Generative AI Chatbot (`LandingChatbot.jsx`):**
+  - Interactive chatbot allowing prospective learners to query track competencies, diagnostic mechanics, and curriculum prerequisites.
 - **The Competitive Contrast Table:**
-  - Directly reflects `TeamUnixFinalPPT.pptx` (Slide 8): compares our platform's adaptive diagnostic, verified proof, and habit consistency against Coursera, generic roadmaps, and unverified certifications.
-- **Trust & Curriculum Section:**
-  - Showcases curriculum tracks (Full-Stack, Data & AI, Cloud Systems) with sample "Why this is recommended" evidence tags.
+  - Compares our adaptive psychometric diagnostic against standard non-adaptive platforms.
 
 ### 4.2 Learner Dashboard (`/dashboard`)
-- **Primary Hero Card — "Your Next Best Action":**
-  - Bold, unambiguous call-to-action banner (e.g., *"Continue: Asynchronous JavaScript & Promises · Lesson 3 of 5 (Estimated 25 mins)"*).
-  - Clear rationale badge: *"Closing gap identified in Diagnostic Question #4"*.
-- **Weekly Habit & Milestone Tracker:**
-  - Interactive calendar ribbon tracking study streak, committed time budget (e.g. `45m / day`), and milestones completed this week.
-- **Skill Breakdown Matrix (Actionable vs. Vanity):**
-  - Lists current target track topics categorized into:
-    - *Mastered (Ready for verification)*
-    - *In Progress (Active learning)*
-    - *Needs Review (Weak subtopics flagged for re-test)*
-- **Activity & Submission Feed:**
-  - Searchable list of recent quiz submissions, git commits, and code review insights.
+- **Next Best Action Card:** Action-oriented card indicating the immediate high-impact skill to study.
+- **Weekly Habit & Milestone Tracker:** Streak tracking, daily time budget adherence, and completion stats.
+- **Interactive Graph Shortcut:** One-click launch into the interactive skill graph.
 
 ### 4.3 Diagnostic Assessment Experience (`/assessment`)
-- **10-Question Sequential Stepper:**
-  - Renders **one question at a time** (as mandated in `AI_Career_Roadmap_Workflow.pdf`).
-  - Top indicator displays current question (`Question 4 of 10`) and knowledge area pill (`Category: Conceptual Understanding`).
-  - Progress bar shows completed questions.
-- **Adaptive Difficulty Feedback:**
-  - Once answered, instant explanation reveals why this question matters to the overall roadmap.
-- **Diagnostic Completion Screen (Initial Skill Report):**
-  - Generates comprehensive visual report:
-    - Baseline level tier (e.g., *Intermediate Level II*).
-    - Identified strengths (topics skipped in roadmap).
-    - Specific knowledge gaps with direct links to personalized roadmap chapters.
-    - CTA: `[Generate My Tailored Roadmap]`.
+- **Pre-Test Calibration:** Declared known skills selector allowing learners to bypass trivial baselines.
+- **Dynamic 1-Question Stepper:** Single-question focus with immediate feedback and category indicators.
+- **Comprehensive Post-Test Review Screen:**
+  - Ability Level ($\theta$), correct response count, and stop reason.
+  - Itemized question review (question stem, user selection, correct answer, tested skill).
+  - Unlocked frontier skills matrix ready for study.
 
 ### 4.4 Personalized Roadmap Canvas (`/roadmap`)
-- **Topological Prerequisite Flow:**
-  - Replaces the simple 4-item checkbox list with an ordered sequence of modules grouped by milestone.
-  - Each item displays:
-    - Module Title & Target Skill.
-    - Estimated study time (e.g., `35 min`).
-    - Format icon (Video, Documentation, Hands-on Exercise).
-    - "Why this step" transparent rationale.
-    - Action button (`Start Lesson`, `Retest Subtopic`, `Completed`).
-- **Remediation Loop Visuals:**
-  - When a topic assessment fails, an amber branch visually inserts a "Revision Module" before re-enabling the assessment button.
+- **Topological Prerequisite Flow:** Visual milestone roadmap with "Coming Soon" badge as async AI generator integration finalizes.
 
 ### 4.5 Skill Graph (`/graph`)
-- **Interactive Prerequisite Map:**
-  - Upgrades the static 5-box SVG into an interactive diagram with clear directed paths.
-  - Nodes visually reflect status:
-    - Green checkmark = Mastered prerequisite.
-    - Pulsing blue ring = Currently active topic.
-    - Slate lock = Blocked by upstream prerequisite.
-  - Clicking any node opens a side drawer with topic overview, prerequisite list, and recommended resources.
+- **Interactive Prerequisite Map (`InteractiveSkillGraph.jsx`):**
+  - SVG visualization rendering the 56-skill curriculum across 9 domain clusters with 72 prerequisite dependency links.
+  - 2-State Visual Model:
+    - **Ready to Learn (`unlocked`):** Green node (`#16a34a`) with checkmark icon denoting mastered skills or accessible frontier nodes whose prerequisites are complete.
+    - **Locked (`locked`):** Dashed border with lock icon denoting blocked topics.
+  - Interactive Controls:
+    - Pan, zoom, and cluster filter buttons.
+    - Node selection drawer opening right-hand pane with skill overview, calibrated difficulty, direct prerequisites, and unlocked downstream dependencies.
 
 ### 4.6 Progress Analytics (`/analytics`)
-- **Empirical Learning Evidence:**
-  - Replaces placeholder zeroes with genuine learning progression charts.
-  - Retention & Re-test Performance: shows score improvements after revision modules.
-  - Weak Area Heatmap: categorizes mistakes by topic area (Syntax vs Theory vs Architecture).
+- Retention metrics, learning velocity, and weekly time budget fulfillment.
 
 ---
 
 ## 5. Accessibility, Responsiveness & State Specifications
 
-### 5.1 Mobile Application (Capacitor) & PWA Directives
-- **Cross-Platform Target:** Web + installable Progressive Web App (PWA) + iOS/Android native containerization via Capacitor.
-- **Hardware Safe-Area Insets:** Layout shells implement CSS environment variables (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`) so top bars and bottom navigation clear device notches, status bars, and home indicators.
-- **Touch-First Ergonomics:**
-  - Strict minimum 44x44px touch bounding boxes across all buttons, quiz choices, topic nodes, and filter chips.
-  - Double-tap zoom delays eliminated via `touch-action: manipulation`.
-  - Native-feeling momentum scrolling (`-webkit-overflow-scrolling: touch`).
-- **Mobile Navigation:** Dedicated thumb-friendly bottom bar (`MobileNav.jsx`) on viewports `< 768px` providing instant access to `/dashboard`, `/roadmap`, `/learn`, and `/career`.
-- **PWA Standalone Display:** Configured for `display: standalone` in `manifest.webmanifest` with brand theme color (`#0b0f17`).
-- **Offline State Persistence:** Diagnostic quiz state, roadmap milestones, and session tokens persist in `localStorage` / `sessionStorage` to survive connection drops and mobile app restarts.
-- **Reduced Motion Support:** Respects `prefers-reduced-motion: reduce` by disabling smooth scrolling and transitions.
-- **Lightweight Assets:** All SVG icons loaded inline via `lucide-react` (stroke width 2px). Zero heavy canvas dependencies.
-
-### 5.2 Form States & Micro-Interactions
-- **Loading State:** Skeleton loaders matching exact card geometry (`animate-pulse bg-slate-200`) rather than generic spinning circles.
-- **Empty States:** Meaningful illustrations and clear next actions (e.g., *"No assessment history yet. Take your first 5-minute diagnostic to map your skills."*).
-- **Error States:** Clear explanation of failure with retry buttons and fallback contact instructions.
+- **Mobile Navigation:** Dedicated thumb-friendly bottom bar (`MobileNav.jsx`) on viewports `< 768px`.
+- **Touch-First Ergonomics:** Strict minimum 44x44px touch bounding boxes across all interactive controls.
+- **PWA Standards:** Standalone web app manifest support with brand theme colors and offline state resilience.

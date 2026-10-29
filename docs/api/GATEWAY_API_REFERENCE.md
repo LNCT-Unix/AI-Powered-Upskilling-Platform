@@ -67,18 +67,35 @@ All error responses from the Spring Boot gateway (including validation failures,
 
 ## 2. API Endpoints Quick Reference
 
+### 2.1 Authentication & User Endpoints (`/api/auth`)
+
 | Method | Endpoint | Auth Required | Purpose |
 | :--- | :--- | :--- | :--- |
 | **GET** | `/oauth2/authorization/{google\|github}` | No | Initiates OAuth2 authorization redirect |
 | **POST** | `/api/auth/oauth2/exchange` | No | Exchanges single-use code from callback URL for JWT access token |
+| **POST** | `/api/auth/register` | No | Registers user with email & password; sends 6-digit verification OTP |
+| **POST** | `/api/auth/email-verification/confirm` | No | Confirms 6-digit email OTP (alias `/email-verification/verify-otp`) & logs in |
+| **POST** | `/api/auth/email-verification/resend` | No | Resends 6-digit email verification code |
+| **POST** | `/api/auth/login` | No | Authenticates user with email and password |
+| **POST** | `/api/auth/forgot-password` | No | Sends 6-digit password reset OTP to registered email |
+| **POST** | `/api/auth/verify-reset-otp` | No | Verifies password reset OTP; returns short-lived reset token |
+| **POST** | `/api/auth/reset-password` | No | Resets password using reset token |
 | **GET** | `/api/auth/me` | Yes (`Bearer`) | Fetches the authenticated user profile & verifies session validity |
-| **POST** | `/api/auth/refresh` | Cookie (`refresh_token`) | Rotates refresh token and returns a fresh JWT access token |
-| **POST** | `/api/auth/logout` | Cookie (`refresh_token`) | Revokes refresh token and clears session cookie |
+| **POST** | `/api/auth/refresh` | Cookie / Body | Rotates refresh token and returns a fresh JWT access token |
+| **POST** | `/api/auth/logout` | Cookie / Body | Revokes refresh token and clears session cookie |
 | **POST** | `/api/auth/oauth-links/{provider}/intent` | Yes (`Bearer`) | Creates a short-lived intent to link Google or GitHub to existing account |
-| **POST** | `/api/v1/assessments` | Yes (`Bearer`) | Starts a new assessment or idempotently returns current in-progress test |
-| **GET** | `/api/v1/assessments/{id}` | Yes (`Bearer`) | Gets the current assessment state and next question to answer |
-| **POST** | `/api/v1/assessments/{id}/responses` | Yes (`Bearer`) | Submits an answer for the current question and advances engine |
-| **GET** | `/api/v1/assessments/{id}/result` | Yes (`Bearer`) | Returns final diagnostic score, ability level ($\theta$), and skill tree |
+
+### 2.2 Onboarding & Assessment Endpoints (`/api/v1/assessments`)
+
+| Method | Endpoint | Auth Required | Purpose |
+| :--- | :--- | :--- | :--- |
+| **GET** | `/api/v1/assessments/tracks` | No / Bearer | Lists active learning tracks for the onboarding track picker |
+| **GET** | `/api/v1/assessments/tracks/{trackId}/skills` | No / Bearer | Lists all skills of a track for pre-test declared calibration |
+| **POST** | `/api/v1/assessments` | Yes (`Bearer`) | Starts assessment or resumes active one (accepts `trackId` & `knownSkillSlugs`) |
+| **GET** | `/api/v1/assessments/{id}` | Yes (`Bearer`) | Gets current assessment state and next question to answer |
+| **POST** | `/api/v1/assessments/{id}/responses` | Yes (`Bearer`) | Submits answer (`itemId`, `selectedOption`) and advances CAT engine |
+| **GET** | `/api/v1/assessments/{id}/result` | Yes (`Bearer`) | Returns summary result: level, ability score ($\theta$), and skill tree |
+| **GET** | `/api/v1/assessments/{id}/report` | Yes (`Bearer`) | Comprehensive post-assessment report: per-question review and unlocked skills |
 
 ---
 
@@ -346,33 +363,287 @@ Allows an authenticated user to link a second OAuth identity (e.g. link GitHub t
 
 ---
 
-## 4. Adaptive Assessment Endpoints (`/api/v1/assessments`)
+### 3.7 Email & Password Registration
+
+`POST /api/auth/register`
+
+Registers a new user account with full name, email, and password. A 6-digit one-time verification passcode (OTP) is automatically dispatched to the learner's email via Gmail SMTP.
+
+#### Request
+- **Headers:** `Content-Type: application/json`
+- **Body:**
+```json
+{
+  "fullName": "Alex Mercer",
+  "email": "alex.mercer@example.com",
+  "password": "Password123!"
+}
+```
+
+#### Response (`202 Accepted`)
+```json
+{
+  "success": true,
+  "message": "If the email is eligible, a 6-digit verification code has been sent.",
+  "data": {
+    "email": "alex.mercer@example.com",
+    "verificationRequired": true,
+    "otpExpiresInSeconds": 900
+  },
+  "timestamp": "2026-10-29T10:00:00.000"
+}
+```
+
+---
+
+### 3.8 Confirm Email Verification OTP
+
+`POST /api/auth/email-verification/confirm`  
+*(Alternative Alias: `POST /api/auth/email-verification/verify-otp`)*
+
+Verifies the 6-digit OTP code sent during registration. Upon confirmation, marks the email as verified, provisions active credentials, and sets the `refresh_token` cookie.
+
+#### Request
+- **Headers:**
+  - `Content-Type: application/json`
+  - *(Optional)* `X-Client-Platform: mobile` (if calling from a mobile device)
+- **Body:**
+```json
+{
+  "email": "alex.mercer@example.com",
+  "otp": "491823"
+}
+```
+
+#### Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Email verified successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresInSeconds": 900,
+    "refreshToken": null,
+    "user": {
+      "id": 1,
+      "email": "alex.mercer@example.com",
+      "fullName": "Alex Mercer",
+      "role": "USER"
+    }
+  },
+  "timestamp": "2026-10-29T10:02:00.000"
+}
+```
+
+---
+
+### 3.9 Resend Email Verification OTP
+
+`POST /api/auth/email-verification/resend`
+
+Generates and emails a fresh 6-digit verification code with a renewed 15-minute TTL. Rate limited to prevent email flooding.
+
+#### Request
+- **Headers:** `Content-Type: application/json`
+- **Body:**
+```json
+{
+  "email": "alex.mercer@example.com"
+}
+```
+
+#### Response (`202 Accepted`)
+```json
+{
+  "success": true,
+  "message": "If the email is eligible, a 6-digit verification code has been sent.",
+  "data": {
+    "email": "alex.mercer@example.com",
+    "verificationRequired": true,
+    "otpExpiresInSeconds": 900
+  },
+  "timestamp": "2026-10-29T10:03:00.000"
+}
+```
+
+---
+
+### 3.10 Email & Password Login
+
+`POST /api/auth/login`
+
+Authenticates a verified user with email and password.
+
+#### Request
+- **Headers:**
+  - `Content-Type: application/json`
+  - *(Optional)* `X-Client-Platform: mobile`
+- **Body:**
+```json
+{
+  "email": "alex.mercer@example.com",
+  "password": "Password123!"
+}
+```
+
+#### Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresInSeconds": 900,
+    "refreshToken": null,
+    "user": {
+      "id": 1,
+      "email": "alex.mercer@example.com",
+      "fullName": "Alex Mercer",
+      "role": "USER"
+    }
+  },
+  "timestamp": "2026-10-29T10:04:00.000"
+}
+```
+
+---
+
+### 3.11 Password Reset Lifecycle
+
+#### A. Request Reset Code
+`POST /api/auth/forgot-password`
+```json
+{ "email": "alex.mercer@example.com" }
+```
+*Response (`200 OK`):* `{"success": true, "message": "If an account exists with this email, a password reset code has been sent."}`
+
+#### B. Verify Reset OTP
+`POST /api/auth/verify-reset-otp`
+```json
+{
+  "email": "alex.mercer@example.com",
+  "otp": "829104"
+}
+```
+*Response (`200 OK`):*
+```json
+{
+  "success": true,
+  "message": "OTP verified successfully.",
+  "data": {
+    "resetToken": "7b8c9d0e-1f2a-4b5c-8d9e-0f1a2b3c4d5e"
+  }
+}
+```
+
+#### C. Finalize Password Reset
+`POST /api/auth/reset-password`
+```json
+{
+  "email": "alex.mercer@example.com",
+  "resetToken": "7b8c9d0e-1f2a-4b5c-8d9e-0f1a2b3c4d5e",
+  "newPassword": "NewStrongPassword456!"
+}
+```
+*Response (`200 OK`):* `{"success": true, "message": "Password has been reset successfully."}`
+
+---
+
+### 3.12 Mobile Client Platform Support (`X-Client-Platform: mobile`)
+
+When calling from native mobile clients (React Native, Flutter, or native apps):
+1. Include the header: `X-Client-Platform: mobile`.
+2. The gateway will skip setting browser `HttpOnly` cookies. Instead, the raw `refreshToken` is returned directly in the response payload `data.refreshToken`.
+3. When refreshing tokens via `POST /api/auth/refresh` or logging out via `POST /api/auth/logout`, mobile clients pass `{ "refreshToken": "<token>" }` in the JSON body.
+
+---
+
+## 4. Onboarding & Adaptive Assessment Endpoints (`/api/v1/assessments`)
 
 ### 4.1 How the Adaptive Engine Works (CAT)
 The platform evaluates learner proficiency using an Item Response Theory (IRT) staircase algorithm:
-1. **Starting Point**: Every assessment begins at difficulty `0.0`.
+1. **Starting Point**: Every assessment begins at difficulty `0.0` (or calibrated higher based on declared known skills).
 2. **Step Adjustments**: Answering correctly adjusts the candidate's estimated ability ($\theta$) upwards by `+0.35`; answering incorrectly adjusts it downwards by `-0.35`.
-3. **Adaptive Item Selection**: The backend dynamically searches for the nearest active question in difficulty to the candidate's current $\theta$.
+3. **Adaptive Item Selection**: The backend dynamically queries the unused item pool whose calibrated difficulty is closest to the candidate's current $\theta$.
+   - **Direct Indexed Anti-Join:** Candidate selection queries the item pool using an indexed `LEFT JOIN ... WHERE r.id IS NULL` anti-join on sequential responses, ensuring consistent state and zero proxy bypass issues.
 4. **Early Termination Rules**:
    - Minimum: **5 questions**.
    - Maximum: **9 questions**.
-   - Stop condition: Once at least 5 questions are answered, if the answers have oscillated direction at least twice (`directionChanges >= 2`), the ability level is confirmed and the assessment automatically finishes.
+   - Stop condition: Once at least 5 questions are answered, if the answers have oscillated direction at least twice (`directionChanges >= 2`), the ability level is confirmed (`LEVEL_CONFIRMED`) and the assessment terminates early.
 5. **Proficiency Levels**:
    - `BEGINNER`: $\theta < -0.5$
    - `INTERMEDIATE`: $-0.5 \le \theta \le 0.75$
    - `ADVANCED`: $\theta > 0.75$
 6. **Skill States**:
-   - `MASTERED`: Difficulty is well below ability ($\text{diff} \le \theta - 0.25$).
-   - `FRONTIER`: Not mastered yet, but all prerequisites are mastered (the optimal target for upcoming learning milestones).
-   - `LOCKED`: Prerequisite skills have not yet been mastered.
+   - `MASTERED`: Difficulty is well below ability ($\text{diff} \le \theta - 0.25$) or skill was declared during onboarding.
+   - `FRONTIER`: Not mastered yet, but 100% of prerequisites are mastered (the optimal target for upcoming learning milestones).
+   - `LOCKED`: One or more prerequisite skills have not yet been mastered.
 
 ---
 
-### 4.2 Start or Resume Assessment
+### 4.2 List Active Tracks
+
+`GET /api/v1/assessments/tracks`
+
+Lists all `ACTIVE` tracks for the onboarding track-picker dropdown.
+
+#### Request
+- **Headers:** None required (Public / Authenticated)
+
+#### Response (`200 OK`)
+```json
+[
+  {
+    "trackId": "00000000-0000-0000-0000-000000000001",
+    "slug": "backend-engineering",
+    "name": "Backend Engineering"
+  }
+]
+```
+
+---
+
+### 4.3 List Track Skills for Pre-Test Calibration
+
+`GET /api/v1/assessments/tracks/{trackId}/skills`
+
+Lists all skills within a track for the onboarding pre-selection checklist. Learners mark the skills they already feel comfortable with.
+
+#### Path Variables
+- `trackId`: UUID of the track.
+
+#### Request
+- **Headers:** None required (Public / Authenticated)
+
+#### Response (`200 OK`)
+```json
+[
+  {
+    "skillId": "11111111-0000-0000-0000-000000000001",
+    "slug": "programming-basics",
+    "name": "Programming Basics",
+    "cluster": "Foundations",
+    "difficulty": -2.0
+  },
+  {
+    "skillId": "11111111-0000-0000-0000-000000000002",
+    "slug": "git-basics",
+    "name": "Git Basics",
+    "cluster": "Foundations",
+    "difficulty": -1.8
+  }
+]
+```
+
+---
+
+### 4.4 Start or Resume Assessment
 
 `POST /api/v1/assessments`
 
-Starts a new diagnostic assessment for the specified track. **Idempotent behavior:** If the user already has an active assessment in progress for this track, the gateway immediately returns that existing assessment state instead of failing.
+Starts a new diagnostic assessment for the specified track or resumes the one already in progress. Accepts optional `knownSkillSlugs` for pre-test calibration.
 
 #### Request
 - **Headers:**
@@ -381,7 +652,12 @@ Starts a new diagnostic assessment for the specified track. **Idempotent behavio
 - **Body:**
 ```json
 {
-  "trackId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+  "trackId": "00000000-0000-0000-0000-000000000001",
+  "knownSkillSlugs": [
+    "programming-basics",
+    "git-basics",
+    "sql-basics"
+  ]
 }
 ```
 
@@ -417,7 +693,7 @@ Starts a new diagnostic assessment for the specified track. **Idempotent behavio
 
 #### Sample Fetch Call
 ```javascript
-export async function startAssessment(accessToken, trackId) {
+export async function startAssessment(accessToken, trackId, knownSkillSlugs = []) {
   const response = await fetch(`${API_BASE_URL}/api/v1/assessments`, {
     method: 'POST',
     headers: {
@@ -425,7 +701,7 @@ export async function startAssessment(accessToken, trackId) {
       'Content-Type': 'application/json',
     },
     credentials: 'include',
-    body: JSON.stringify({ trackId }),
+    body: JSON.stringify({ trackId, knownSkillSlugs }),
   });
 
   if (!response.ok) {
@@ -439,7 +715,7 @@ export async function startAssessment(accessToken, trackId) {
 
 ---
 
-### 4.3 Get Assessment State / Resume
+### 4.5 Get Assessment State / Resume
 
 `GET /api/v1/assessments/{id}`
 
@@ -616,7 +892,7 @@ export async function submitAssessmentAnswer(accessToken, assessmentId, itemId, 
 
 ---
 
-### 4.5 Fetch Assessment Result
+### 4.6 Fetch Assessment Result
 
 `GET /api/v1/assessments/{id}/result`
 
@@ -640,27 +916,19 @@ Returns the comprehensive diagnostic score and the mapped skill tree once the as
   "skills": [
     {
       "skillId": "5a4b3c2d-1e0f-9a8b-7c6d-5e4f3a2b1c0d",
+      "slug": "http-basics",
       "name": "HTTP / REST API Fundamentals",
-      "cluster": "Web Protocols",
-      "state": "MASTERED"
-    },
-    {
-      "skillId": "6b5c4d3e-2f1a-0b9c-8d7e-6f5a4b3c2d1e",
-      "name": "Database Indexing & B-Trees",
-      "cluster": "Storage Engines",
-      "state": "MASTERED"
+      "cluster": "Web APIs",
+      "state": "MASTERED",
+      "prerequisites": ["11111111-0000-0000-0000-000000000001"]
     },
     {
       "skillId": "7c6d5e4f-3a2b-1c0d-9e8f-7a6b5c4d3e2f",
+      "slug": "redis-in-memory",
       "name": "Distributed Caching with Redis",
-      "cluster": "System Architecture",
-      "state": "FRONTIER"
-    },
-    {
-      "skillId": "8d7e6f5a-4b3c-2d1e-0f9a-8b7c6d5e4f3a",
-      "name": "Consensus Protocols & Paxos",
-      "cluster": "System Architecture",
-      "state": "LOCKED"
+      "cluster": "Performance",
+      "state": "FRONTIER",
+      "prerequisites": ["5a4b3c2d-1e0f-9a8b-7c6d-5e4f3a2b1c0d"]
     }
   ]
 }
@@ -670,24 +938,88 @@ Returns the comprehensive diagnostic score and the mapped skill tree once the as
 - `409 Conflict`: The test is still `IN_PROGRESS` (`Assessment not finished yet`).
 - `404 Not Found`: Assessment does not exist or unauthorized.
 
-#### Sample Fetch Call
-```javascript
-export async function getAssessmentResult(accessToken, assessmentId) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/assessments/${assessmentId}/result`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
+---
+
+### 4.7 Fetch Comprehensive Post-Assessment Report
+
+`GET /api/v1/assessments/{id}/report`
+
+Returns the full post-assessment report once `COMPLETED`. Includes:
+1. `responses`: Per-question review with question stem, learner's chosen option text, correct option text, tested skill slug and name, and correctness boolean.
+2. `skills`: Full skill graph state (`MASTERED`, `FRONTIER`, `LOCKED`) for every node in the track.
+3. `unlockedSkills`: Every skill that is newly accessible (`MASTERED` or `FRONTIER`) as a result of this diagnostic test — the frontend uses this array to update and highlight graph nodes and unlock upcoming roadmap steps.
+
+#### Path Variables
+- `id`: UUID of the assessment.
+
+#### Request
+- **Headers:**
+  - `Authorization: Bearer <accessToken>`
+
+#### Response (`200 OK`)
+```json
+{
+  "assessmentId": "d3b07384-d113-467f-bb8e-a43878b2d19f",
+  "level": "INTERMEDIATE",
+  "initialTheta": 0.0,
+  "finalTheta": 0.35,
+  "answered": 7,
+  "correct": 5,
+  "stopReason": "LEVEL_CONFIRMED",
+  "responses": [
+    {
+      "itemStem": "Which HTTP caching header allows a client to perform conditional validation with the origin server?",
+      "yourAnswer": "ETag / If-None-Match",
+      "correctAnswer": "ETag / If-None-Match",
+      "skillSlug": "http-basics",
+      "skillName": "HTTP Basics",
+      "correct": true
     },
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Result not ready');
-  }
-
-  return response.json(); // returns ResultView
+    {
+      "itemStem": "When designing an ACID-compliant database transaction, what property does the 'I' represent?",
+      "yourAnswer": "Integrity",
+      "correctAnswer": "Isolation",
+      "skillSlug": "transactions-acid",
+      "skillName": "ACID Transactions",
+      "correct": false
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "5a4b3c2d-1e0f-9a8b-7c6d-5e4f3a2b1c0d",
+      "slug": "http-basics",
+      "name": "HTTP Basics",
+      "cluster": "Web APIs",
+      "state": "MASTERED",
+      "prerequisites": []
+    },
+    {
+      "skillId": "7c6d5e4f-3a2b-1c0d-9e8f-7a6b5c4d3e2f",
+      "slug": "redis-in-memory",
+      "name": "Redis In-Memory Caching",
+      "cluster": "Performance",
+      "state": "FRONTIER",
+      "prerequisites": ["5a4b3c2d-1e0f-9a8b-7c6d-5e4f3a2b1c0d"]
+    }
+  ],
+  "unlockedSkills": [
+    {
+      "skillId": "5a4b3c2d-1e0f-9a8b-7c6d-5e4f3a2b1c0d",
+      "slug": "http-basics",
+      "name": "HTTP Basics",
+      "cluster": "Web APIs",
+      "state": "MASTERED",
+      "prerequisites": []
+    },
+    {
+      "skillId": "7c6d5e4f-3a2b-1c0d-9e8f-7a6b5c4d3e2f",
+      "slug": "redis-in-memory",
+      "name": "Redis In-Memory Caching",
+      "cluster": "Performance",
+      "state": "FRONTIER",
+      "prerequisites": ["5a4b3c2d-1e0f-9a8b-7c6d-5e4f3a2b1c0d"]
+    }
+  ]
 }
 ```
 
@@ -695,30 +1027,65 @@ export async function getAssessmentResult(accessToken, assessmentId) {
 
 ## 5. Complete Frontend Service Module (`assessmentService.js`)
 
-Below is the production-ready service module that frontend developers can copy directly into `web-app/src/services/assessmentService.js`:
+Below is the production-ready service module matching `web-app/src/services/assessmentService.js`:
 
 ```javascript
-import { apiClient, getAccessToken } from './api';
+import { apiClient } from './api';
+
+// Fixed UUID for Backend Engineering track matching backend seed
+export const BACKEND_TRACK_ID = '00000000-0000-0000-0000-000000000001';
 
 export const assessmentService = {
   /**
-   * Start a new test or resume an existing active one for a track.
-   * @param {string} trackId - UUID of the learning track.
-   * @returns {Promise<AssessmentState>}
+   * Fetch all active learning tracks for the onboarding dropdown.
+   * Endpoint: GET /api/v1/assessments/tracks
    */
-  async startOrResume(trackId) {
-    return apiClient('/api/v1/assessments', {
-      method: 'POST',
-      body: { trackId },
+  async getTracks() {
+    return apiClient('/api/v1/assessments/tracks', {
+      method: 'GET',
     });
   },
 
   /**
-   * Fetch current state by assessment ID (for page reloads or active sessions).
-   * @param {string} assessmentId - UUID of the assessment.
-   * @returns {Promise<AssessmentState>}
+   * Fetch all skills of a track for the onboarding pre-selection checklist.
+   * Endpoint: GET /api/v1/assessments/tracks/{trackId}/skills
+   * @param {string} trackId - UUID of the track.
+   */
+  async getSkillsForTrack(trackId) {
+    if (!trackId) throw new Error('Track ID is required');
+    return apiClient(`/api/v1/assessments/tracks/${trackId}/skills`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Start a new assessment or resume existing active test with declared skills.
+   * Endpoint: POST /api/v1/assessments
+   * @param {string} trackId - UUID of the track.
+   * @param {string[]} [knownSkillSlugs=[]] - Declared familiar skill slugs.
+   */
+  async startAssessment(trackId, knownSkillSlugs = []) {
+    if (!trackId) throw new Error('Track ID is required');
+    return apiClient('/api/v1/assessments', {
+      method: 'POST',
+      body: {
+        trackId,
+        knownSkillSlugs: Array.isArray(knownSkillSlugs) ? knownSkillSlugs : [],
+      },
+    });
+  },
+
+  /** Backward-compatible alias */
+  async startOrResume(trackId, knownSkillSlugs = []) {
+    return this.startAssessment(trackId || BACKEND_TRACK_ID, knownSkillSlugs);
+  },
+
+  /**
+   * Fetch current state by assessment ID.
+   * Endpoint: GET /api/v1/assessments/{id}
    */
   async getState(assessmentId) {
+    if (!assessmentId) throw new Error('Assessment ID is required');
     return apiClient(`/api/v1/assessments/${assessmentId}`, {
       method: 'GET',
     });
@@ -726,28 +1093,35 @@ export const assessmentService = {
 
   /**
    * Submit an answer to the current question.
-   * @param {string} assessmentId - UUID of the assessment.
-   * @param {string} itemId - UUID of the current question.
-   * @param {number} selectedOption - 0-indexed integer corresponding to choice.
-   * @returns {Promise<AssessmentState>}
+   * Endpoint: POST /api/v1/assessments/{id}/responses
+   * @param {string} assessmentId - Assessment UUID.
+   * @param {string} itemId - Question UUID.
+   * @param {number} selectedOption - 0-indexed choice integer.
    */
   async submitAnswer(assessmentId, itemId, selectedOption) {
     return apiClient(`/api/v1/assessments/${assessmentId}/responses`, {
       method: 'POST',
-      body: {
-        itemId,
-        selectedOption,
-      },
+      body: { itemId, selectedOption },
     });
   },
 
   /**
-   * Retrieve final score and skill results once status is COMPLETED.
-   * @param {string} assessmentId - UUID of the completed assessment.
-   * @returns {Promise<ResultView>}
+   * Retrieve summary score and skill results once status is COMPLETED.
+   * Endpoint: GET /api/v1/assessments/{id}/result
    */
   async getResult(assessmentId) {
     return apiClient(`/api/v1/assessments/${assessmentId}/result`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Retrieve full comprehensive post-assessment report once COMPLETED.
+   * Endpoint: GET /api/v1/assessments/{id}/report
+   */
+  async getReport(assessmentId) {
+    if (!assessmentId) throw new Error('Assessment ID is required');
+    return apiClient(`/api/v1/assessments/${assessmentId}/report`, {
       method: 'GET',
     });
   },
@@ -758,12 +1132,24 @@ export const assessmentService = {
 
 ## 6. TypeScript Type Definitions
 
-If the frontend team writes TypeScript or utilizes JSDoc type checking, use these interface definitions:
-
 ```typescript
 export type AssessmentStatus = 'IN_PROGRESS' | 'COMPLETED';
 export type SkillState = 'MASTERED' | 'FRONTIER' | 'LOCKED';
 export type LearnerLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+
+export interface TrackSummary {
+  trackId: string;
+  slug: string;
+  name: string;
+}
+
+export interface SkillSummary {
+  skillId: string;
+  slug: string;
+  name: string;
+  cluster: string;
+  difficulty: number;
+}
 
 export interface AssessmentQuestion {
   itemId: string;
@@ -788,9 +1174,11 @@ export interface AssessmentState {
 
 export interface SkillResult {
   skillId: string;
+  slug?: string;
   name: string;
   cluster: string;
   state: SkillState;
+  prerequisites?: string[];
 }
 
 export interface AssessmentResultView {
@@ -800,6 +1188,28 @@ export interface AssessmentResultView {
   answered: number;
   correct: number;
   skills: SkillResult[];
+}
+
+export interface ResponseDetail {
+  itemStem: string;
+  yourAnswer: string;
+  correctAnswer: string;
+  skillSlug: string;
+  skillName: string;
+  correct: boolean;
+}
+
+export interface AssessmentReport {
+  assessmentId: string;
+  level: LearnerLevel;
+  initialTheta: number;
+  finalTheta: number;
+  answered: number;
+  correct: number;
+  stopReason: string;
+  responses: ResponseDetail[];
+  skills: SkillResult[];
+  unlockedSkills: SkillResult[];
 }
 
 export interface ApiResponse<T> {

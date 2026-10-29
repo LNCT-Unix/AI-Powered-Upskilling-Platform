@@ -1,8 +1,8 @@
 # Frontend Architecture Specification — AI-Powered Upskilling Platform
 
-**Document Status:** Architecture Plan & Verified Implementation (v2.1)  
+**Document Status:** Architecture Plan & Verified Implementation (v2.2)  
 **Role:** Senior Frontend Engineer & UX Architect  
-**Target Stack:** React 19, Vite 8, React Router DOM 7, Tailwind CSS v4, Lucide React  
+**Target Stack:** React 19, Vite, React Router DOM, Tailwind CSS v4, Lucide React  
 **Target Delivery:** Progressive Web App (PWA) + Cross-Platform Mobile Application (via Capacitor)  
 **Reference Specification:** 6-Phase Master Website Workflow Diagram  
 
@@ -11,16 +11,17 @@
 ## 1. Architectural Principles
 
 1. **Strict 6-Phase Lifecycle Alignment:** Every frontend module maps directly to one of the 6 phases defined in the master workflow diagram:
-   - *Phase 1:* User Onboarding & Skill Background Setup
-   - *Phase 2:* Initial Knowledge Diagnostic & Skill Report
-   - *Phase 3:* Personalized Roadmap Generation & Study Plan
+   - *Phase 1:* User Onboarding, Track Selection & Declared Skill Calibration
+   - *Phase 2:* Initial Knowledge Diagnostic (IRT Rasch CAT) & Detailed Post-Test Report
+   - *Phase 3:* Personalized Roadmap Generation & Milestone Planning
    - *Phase 4:* In-Depth Learning, AI Doubt Solving & Remediation Loops
-   - *Phase 5:* Practical Project Verification & Certification
-   - *Phase 6:* Career Development (Resume, Mock Interview, Job Matches) & Skill Stacking Loop
-2. **Cross-Platform Delivery (PWA & Capacitor):** The web application is engineered from the ground up to wrap seamlessly into native iOS/Android shells via **Capacitor** and install as a **Progressive Web App (PWA)** with touch-first ergonomics and offline resilience.
-3. **Strict Gateway & Auth Boundary:** Network requests and tokens are isolated in `services/api.js` and `context/AuthContext.jsx`. The frontend remains an authorized consumer of Spring Boot Gateway endpoints (`/api/auth/*`, `/api/v1/*`), with resilient fallback to Mock Auth Mode (`VITE_USE_MOCK_AUTH=true`).
-4. **URL-First Navigation:** Deep linking and browser history are maintained across all 12 platform routes via `react-router-dom` v7.
-5. **Inclusive Accessibility:** Built-in multi-language localization (English, Hindi, Hinglish) and speech-to-text voice recognition for AI doubt solving.
+   - *Phase 5:* Practical Project Verification & Automated Code Audits
+   - *Phase 6:* Career Development (AI Resume Builder, Mock Interviews, Placement Hub)
+2. **Cross-Platform Delivery (PWA & Capacitor):** Engineered from the ground up with mobile-first ergonomics, safe-area insets, and touch target minimums. Supports mobile token delivery with `X-Client-Platform: mobile`.
+3. **Strict Gateway & Auth Boundary:** In-memory JWT access token management, HttpOnly refresh token cookies, silent token rotation, and robust offline fallback via `VITE_USE_MOCK_AUTH=true`.
+4. **URL-First Navigation:** Deep linking and browser history are maintained across all platform routes via `react-router-dom`.
+5. **Interactive Data Visualizations:** Custom D3 / SVG graph modeling for prerequisite competency trees, rendered in `InteractiveSkillGraph.jsx` with a clean 2-state visual filter: *Ready to Learn* vs *Locked*.
+6. **Built-in Generative AI Chatbot:** Interactive landing page chatbot (`LandingChatbot.jsx`) answering learner curriculum and platform questions.
 
 ---
 
@@ -30,48 +31,53 @@
 web-app/src/
 ├── main.jsx                     # React entry point with StrictMode & global index.css
 ├── App.jsx                      # Root application provider wrapping AuthProvider & RouterProvider
-├── router.jsx                   # React Router route registry across all 6 phases
-├── index.css                    # Tailwind CSS v4 directives & @theme design tokens (Deep Craft Learning)
+├── router.jsx                   # React Router route registry across all platform views
+├── index.css                    # Tailwind CSS v4 directives & @theme design tokens
 │
 ├── assets/                      # Static local assets (hero.png)
 │
 ├── components/                  # Domain-agnostic & domain-specific UI components
-│   ├── ui/                      # Design system primitives (Button, Card, Logo, MetricCard, ScoreRing, SkillBar)
-│   ├── layout/                  # Navigation frames (DashboardShell, Sidebar, MobileNav, LanguageVoiceSelector)
-│   └── auth/                    # Dedicated authentication components (login.jsx, signup.jsx)
+│   ├── ui/                      # Design system primitives (Button, Card, Logo, MetricCard, ScoreRing, SkillBar, Badge)
+│   ├── layout/                  # Navigation frames (DashboardShell, Sidebar, MobileNav)
+│   ├── auth/                    # Authentication forms (login.jsx, signup.jsx, forgotPass.jsx, AuthView.jsx)
+│   ├── feature/                 # Feature-specific widgets (LandingChatbot.jsx, AskAIPanel.jsx)
+│   └── graph/                   # Competency graph engine (InteractiveSkillGraph.jsx, graphModel.js)
 │
 ├── pages/                       # Application route page components
-│   ├── LandingPage.jsx          # [Phase 1] Public landing page with hero & workflow features
+│   ├── LandingPage.jsx          # [Phase 1] Public landing page with hero, workflow features & AI chatbot
 │   ├── LoginPage.jsx            # [Phase 1] Sign-in page with email & OAuth options
 │   ├── SignupPage.jsx           # [Phase 1] Registration page with client-side validation
+│   ├── VerifyEmailPage.jsx      # [Phase 1] 6-digit OTP email verification screen
 │   ├── AuthCallbackPage.jsx     # [Phase 1] Handles gateway OAuth2 code exchange
-│   ├── OnboardingPage.jsx       # [Phase 1] 3-step wizard: Language/Persona -> Skill Track -> Background & Study Budget
-│   ├── AssessmentPage.jsx       # [Phase 2] 10-question adaptive diagnostic & Initial Skill Report
-│   ├── RoadmapPage.jsx          # [Phase 3] Topological milestone roadmap & "Why this step" rationales
+│   ├── AuthErrorPage.jsx        # [Phase 1] Graceful OAuth failure handler with error resolution
+│   ├── OnboardingPage.jsx       # [Phase 1] 3-step wizard: Language/Persona -> Track Selection -> Declared Skills & Budget
+│   ├── AssessmentPage.jsx       # [Phase 2] Adaptive CAT diagnostic runner & comprehensive post-test review
 │   ├── DashboardPage.jsx        # [Phase 3/4] Student overview (Next best action, habit streak, stats)
-│   ├── LearnWorkspacePage.jsx   # [Phase 4] Topic study workspace (Resource tabs, AI Doubt-Solver chat, Topic Quiz)
-│   ├── ProjectVerifyPage.jsx    # [Phase 5] GitHub repository submission, AI code review & certificate
+│   ├── RoadmapPage.jsx          # [Phase 3] Visual topological roadmap view (Coming Soon)
+│   ├── ProjectVerifyPage.jsx    # [Phase 5] GitHub repository submission & code review
 │   ├── CareerHubPage.jsx        # [Phase 6] AI resume builder, mock interview simulator & job matches
-│   ├── SkillGraphPage.jsx       # Interactive prerequisite knowledge graph
-│   ├── AnalyticsPage.jsx        # Learning hours, velocity, & retention metrics
+│   ├── SkillGraphPage.jsx       # Interactive prerequisite knowledge graph view
+│   ├── AnalyticsPage.jsx        # Learning hours, velocity, & skill retention metrics
 │   └── NotFoundPage.jsx         # 404 fallback page
 │
 ├── context/                     # Global state providers
 │   ├── AuthContext.jsx          # Central user session, tokens, & authentication lifecycle
 │   ├── authContextInstance.js   # React createContext instance
-│   └── LanguageContext.jsx      # Multi-language state (English, Hindi, Hinglish) & voice assistance
+│   ├── LanguageContext.jsx      # Multi-language state (English, Hindi, Hinglish) & voice assistance
+│   └── languageContextInstance.js # React createContext instance
 │
 ├── hooks/                       # Custom utility hooks
 │   ├── useAuth.js               # Convenience hook consuming AuthContext
-│   ├── useSpeechRecognition.js  # Browser Web Speech API hook for voice-to-text input
-│   └── useAdaptiveQuiz.js       # Adaptive diagnostic state machine hook
+│   └── useLanguage.js           # Multi-language localization hook
 │
 ├── services/                    # API & network boundary
 │   ├── api.js                   # Central fetch wrapper with Bearer token & cookie credentials
-│   └── authService.js           # Endpoints for authentication, OAuth redirects, and token exchange
+│   ├── authService.js           # Endpoints for email auth, OTP confirmation, password reset & OAuth
+│   └── assessmentService.js     # Track discovery, pre-test calibration, adaptive quiz, & reports
 │
-└── data/                        # Local mock fixtures & curriculum specifications
-    └── mockData.js              # Comprehensive questions, roadmap nodes, resources, and profiles
+└── data/                        # Local mock fixtures & curriculum data
+    ├── chatbotQuestions.js      # Landing chatbot question trees and responses
+    └── mockData.js              # Fallback curriculum and assessment data
 ```
 
 ---
@@ -80,18 +86,19 @@ web-app/src/
 
 | Route URL | Page Component | Access Level | Master Workflow Phase | Description |
 |---|---|---|---|---|
-| `/` | `LandingPage` | Public | Phase 1 | Public landing page with value proposition and CTA |
+| `/` | `LandingPage` | Public | Phase 1 | Landing page with value props, preview, and landing AI chatbot |
 | `/login` | `LoginPage` | Public | Phase 1 | Sign in via Google, GitHub, or email/password |
-| `/signup` | `SignupPage` | Public | Phase 1 | New user registration form |
+| `/signup` | `SignupPage` | Public | Phase 1 | Registration with client validation and OTP trigger |
+| `/verify-email` | `VerifyEmailPage` | Public | Phase 1 | 6-digit OTP verification screen |
 | `/auth/callback` | `AuthCallbackPage` | Public | Phase 1 | OAuth2 code exchange receiver |
-| `/onboarding` | `OnboardingPage` | Authenticated | Phase 1 | Multi-step wizard: Language, Skill Selection, Background |
-| `/assessment` | `AssessmentPage` | Authenticated | Phase 2 | 10-question adaptive diagnostic & Initial Skill Report |
+| `/auth/error` | `AuthErrorPage` | Public | Phase 1 | OAuth failure guidance and retry actions |
+| `/onboarding` | `OnboardingPage` | Authenticated | Phase 1 | Multi-step wizard: Track Selection & Declared Skill Calibration |
+| `/assessment` | `AssessmentPage` | Authenticated | Phase 2 | Adaptive CAT diagnostic & detailed post-test gap report |
 | `/dashboard` | `DashboardPage` | Authenticated | Phase 3/4 | Command center: next action, streak, quick links |
-| `/roadmap` | `RoadmapPage` | Authenticated | Phase 3/4 | Topological learning path with revision branches |
-| `/learn/:topicSlug` | `LearnWorkspacePage` | Authenticated | Phase 4 | Resource tabs, AI doubt solver, topic assessment |
+| `/roadmap` | `RoadmapPage` | Authenticated | Phase 3/4 | Topological learning path (Coming Soon badge) |
+| `/graph` | `SkillGraphPage` | Authenticated | Supporting | Interactive 56-skill prerequisite tree with 2-state filter |
 | `/projects` | `ProjectVerifyPage` | Authenticated | Phase 5 | Practical capstones, GitHub review, certificates |
-| `/career` | `CareerHubPage` | Authenticated | Phase 6 | AI resume builder, mock interviews, switch skill |
-| `/graph` | `SkillGraphPage` | Authenticated | Supporting | Interactive knowledge prerequisite tree |
+| `/career` | `CareerHubPage` | Authenticated | Phase 6 | AI resume builder, mock interviews, job matches |
 | `/analytics` | `AnalyticsPage` | Authenticated | Supporting | Study hours, retention metrics, and velocity |
 | `*` | `NotFoundPage` | Public | Fallback | 404 page |
 
@@ -102,72 +109,8 @@ web-app/src/
 1. **Localization Engine (`LanguageContext.jsx`):**
    - Supports `en` (English), `hi` (Hindi), and `hinglish` (Conversational Indian English).
    - Stored in `localStorage` and toggled from the navigation bar.
-   - Dynamic prompt generation: passes the preferred language to AI learning assistants so doubt explanations are returned in Hinglish, Hindi, or English.
-2. **Speech Recognition (`useSpeechRecognition.js`):**
-   - Powered by standard browser `SpeechRecognition` / `webkitSpeechRecognition`.
-   - Requires zero external dependencies.
-   - Microphone icon inside the AI Doubt-Solver input box enables one-click voice queries.
-3. **Mobile Navigation (`MobileNav.jsx`):**
-   - Fixed bottom action bar on viewports `< 768px` providing one-thumb access to `/dashboard`, `/roadmap`, `/learn`, and `/career`.
-
----
-
-## 5. The Remediation Loop Architecture (Phase 4)
-
-```
-                    +---------------------------+
-                    |       Learn Topic         |
-                    | (Docs, Videos, Exercises) |
-                    +-------------+-------------+
-                                  |
-                                  v
-                    +---------------------------+
-                    |   Take Topic Assessment   |
-                    +-------------+-------------+
-                                  |
-                    +-------------+-------------+
-                    |  Score >= 70% (Mastered)? |
-                    +-------------+-------------+
-                           /             \
-                   NO     /               \  YES
-                         v                 v
-          +-----------------------+   +-----------------------+
-          |  Find Weak Subtopics  |   |  Mark Topic Completed |
-          +-----------+-----------+   +-----------+-----------+
-                      |                           |
-                      v                           v
-          +-----------------------+   +-----------------------+
-          | Suggest Easier Media  |   |  Update Progress XP   |
-          +-----------+-----------+   +-----------+-----------+
-                      |                           |
-                      v                           v
-          +-----------------------+   +-----------------------+
-          |  Attach Revision Node |   |   Unlock Next Topic   |
-          +-----------+-----------+   +-----------------------+
-                      |
-                      v
-          +-----------------------+
-          |    Re-Test Learner    |
-          +-----------------------+
-```
-
----
-
-## 6. Mobile (Capacitor) & PWA Architecture
-
-### 1. Capacitor Native Containerization
-The web application is structured for seamless wrapping using `@capacitor/core` and `@capacitor/cli` for iOS and Android:
-- **No Hard Page Reloads:** All in-app transitions utilize `react-router-dom` (`navigate()` / `<Link />`) to prevent webview reloads in Capacitor.
-- **Hardware Safe-Area Insets:** Layout shells implement CSS environment variables (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`) ensuring elements clear device notches, status bars, and gesture pill indicators.
-- **Touch Ergonomics:**
-  - Minimum 44x44px touch bounding boxes across all interactive buttons, topic nodes, and choice chips.
-  - Double-tap delay eliminated via `touch-action: manipulation`.
-  - Native-feeling momentum scrolling (`-webkit-overflow-scrolling: touch`).
-
-### 2. Progressive Web App (PWA) Standards
-- **Standalone Web App Manifest (`manifest.webmanifest`):** Configures display mode `standalone`, orientation lock capabilities, brand theme colors (`#0b0f17`), and SVG/PNG icon matrices.
-- **Offline & State Resilience:** Active assessment progress, roadmap states, and student session tokens are cached in `localStorage` / `sessionStorage` to ensure uninterrupted learning during flaky mobile connectivity.
-
-### 3. Capacitor Plugin Abstractions
-- **Voice Recognition:** `useSpeechRecognition.js` provides an abstraction hook utilizing browser Web Speech API on desktop web, designed to bind directly to `@capacitor-community/speech-recognition` when running within native iOS/Android containers.
-- **OAuth & Deep Linking:** Supports standard browser redirect flow on web, structured to intercept native custom URL schemes (`app://auth/callback`) on mobile.
+2. **Mobile Navigation (`MobileNav.jsx`):**
+   - Fixed bottom action bar on viewports `< 768px` providing one-thumb access to core routes.
+3. **Interactive Graph UI:**
+   - 2-State Visual Legend: **Ready to Learn** (green nodes) vs **Locked** (dashed grey nodes).
+   - Cluster filtering across all 9 curriculum clusters (Foundations, Web APIs, Databases, Security, Architecture, Performance, Async, Quality, DevOps).

@@ -1,20 +1,16 @@
 # Product Overview — AI-Powered Upskilling Platform With Progress Tracker
 
 **Team:** Team Unix  
-**Program:** EPAM Systems COE Program  
+**Program:** EPAM Systems CoE Programme  
 **Repository:** `https://github.com/LNCT-Unix/AI-Powered-Upskilling-Platform`  
-**Current Branch:** `frontend`  
-**Document Status:** Baseline Product Specification (v1.0)  
-**Source Baseline Documents:**
-- `AI_Career_Roadmap_Workflow.pdf` (Workflow diagram across 6 phases)
-- `AI_Roadmap_Platform_Features (1).pptx` (Detailed feature catalog, architecture, MVP priorities)
-- `TeamUnixFinalPPT.pptx` (Vision, problem statement, comparison matrix, target personas)
+**Current Milestone:** Sprint 1 Complete • Sprint 2 In-Progress  
+**Document Status:** Baseline Product Specification & Implemented Capabilities (v2.0)  
 
 ---
 
 ## 1. Executive Summary & Vision
 
-The **AI-Powered Upskilling Platform With Progress Tracker** is an intelligent, career-focused learning ecosystem built to solve the fundamental problems plaguing online learning today:
+The **AI-Powered Upskilling Platform With Progress Tracker** is an intelligent, career-focused learning ecosystem built to solve the fundamental dysfunctions plaguing online learning today:
 1. **Wrong starting points** caused by unverified, self-reported skills.
 2. **Low trust in AI** due to ungrounded recommendations and opaque reasoning.
 3. **Lost momentum and drop-offs** because roadmaps exist only in conversational AI threads without tracking or habits.
@@ -28,7 +24,7 @@ The **AI-Powered Upskilling Platform With Progress Tracker** is an intelligent, 
 
 ## 2. Target Audiences (User Personas)
 
-As established in `TeamUnixFinalPPT.pptx` (Slide 5), the platform serves five distinct learner segments:
+The platform serves five distinct learner segments:
 
 | Persona | Needs & Goals | Key Platform Capabilities Used |
 |---|---|---|
@@ -42,23 +38,21 @@ As established in `TeamUnixFinalPPT.pptx` (Slide 5), the platform serves five di
 
 ## 3. End-to-End Product Workflow (The 6-Phase Lifecycle)
 
-The platform architecture follows the comprehensive 6-phase lifecycle documented in `AI_Career_Roadmap_Workflow.pdf`:
-
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: User Onboarding"]
-        A1[Start: Visit Platform] --> A2[Sign Up / Login<br/>Google, GitHub, Email]
+        A1[Start: Visit Platform & Landing Chatbot] --> A2[Sign Up / Login<br/>Google, GitHub, Email+OTP]
         A2 --> A3[Create Profile]
-        A3 --> A4[Select Skill to Master<br/>User Choice or AI Recommendation]
-        A4 --> A5[Enter Background<br/>Known, Weak Areas, Preferences]
+        A3 --> A4[Select Learning Track<br/>Backend Engineering]
+        A4 --> A5[Declare Known Skills & Set Budget]
     end
 
     subgraph P2["Phase 2: Initial Knowledge Assessment"]
-        B1[Start AI Diagnostic] --> B2[Ask 10 Adaptive Questions<br/>One at a time]
-        B2 <--> B3[Adapt Next Question<br/>Repeat until 10 completed]
-        B2 --> B4[Cover 5 Knowledge Areas<br/>Prerequisites, Concepts, Theory, Syntax, Practical]
-        B4 --> B5[Analyze Answers & Knowledge Gaps]
-        B5 --> B6[Initial Skill Report<br/>Known topics, weak topics, current level]
+        B1[Start Adaptive Diagnostic] --> B2[Dynamic CAT Question 1<br/>1-PL Rasch Model]
+        B2 <--> B3[Staircase Adaptation<br/>5 to 9 Questions, Adaptive Engine]
+        B2 --> B4[Early Stop Criteria Met<br/>Level Confirmed]
+        B4 --> B5[Generate Diagnostic Report]
+        B5 --> B6[Initial Skill Report<br/>Review Answers, Abilities & Unlocked Graph]
     end
 
     subgraph P3["Phase 3: Personalized Roadmap Generation"]
@@ -107,67 +101,58 @@ flowchart TD
 ## 4. Phase-by-Phase Requirement Specifications
 
 ### Phase 1: User Onboarding
-- **Identity & Authentication:** Support Google OIDC, GitHub OAuth 2.0, and email/password with verification tokens.
-- **Profile Configuration:** Name, educational/career stage, target roles, preferred study pace (hours/day).
-- **Skill Selection:** Choose from primary technology tracks (e.g., Full-Stack Web Development, Data Science & AI, Backend Systems, Cloud Engineering) or search custom topics.
-- **Background & Learning Style Preferences:**
-  - Self-assessed familiarity (Beginner, Intermediate, Advanced).
-  - Format preference (Video-first, Documentation-first, Hands-on project-first).
-  - Language preference (English, Hindi, Hinglish).
+- **Identity & Authentication:**
+  - Google OIDC and GitHub OAuth2 with verified primary email fallback.
+  - Email/Password registration with 6-digit verification OTP delivered via Gmail SMTP.
+  - Self-service password reset lifecycle via email OTP.
+  - Session token exchange with rotating HttpOnly refresh tokens.
+- **Track Selection & Pre-Test Calibration:**
+  - Select active track (`GET /api/v1/assessments/tracks`).
+  - Declare already familiar skills (`GET /api/v1/assessments/tracks/{trackId}/skills`) to seed initial mastery and skip redundant questions.
+- **Landing Page AI Chatbot:** Interactive generative chatbot (`LandingChatbot.jsx`) answering learner curriculum and platform inquiries.
 
 ### Phase 2: Initial Knowledge Assessment
-- **Diagnostic Engine:** 10 questions administered sequentially (one at a time).
-- **Adaptive Question Selection:** Difficulty adjusts based on prior answers to rapidly zero in on actual knowledge boundaries.
-- **5 Knowledge Dimensions:**
-  1. *Prerequisites & Foundations*
-  2. *Core Conceptual Understanding*
-  3. *Theory & Architecture*
-  4. *Syntax, Idioms & Mechanics*
-  5. *Practical Implementation & Problem-Solving*
-- **Outcome:** Comprehensive Initial Skill Report showing verified baseline score (0–100%), verified strengths, identified knowledge gaps, and recommended starting tier.
+- **Psychometric Diagnostic Engine:**
+  - Item Response Theory (IRT 1-PL Rasch Model): $P_i(\theta) = \frac{1}{1 + e^{-(\theta - b_i)}}$.
+  - Sequential delivery: 5 to 9 questions with step adjustments ($\pm 0.35$ logits).
+  - Early stopping rule: Terminates upon confirmed ability level (`directionChanges >= 2` after minimum 5 questions).
+  - High-performance indexed anti-join queries ensuring fast, deterministic item retrieval.
+- **Post-Assessment Diagnostic Report:**
+  - Final ability estimate ($\theta$), competency level (`BEGINNER`, `INTERMEDIATE`, `ADVANCED`), and correct count.
+  - Itemized per-question review showing question stem, user choice, correct answer, and tested skill.
+  - Mapped skill graph identifying newly unlocked skills (`MASTERED` and `FRONTIER`).
 
 ### Phase 3: Personalized Roadmap Generation
-- **Topic Sequencing:** Topologically sorted directed acyclic graph (DAG) ordering topics from absolute prerequisites to advanced capstone topics.
-- **Transparent Justification ("Why this step"):** Every recommended topic must display explicit reasoning (e.g., *"Recommended because Diagnostic identified gap in Asynchronous Event Loop"*).
-- **Curated Multi-Format Resources:**
-  - Official documentation (MDN, React.dev, Python docs).
-  - High-rated video lectures (YouTube, NPTEL, free lecture series).
-  - Hands-on exercises (coding sandboxes, GitHub starters).
-- **Study Planner:** Schedule milestones according to daily time budget (e.g., 45 mins/day -> 6-week roadmap).
+- **Topological Sequencing:** Directed Acyclic Graph (DAG) ordering topics from fundamental prerequisites to advanced specializations.
+- **Transparent Justification:** "Why this step" rationales linking recommendations to diagnostic performance.
+- **Study Planner:** Micro-learning blocks scheduled to fit the learner's daily study budget.
 
 ### Phase 4: Learning & Adaptive Evaluation Loop
-- **Active Learning Workspace:** Direct access to curated learning materials, notes, bookmarks, and source-grounded doubt resolution.
-- **Modular Topic Assessments:** 3–5 targeted questions upon topic completion.
-- **Adaptive Remediation Loop:**
-  - If score < 75%: Flag specific weak subtopics, automatically inject targeted revision resources in an alternative format, and trigger a focused re-test.
-  - If score >= 75%: Mark topic mastered, award XP/streak, and unlock downstream prerequisite nodes.
+- **Study Workspace:** Hand-picked documentation, video lectures, and coding sandbox exercises.
+- **Remediation Loop:** Topic assessments automatically detect weak subtopics and inject focused revision modules before re-testing.
 
 ### Phase 5: Practical Skill Verification
-- **Project-Based Validation:** Learners build real-world portfolio applications matching standardized specifications.
-- **GitHub Integration:** Auto-inspect repository commits, branch hygiene, and structure.
-- **Automated AI Code Review:** Evaluates code quality, best practices, security flaws, and performance, returning actionable line-level suggestions.
-- **Verifiable Credentialing:** Final comprehensive test + verified project issue a digital certificate with unique verification hash/QR code.
+- **GitHub Capstone Submission:** Real-world project briefs submitted via repository URL.
+- **Automated AI Code Review:** Linting, architectural analysis, security vulnerability checks, and automated unit testing.
+- **Verifiable Credentialing:** Digital badges with unique verification hashes for resumes and LinkedIn.
 
 ### Phase 6: Career Readiness & Progression
-- **ATS Resume & Portfolio Builder:** Highlights verified platform skills and verified GitHub projects.
-- **AI Mock Interviews:** Realistic technical and HR voice/text simulations with feedback on problem-solving approach and precision.
-- **Job/Internship Opportunity Matching:** Connects learners to openings that directly match their verified skill profile.
-- **Lifelong Learning Loop:** Return arrow allows learners to branch into adjacent technologies or advanced specializations.
+- **ATS Resume Builder:** Generates ATS-optimized resumes emphasizing verified skills and capstone repositories.
+- **AI Mock Technical Interviews:** Voice/text interview simulator with rubric-based scoring.
+- **Opportunity Matching:** Connects learners with entry-level and junior software roles matching their verified competencies.
 
 ---
 
 ## 5. Scope Separation: MVP vs. Future Horizons
 
-Based on `AI_Roadmap_Platform_Features (1).pptx` (Slide 12), features are strictly triaged into phases to guarantee deliverability:
-
 | Dimension | MVP Scope (Sprint 1–2 Priority) | Future Roadmap (Subsequent Sprints) |
 |---|---|---|
-| **Authentication** | Spring Boot OAuth2 (Google, GitHub) + Session token exchange | Multi-factor auth, SAML / enterprise SSO |
-| **Diagnostic Assessment** | 10-question sequential test across 5 knowledge areas with scoring report | Real-time webcam proctoring, audio environment monitoring |
-| **Roadmap** | Topological skill path with "Why this step" rationales and milestone tracking | Dynamic real-time graph layout recalculation |
-| **Resources** | Curated catalog (videos, docs, exercises) with free/paid indicators & ratings | Broken-link auto-crawlers, personalized video transcription search |
+| **Authentication** | Spring Boot OAuth2 (Google, GitHub) + Email/Password with 6-digit OTP verification + Password Reset + Dual-token exchange | Multi-factor auth (TOTP), SAML / Enterprise SSO |
+| **Diagnostic Assessment** | 1-PL Rasch CAT engine (5-9 items) with indexed anti-join queries, pre-test calibration, and detailed report | Real-time proctoring, webcam environment monitoring |
+| **Skill Graph** | 56-skill Backend DAG with 72 prerequisite edges, 2-state visual filter (Ready to Learn vs Locked) | Multi-track cross-domain graph synthesis |
+| **Roadmap** | Topological skill path with "Coming Soon" frontend view and async LLM synthesis queue | Dynamic real-time roadmap recalculation based on daily pacing |
+| **Resources** | Curated catalog (videos, docs, exercises) with free indicators | Automated broken link crawlers, video transcription search |
 | **Evaluation** | Topic completion quizzes with weak-subtopic identification and revision prompts | Full live in-browser multi-language code runner sandbox |
-| **Verification** | Manual GitHub repo link submission + static rubric verification | Automated GitHub Webhook commit parsing and automated PR test runners |
-| **Career Tools** | Basic ATS resume formatting & skill export | Real-time voice AI mock interview simulations & recruiter job board |
-| **Accessibility & Platform** | Responsive mobile layout, PWA installability, Capacitor mobile containerization, touch-first 44px ergonomics, multi-language (en/hi/hinglish), Web Speech voice input | Native iOS/Android app store deployment via Capacitor, background audio, full offline media caching |
-| **Institutional** | Single-user dashboard | Multi-tenant trainer batch dashboards, bulk CSV import, cohort alerts |
+| **Verification** | Public GitHub repo link submission + static rubric review | Automated containerized CI/CD test runners & Docker sandbox execution |
+| **Career Tools** | ATS resume export & mock interview simulator | Real-time voice AI interview simulator & recruiter talent portal |
+| **Mobile & PWA** | `X-Client-Platform: mobile` header support, deep-link authentication, PWA installable manifest | Native iOS/Android App Store release via Capacitor |

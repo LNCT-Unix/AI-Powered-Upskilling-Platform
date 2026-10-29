@@ -1,8 +1,9 @@
 # Implementation Roadmap & Sprint Plan — AI-Powered Upskilling Platform
 
-**Document Status:** Phased Engineering Plan (v2.0)  
+**Document Status:** Phased Engineering Plan & Status Review (v2.1)  
 **Role:** Senior Frontend Engineer & Scrum Lead  
 **Execution Strategy:** 6-Phase Master Workflow Lifecycle Alignment  
+**Current Milestone:** Sprint 1 Complete • Sprint 2 Active  
 
 ---
 
@@ -10,29 +11,29 @@
 
 ```mermaid
 graph TD
-    subgraph P1["Phase 1: User Onboarding"]
-        A1[Start: Visit Website] --> A2[Sign up / Login]
+    subgraph P1["Phase 1: User Onboarding (COMPLETE)"]
+        A1[Start: Visit Website & Landing Chatbot] --> A2[Sign up / Login: OAuth2 or Email+OTP]
         A2 --> A3[Create Profile]
-        A3 --> A4[Select Skill to Master]
-        A4 --> A5[Enter Background & Preferences]
+        A3 --> A4[Select Track: Backend Engineering]
+        A4 --> A5[Declare Known Skills & Set Budget]
     end
 
-    subgraph P2["Phase 2: Initial Knowledge Assessment"]
-        B1[Start AI Diagnostic] --> B2[Ask 10 Adaptive Questions]
-        B2 <-->|Repeat until 10 done| B3[Adapt Next Question]
-        B2 --> B4[Cover 5 Knowledge Areas]
-        B4 --> B5[Analyze Answers & Identify Gaps]
-        B5 --> B6[Initial Skill Report]
+    subgraph P2["Phase 2: Adaptive Knowledge Diagnostic (COMPLETE)"]
+        B1[Launch Diagnostic Assessment] --> B2[Dynamic CAT Question 1]
+        B2 <-->|Rasch 1-PL Staircase / 5-9 Items| B3[Dynamic Anti-Join Item Selection]
+        B2 --> B4[Early Stop Criteria: Level Confirmed]
+        B4 --> B5[Generate Diagnostic Report]
+        B5 --> B6[Review Item Breakdown & Unlocked Skills]
     end
 
-    subgraph P3["Phase 3: Personalized Roadmap Generation"]
-        C1[AI Generates Roadmap] --> C2[Order Topics: Prerequisites to Advanced]
+    subgraph P3["Phase 3: Personalized Roadmap Generation (IN PROGRESS)"]
+        C1[Async Roadmap Generation Trigger] --> C2[Order Topological Gaps from Report]
         C2 --> C3[Recommend Resources: Videos, Docs, Practice]
         C3 --> C4[Daily/Weekly Study Plan & Planner]
-        C4 --> C5[Roadmap Dashboard]
+        C4 --> C5[Roadmap Canvas View: Coming Soon]
     end
 
-    subgraph P4["Phase 4: Learning & Adaptive Evaluation"]
+    subgraph P4["Phase 4: Learning & Adaptive Evaluation (PLANNED)"]
         D1[Learn Topic in Workspace] --> D2[AI Doubt Assistant & Resources]
         D1 --> D3[Complete Topic & Take Quiz]
         D3 --> D4{Topic Mastered >= 70%?}
@@ -44,9 +45,9 @@ graph TD
         D8 --> D9[Unlock Next Topic]
     end
 
-    subgraph P5["Phase 5: Practical Skill Verification"]
+    subgraph P5["Phase 5: Practical Skill Verification (PLANNED)"]
         E1[Complete Practical Projects] --> E2[Connect GitHub & Submit]
-        E2 --> E3[AI Project & Code Review]
+        E2 --> E3[AI Automated Code Review]
         E3 --> E4[Final Skill Assessment]
         E4 --> E5{Skill Verified?}
         E5 -->|No| E6[Targeted Improvement & Reassessment]
@@ -54,11 +55,11 @@ graph TD
         E5 -->|Yes| E7[Verified Certificate & Badge]
     end
 
-    subgraph P6["Phase 6: Career Development & Loop-Back"]
+    subgraph P6["Phase 6: Career Development & Loop-Back (PLANNED)"]
         F1[AI Resume & Portfolio Builder] --> F2[AI Mock Interviews & Scored Feedback]
         F2 --> F3[Job & Internship Matches]
         F3 --> F4[Continuous Skill Improvement]
-        F4 --> F5[Choose Another Skill]
+        F4 --> F5[Choose Another Skill Track]
     end
 
     A5 --> B1
@@ -66,79 +67,71 @@ graph TD
     C5 --> D1
     D9 -->|All Topics Done| E1
     E7 --> F1
-    F5 -.->|Amber Loop-Back| A4
+    F5 -.->|Loop-Back| A4
 ```
 
 ---
 
-## 2. Phase-by-Phase Implementation Specifications
+## 2. Phase-by-Phase Implementation Status
 
 ### Phase 1: User Onboarding & Profile Setup
-- **Routes:** `/`, `/login`, `/signup`, `/auth/callback`, `/onboarding`
-- **Core Deliverables:**
-  1. **Landing Page (`/`):** High-converting public view detailing platform value propositions, interactive preview, and direct CTA into `/signup`.
-  2. **Auth Pages (`/login`, `/signup`):** Email/password and Google/GitHub OAuth with live client validation.
-  3. **Multi-Step Onboarding Wizard (`/onboarding`):**
-     - *Step 1 (Language & Persona):* Choose English, Hindi, or Hinglish; select learner persona (Career Seeker, Student, etc.).
-     - *Step 2 (Skill Selection):* Curated technology tracks (Full-Stack, Backend, Cloud/DevOps, AI/ML).
-     - *Step 3 (Background & Budget):* Known topics, self-reported weak areas, and daily study budget (hours/day).
-- **Transitions:** Submitting onboarding automatically initializes the baseline state and transitions directly into `/assessment`.
+- **Status:** **COMPLETED & VERIFIED**
+- **Routes:** `/`, `/login`, `/signup`, `/verify-email`, `/auth/callback`, `/auth/error`, `/onboarding`
+- **Delivered Capabilities:**
+  1. **Landing Page (`/`):** Enterprise presentation with workflow stages, value comparisons, and interactive embedded AI chatbot (`LandingChatbot.jsx`).
+  2. **Unified Authentication:** Google OIDC, GitHub OAuth2 with verified email fallback, and email/password signup with 6-digit OTP verification via Gmail SMTP.
+  3. **Multi-Step Onboarding Wizard (`/onboarding`):** Language/persona selection, track discovery (`GET /api/v1/assessments/tracks`), and pre-test declared skills calibration (`GET /api/v1/assessments/tracks/{trackId}/skills`).
 
 ---
 
 ### Phase 2: Initial Knowledge Assessment
+- **Status:** **COMPLETED & VERIFIED**
 - **Route:** `/assessment`
-- **Core Deliverables:**
-  1. **10-Question Sequential Diagnostic:**
-     - Evaluates 5 dimensions: Prerequisites, Core Concepts, Theoretical Depth, Syntax/Implementation, and Practical Problem Solving.
-     - Single-question focus with real-time feedback and dynamic difficulty adaptation.
-  2. **Analysis Engine:** Calculates baseline mastery score and catalogs specific conceptual gaps.
-  3. **Initial Skill Report:** Clear visual breakdown of Mastered Topics, Diagnostic Gaps, and Suggested Starting Level.
-  4. **Animated AI Roadmap Generation Screen:** Clicking "Generate My Roadmap" displays transparent AI reasoning (pruning mastered prerequisites, inserting revision modules for weak topics, scheduling study blocks) before opening `/roadmap`.
+- **Delivered Capabilities:**
+  1. **Adaptive CAT Engine (Rasch 1-PL):** Staircase difficulty adjustments ($\pm 0.35$ logits), 5 to 9 questions, early termination on confirmed level.
+  2. **Anti-Join Query Selection:** Indexed candidate selection with LEFT JOIN anti-join on sequential responses.
+  3. **Pre-Test Calibration:** Declared skills passed via `knownSkillSlugs` to immediately mark mastered skills and adapt starting difficulty.
+  4. **Comprehensive Post-Test Report (`/report`):** Itemized question review (question stem, learner choice, correct answer, tested skill) and `unlockedSkills` array for updating the skill graph.
 
 ---
 
 ### Phase 3: Personalized Roadmap Generation
+- **Status:** **IN PROGRESS (Sprint 2 Delivery)**
 - **Routes:** `/roadmap`, `/dashboard`
-- **Core Deliverables:**
-  1. **Topological Roadmap Canvas (`/roadmap`):**
-     - Milestones ordered strictly from prerequisites to advanced topics.
-     - Clear status chips: `Mastered`, `In-Progress`, `Revision Required`, `Locked`.
-     - Transparent "Why this step" rationale flyouts.
-  2. **Smart Study Planner:** Schedules topics based on the learner's daily/weekly time budget.
-  3. **Student Command Center (`/dashboard`):** Prominently displays the Next Best Action, active habit streak, skill score rings, and quick learning launchers.
+- **Current State:**
+  - Route `/roadmap` is accessible with a "Soon" badge in the navigation sidebar.
+  - Asynchronous LLM synthesis worker design in progress in `ai-worker/`.
+  - Student Dashboard (`/dashboard`) displays current readiness metrics, streak counter, and action launchers.
 
 ---
 
 ### Phase 4: Learning & Adaptive Evaluation
+- **Status:** **PLANNED (Sprint 3 Delivery)**
 - **Route:** `/learn/:topicSlug`
-- **Core Deliverables:**
-  1. **Dedicated Study Workspace:** Clean tabs for Curated Resources (Documentation, Hand-picked Videos, Interactive Exercises).
-  2. **In-Context AI Learning Assistant:**
-     - Doubt-solving conversational panel available at all times.
-     - Multi-language responses (English, Hindi, Hinglish).
-     - Browser Web Speech voice input button.
-  3. **Topic Assessment & The Remediation Loop:**
-     - "Complete & Take Topic Quiz" evaluation button.
-     - **Pass (>= 70%):** Mark topic completed -> Award XP & update habit streak -> Unlock next topic.
-     - **Fail (< 70%):** Identify weak subtopics -> Suggest bite-sized remedial resources -> Dynamically attach Revision Module node to the roadmap -> Re-test learner until mastered.
+- **Scope:** Dedicated study workspace, topic quizzes, and automated revision module injection upon test failure.
 
 ---
 
 ### Phase 5: Practical Skill Verification
+- **Status:** **PLANNED (Sprint 3 Delivery)**
 - **Route:** `/projects`
-- **Core Deliverables:**
-  1. **Capstone Projects Workspace:** Practical real-world project briefs aligned with the learner's track.
-  2. **GitHub Submission:** Enter repository URL or link via GitHub OAuth.
-  3. **AI Automated Code Review:** Instant static analysis covering code architecture, test coverage, code quality, and security best practices.
-  4. **Verification & Badging:** Passing projects issue a cryptographically verifiable certificate and credential badge for resumes/LinkedIn.
+- **Scope:** Public GitHub repository submission, automated containerized code linting, unit testing, and cryptographically signed verification badges.
 
 ---
 
 ### Phase 6: Career Development & Loop-Back
+- **Status:** **PLANNED (Sprint 4 Delivery)**
 - **Route:** `/career`
-- **Core Deliverables:**
-  1. **AI Resume & Portfolio Builder:** Automatically highlights verified skills and completed capstone projects.
-  2. **AI Mock Technical Interview Simulator:** Question-and-answer simulator with scoring and actionable feedback.
-  3. **Job & Internship Matches:** Curated entry-level and mid-level opportunities matching verified skills.
-  4. **"Choose Another Skill to Master" (Loop-Back):** Returns learner to Phase 1 (`Select skill to master`), allowing seamless multi-skill credential stacking.
+- **Scope:** AI resume generator, mock interview simulator with scored feedback, and loop-back to new skill tracks.
+
+---
+
+## 3. Supporting Features Delivered
+
+| Feature | Location | Status |
+|---|---|---|
+| **Interactive Skill Graph** | `web-app/src/pages/SkillGraphPage.jsx` | Completed: 56 skills, 9 clusters, 72 prerequisite edges, 2-state visual filter (Ready to Learn vs Locked). |
+| **Progress Analytics** | `web-app/src/pages/AnalyticsPage.jsx` | Completed: Study hours, retention metrics, and velocity indicators. |
+| **Landing AI Chatbot** | `web-app/src/components/feature/LandingChatbot.jsx` | Completed: Dynamic question tree and answers regarding curriculum and platform. |
+| **Anti-Join Item Selection** | `gateway/.../repository/AssessmentItemRepository.java` | Completed: Indexed candidate anti-join selecting nearest-difficulty items. |
+| **Low-Latency Graph Queries** | `gateway/.../service/AssessmentService.java` | Completed: Joined prerequisite pre-fetching eliminating $N+1$ queries. |

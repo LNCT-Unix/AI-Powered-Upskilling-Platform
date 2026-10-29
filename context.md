@@ -198,6 +198,12 @@ $$\text{Level}(\theta) = \begin{cases}
 - **Test-Retest Reliability:** $0.828$.
 - **Determinism:** Identical input responses produce bit-identical logit results.
 
+### 4.5 Direct Anti-Join Query Selection (`findNext`)
+To deliver low-latency adaptive quiz interactions without cache invalidation issues or proxy bypass defects:
+- **Query Mechanism:** `AssessmentItemRepository.findNext` executes an indexed `LEFT JOIN AssessmentResponse r ON r.item.id = i.id AND r.assessment.id = :assessmentId WHERE r.id IS NULL`.
+- **Database Ordering:** Candidate items are ordered by `ABS(i.difficulty - :theta), i.id` and fetched with `Limit.of(1)`.
+- **Transactional Consistency:** Answers are persisted and flushed with `saveAndFlush`, ensuring the database state is always consistent and eliminating in-memory cache staleness.
+
 ---
 
 ## 5. Skill Graph Engine & Topological DAG
@@ -370,6 +376,8 @@ erDiagram
 | `options` | `TEXT` | `NOT NULL` | JSON stringified array of 4 options |
 | `correct_option` | `INT` | `NOT NULL` | 0-indexed correct option (NEVER sent to client during test) |
 | `status` | `VARCHAR(50)` | `DEFAULT 'ACTIVE'` | `ACTIVE`, `RETIRED` |
+| *Indexes* | `idx_items_track_status` | `(track_id, status)` | Fast active item pool loading |
+| | `idx_items_track_status_diff` | `(track_id, status, difficulty)` | Fast difficulty-sorted lookup |
 
 #### `assessments`
 | Column | Type | Constraints | Description |
@@ -386,6 +394,8 @@ erDiagram
 | `stop_reason` | `VARCHAR(50)` | `NULLABLE` | `LEVEL_CONFIRMED`, `MAX_ITEMS`, `NO_QUESTIONS_LEFT` |
 | `known_skill_slugs` | `TEXT` | `NULLABLE` | JSON array of self-reported skills |
 | `started_at` / `completed_at` | `TIMESTAMP` | Timestamps |
+| *Indexes* | `idx_assessments_user_track_status` | `(user_id, track_id, status)` | Fast in-progress test check on start() |
+| | `idx_assessments_id_user` | `(id, user_id)` | Fast ownership verification on owned() |
 
 #### `assessment_responses`
 | Column | Type | Constraints | Description |
@@ -397,6 +407,7 @@ erDiagram
 | `selected_option` | `INT` | `NOT NULL` | Option index selected by user |
 | `is_correct` | `BOOLEAN` | `NOT NULL` | Computed correctness |
 | `answered_at` | `TIMESTAMP` | `NOT NULL` | Submission timestamp |
+| *Indexes* | `idx_responses_assessment_seq` | `(assessment_id, seq)` | Fast sequential answers ordering |
 
 #### `assessment_skill_results`
 | Column | Type | Constraints | Description |
@@ -552,7 +563,8 @@ com.unix.aiupskilling/
 │   ├── model/entity/                       # JPA entities: Track, Skill, AssessmentItem,
 │   │                                       # Assessment, AssessmentResponse, AssessmentSkillResult
 │   ├── repository/                         # Spring Data JPA repositories with custom queries
-│   └── service/AssessmentService.java      # 1-PL Rasch algorithm & DAG state colorizer
+│   └── service/
+│       └── AssessmentService.java          # 1-PL Rasch algorithm & DAG state colorizer
 │
 ├── authentication/                         # Security & Identity Module
 │   ├── config/                             # SecurityConfig, JwtFilter, AuthProperties
