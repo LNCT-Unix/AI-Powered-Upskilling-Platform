@@ -1,22 +1,17 @@
 import { useState } from 'react';
-import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { Menu, Bell, LogOut, X } from 'lucide-react';
+import { Outlet, Link } from 'react-router-dom';
+import { Menu, Bell, X } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
+import ProfileDropdown from '../profile/ProfileDropdown';
+import UpdateProfileModal from '../profile/UpdateProfileModal';
 
 export default function DashboardShell() {
-  const [mobileOpen, setMobileOpen]       = useState(false);
-  const [notificationsOpen, setNotifOpen] = useState(false);
-  const navigate  = useNavigate();
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => { await logout(); navigate('/'); };
-
-  // User initials for avatar
-  const initials = user?.fullName
-    ? user.fullName.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
-    : 'SP';
+  const [mobileOpen, setMobileOpen]               = useState(false);
+  const [notificationsOpen, setNotifOpen]         = useState(false);
+  const [updateProfileOpen, setUpdateProfileOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen lg:flex text-slate-900" style={{ background: '#F7F3E8' }}>
@@ -77,7 +72,7 @@ export default function DashboardShell() {
             </Link>
           </div>
 
-          {/* Right: notifications + user avatar */}
+          {/* Right: notifications + user profile dropdown */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Notification bell */}
             <div className="relative">
@@ -113,30 +108,9 @@ export default function DashboardShell() {
               )}
             </div>
 
-            {/* User Profile avatar pill */}
+            {/* User Profile dropdown or Auth actions */}
             {user ? (
-              <div className="flex items-center gap-2 pl-1">
-                <div className="hidden md:block text-right leading-none">
-                  <p className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
-                    {user.fullName || 'Learner'}
-                  </p>
-                  <p className="text-[10px] font-semibold text-indigo-600 mt-1 uppercase tracking-wider">
-                    {user.role || 'Learner'}
-                  </p>
-                </div>
-                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-yellow-400 text-xs font-black text-slate-900 shadow-2xs">
-                  {initials}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  title="Sign out"
-                  aria-label="Sign out"
-                  className="rounded-full p-2 text-slate-400 hover:bg-white hover:text-slate-700 transition"
-                >
-                  <LogOut size={15} />
-                </button>
-              </div>
+              <ProfileDropdown onOpenUpdateModal={() => setUpdateProfileOpen(true)} />
             ) : (
               <div className="flex items-center gap-2">
                 <Link
@@ -164,6 +138,12 @@ export default function DashboardShell() {
         {/* Mobile bottom nav */}
         <MobileNav />
       </div>
+
+      {/* Global Profile Update Modal */}
+      <UpdateProfileModal
+        isOpen={updateProfileOpen}
+        onClose={() => setUpdateProfileOpen(false)}
+      />
     </div>
   );
 }

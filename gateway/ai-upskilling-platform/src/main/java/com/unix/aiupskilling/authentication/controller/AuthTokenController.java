@@ -137,6 +137,8 @@ public class AuthTokenController {
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .role(user.getRole())
+                .avatarUrl(user.getAvatarUrl())
+                .bio(user.getBio())
                 .build();
 
         return ResponseEntity.ok(ApiResponse.ok(response, "OK"));

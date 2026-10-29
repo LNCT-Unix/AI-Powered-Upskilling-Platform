@@ -25,6 +25,12 @@ public class User {
 
     private String fullName;
 
+    @Column(length = 2048)
+    private String avatarUrl;
+
+    @Column(length = 255)
+    private String bio;
+
     @Column(length = 255)
     private String passwordHash;
 

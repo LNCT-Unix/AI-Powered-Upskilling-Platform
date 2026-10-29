@@ -113,6 +113,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const updateUser = useCallback((updatedFields) => {
+    setUser((prev) => (prev ? { ...prev, ...updatedFields } : null));
+  }, []);
+
   const value = {
     user,
     isAuthenticated: Boolean(user),
@@ -122,6 +126,7 @@ export function AuthProvider({ children }) {
     loginWithGoogle: authService.loginWithGoogle,
     loginWithGitHub: authService.loginWithGitHub,
     logout,
+    updateUser,
     handleOAuthCallback,
     confirmEmailVerification,
     resendEmailVerification: authService.resendEmailVerification,

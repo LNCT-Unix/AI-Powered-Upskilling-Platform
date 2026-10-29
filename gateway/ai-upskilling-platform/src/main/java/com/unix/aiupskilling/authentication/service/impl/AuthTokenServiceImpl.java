@@ -310,6 +310,8 @@ public class AuthTokenServiceImpl implements AuthTokenService {
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .role(user.getRole())
+                .avatarUrl(user.getAvatarUrl())
+                .bio(user.getBio())
                 .build();
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.web.context.WebApplicationContext;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -164,5 +165,51 @@ class SecurityAndEndpointIntegrationTest {
                 .andExpect(jsonPath("$.data.authorizationPath").value("/oauth2/authorization/google"))
                 .andExpect(cookie().exists("oauth_link_intent"))
                 .andExpect(cookie().httpOnly("oauth_link_intent", true));
+    }
+
+    @Test
+    @DisplayName("Update profile succeeds when authenticated with valid payload")
+    void testUpdateProfileAuthenticatedSucceeds() throws Exception {
+        String payload = "{\"fullName\":\"Updated Alexandria\",\"avatarUrl\":\"preset:octo-wizard\",\"bio\":\"AI & Systems Explorer\"}";
+
+        mockMvc.perform(put("/api/users/profile")
+                        .header("Authorization", "Bearer " + userTokens.getAccessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.fullName").value("Updated Alexandria"))
+                .andExpect(jsonPath("$.data.avatarUrl").value("preset:octo-wizard"))
+                .andExpect(jsonPath("$.data.bio").value("AI & Systems Explorer"));
+    }
+
+    @Test
+    @DisplayName("Update profile unauthenticated returns 401")
+    void testUpdateProfileUnauthenticatedReturns401() throws Exception {
+        mockMvc.perform(put("/api/users/profile")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fullName\":\"New Name\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Update profile with blank fullName returns 400")
+    void testUpdateProfileInvalidPayloadReturns400() throws Exception {
+        mockMvc.perform(put("/api/users/profile")
+                        .header("Authorization", "Bearer " + userTokens.getAccessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fullName\":\"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Get profile authenticated returns current user profile with avatarUrl")
+    void testGetProfileAuthenticatedSucceeds() throws Exception {
+        mockMvc.perform(get("/api/users/profile")
+                        .header("Authorization", "Bearer " + userTokens.getAccessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(testUser.getId()))
+                .andExpect(jsonPath("$.data.email").value("test.integration@example.com"));
     }
 }
