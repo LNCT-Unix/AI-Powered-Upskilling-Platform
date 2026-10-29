@@ -1,0 +1,76 @@
+services:
+  # ---------------------------------------------------------------------------
+  # 1. PostgreSQL Database Service
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: upskill-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: UpskillDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d UpskillDB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # 2. Redis Queue & Cache Service (For AI Worker & Background Jobs)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: upskill-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  # ---------------------------------------------------------------------------
+  # 3. Spring Boot Gateway Service (Java 21 + IRT Rasch CAT Engine)
+  # ---------------------------------------------------------------------------
+  gateway:
+    build:
+      context: ./gateway/ai-upskilling-platform
+      dockerfile: Dockerfile
+    container_name: upskill-gateway
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/UpskillDB
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgrespassword
+      SERVER_PORT: 8080
+      APP_AUTH_JWT_SECRET: "0123456789012345678901234567890123456789"
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+      APP_FRONTEND_WEB_CALLBACK_URL: http://localhost:5173/auth/callback
+      APP_FRONTEND_WEB_ERROR_URL: http://localhost:5173/auth/error
+
+  # ---------------------------------------------------------------------------
+  # 4. Web Application Frontend (React 19 + Vite + Tailwind CSS)
+  # ---------------------------------------------------------------------------
+  web-app:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+    container_name: upskill-webapp
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+      VITE_USE_MOCK_AUTH: "false"
+      VITE_USE_MOCK_DATA: "false"
+
+volumes:
+  pgdata:
