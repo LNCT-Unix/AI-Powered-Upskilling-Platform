@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
-import { Menu, Bell, X } from 'lucide-react';
+import { Menu, Bell, X, Server } from 'lucide-react';
+import ServerSwitcherModal from '../mobile/ServerSwitcherModal';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,6 +12,7 @@ export default function DashboardShell() {
   const [mobileOpen, setMobileOpen]               = useState(false);
   const [notificationsOpen, setNotifOpen]         = useState(false);
   const [updateProfileOpen, setUpdateProfileOpen] = useState(false);
+  const [serverModalOpen, setServerModalOpen]     = useState(false);
   const { user } = useAuth();
 
   return (
@@ -74,6 +76,16 @@ export default function DashboardShell() {
 
           {/* Right: notifications + user profile dropdown */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Mobile Server Switcher - strictly lg:hidden */}
+            <button
+              type="button"
+              onClick={() => setServerModalOpen(true)}
+              aria-label="Server connection settings"
+              className="rounded-full p-2 bg-white/90 border border-[#E8E0CC] text-slate-500 hover:text-slate-900 hover:bg-white transition shadow-2xs lg:hidden"
+            >
+              <Server size={16} />
+            </button>
+
             {/* Notification bell */}
             <div className="relative">
               <button
@@ -138,6 +150,12 @@ export default function DashboardShell() {
         {/* Mobile bottom nav */}
         <MobileNav />
       </div>
+
+      {/* Mobile Server Switcher Modal */}
+      <ServerSwitcherModal
+        isOpen={serverModalOpen}
+        onClose={() => setServerModalOpen(false)}
+      />
 
       {/* Global Profile Update Modal */}
       <UpdateProfileModal

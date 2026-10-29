@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, RotateCcw, Server } from 'lucide-react';
+import ServerSwitcherModal from '../mobile/ServerSwitcherModal';
+import { isNativeMobile } from '../../services/mobileStorage';
 import { useAuth } from '../../hooks/useAuth';
 import './AuthPage.css';
 
@@ -23,6 +25,7 @@ export default function AuthView({ initialMode = 'login' }) {
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showSignupPass, setShowSignupPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [serverModalOpen, setServerModalOpen] = useState(false);
 
   // Form states
   const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('skillpath_remember_email') || '');
@@ -205,6 +208,20 @@ export default function AuthView({ initialMode = 'login' }) {
 
   return (
     <div className="auth-container">
+      {isNativeMobile() && (
+        <button
+          type="button"
+          onClick={() => setServerModalOpen(true)}
+          className="fixed top-3 right-3 z-50 rounded-full p-2 bg-white/80 backdrop-blur-md border border-[#E8E0CC] text-slate-600 shadow-md sm:hidden"
+          aria-label="Server Settings"
+        >
+          <Server size={16} />
+        </button>
+      )}
+      <ServerSwitcherModal
+        isOpen={serverModalOpen}
+        onClose={() => setServerModalOpen(false)}
+      />
       {/* ================= LEFT · ART ================= */}
       <aside className="auth-art">
         <div className="auth-glow auth-glow-a"></div>
