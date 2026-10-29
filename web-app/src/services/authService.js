@@ -1,15 +1,15 @@
-import { apiClient, setAccessToken } from './api';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import { apiClient, setAccessToken, getApiBaseUrl } from './api';
+import { isNativeMobile, mobileStorage } from './mobileStorage';
+import { openOAuthProvider } from './mobileAuth';
 
 export const authService = {
-  // 1. Initiate OAuth Redirects
-  loginWithGoogle() {
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
+  // 1. Initiate OAuth Redirects (In-App Browser on Mobile, Standard Redirect on Web)
+  async loginWithGoogle() {
+    await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/google`);
   },
 
-  loginWithGitHub() {
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/github`;
+  async loginWithGitHub() {
+    await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/github`);
   },
 
   // 2. Exchange One-Time Code for JWT Access Token
@@ -21,6 +21,9 @@ export const authService = {
     if (response?.data?.accessToken) {
       setAccessToken(response.data.accessToken);
     }
+    if (isNativeMobile() && response?.data?.refreshToken) {
+      await mobileStorage.setRefreshToken(response.data.refreshToken);
+    }
     return response;
   },
 
@@ -29,22 +32,45 @@ export const authService = {
     return apiClient('/api/auth/me');
   },
 
-  // 4. Token Refresh (HttpOnly cookie refresh_token automatically included)
+  // 4. Token Refresh (HttpOnly cookie on web, JSON body on mobile)
   async refreshToken() {
+    let refreshBody = undefined;
+    if (isNativeMobile()) {
+      const storedToken = await mobileStorage.getRefreshToken();
+      if (storedToken) {
+        refreshBody = { refreshToken: storedToken };
+      }
+    }
+
     const response = await apiClient('/api/auth/refresh', {
       method: 'POST',
+      ...(refreshBody ? { body: refreshBody } : {}),
     });
+
     if (response?.data?.accessToken) {
       setAccessToken(response.data.accessToken);
+    }
+    if (isNativeMobile() && response?.data?.refreshToken) {
+      await mobileStorage.setRefreshToken(response.data.refreshToken);
     }
     return response;
   },
 
-  // 5. Logout (Revokes refresh token cookie on server)
+  // 5. Logout (Revokes refresh token cookie on server / clears mobile storage)
   async logout() {
+    let logoutBody = undefined;
+    if (isNativeMobile()) {
+      const storedToken = await mobileStorage.getRefreshToken();
+      if (storedToken) {
+        logoutBody = { refreshToken: storedToken };
+      }
+      await mobileStorage.clearRefreshToken();
+    }
     setAccessToken(null);
+
     return apiClient('/api/auth/logout', {
       method: 'POST',
+      ...(logoutBody ? { body: logoutBody } : {}),
     });
   },
 
@@ -55,6 +81,9 @@ export const authService = {
     });
     if (response?.data?.accessToken) {
       setAccessToken(response.data.accessToken);
+    }
+    if (isNativeMobile() && response?.data?.refreshToken) {
+      await mobileStorage.setRefreshToken(response.data.refreshToken);
     }
     return response;
   },
@@ -73,6 +102,9 @@ export const authService = {
     });
     if (response?.data?.accessToken) {
       setAccessToken(response.data.accessToken);
+    }
+    if (isNativeMobile() && response?.data?.refreshToken) {
+      await mobileStorage.setRefreshToken(response.data.refreshToken);
     }
     return response;
   },
