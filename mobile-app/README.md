@@ -1,102 +1,138 @@
-# AI Upskilling Platform — Mobile Application
+# AI Upskilling Platform — Mobile Application (octoByte)
 
-> **Status:** Planned & Architectural Contract Specified (Sprint 3 Delivery)  
-> **Target Framework:** Cross-Platform Mobile Client (React Native / Flutter / Capacitor)  
+> **Status:** Implemented & Scaffolded with Capacitor 7 Native Android Bridge  
+> **Target Framework:** Capacitor Cross-Platform Native Runtime (Android & iOS)  
 > **Backend Service:** Spring Boot Gateway (`gateway/ai-upskilling-platform`)  
+> **App Name:** octoByte  
+> **Package / App ID:** `com.unix.aiupskilling`  
+> **Custom Scheme:** `octobyte://`  
 > **Maintainers:** Team Unix (EPAM Systems CoE Programme)  
 
 ---
 
 ## 📑 Table of Contents
 
-1. [Overview & Strategy](#1-overview--strategy)
-2. [Mobile Integration Contract](#2-mobile-integration-contract)
-   - [The `X-Client-Platform` Header](#the-x-client-platform-header)
-   - [Deep-Link Authentication Callbacks](#deep-link-authentication-callbacks)
-3. [Token Storage & Security Guidelines](#3-token-storage--security-guidelines)
-4. [Mobile Experience & Feature Roadmap](#4-mobile-experience--feature-roadmap)
-5. [Local Development & Emulation Setup (Upcoming)](#5-local-development--emulation-setup-upcoming)
+1. [Overview & Architecture](#1-overview--architecture)
+2. [Mobile Integration Contract Implementation](#2-mobile-integration-contract-implementation)
+   - [The `X-Client-Platform: mobile` Header](#the-x-client-platform-mobile-header)
+   - [Secure Hardware Token Storage](#secure-hardware-token-storage)
+   - [Deep-Link OAuth2 Handshake (`octobyte://auth/callback`)](#deep-link-oauth2-handshake-octobyteauthcallback)
+3. [Native Mobile Plugins & UX Enhancements](#3-native-mobile-plugins--ux-enhancements)
+   - [Tactile Haptics Engine](#tactile-haptics-engine)
+   - [Status Bar & Splash Screen](#status-bar--splash-screen)
+   - [Android Hardware Back-Button](#android-hardware-back-button)
+4. [Developer Workflow: Build, Emulation & Running](#4-developer-workflow-build-emulation--running)
+   - [Prerequisites](#prerequisites)
+   - [One-Command Web Build & Mobile Sync](#one-command-web-build--mobile-sync)
+   - [Opening in Android Studio](#opening-in-android-studio)
+   - [Running on Android Emulator / Physical Device](#running-on-android-emulator--physical-device)
+   - [Connecting to Local Spring Boot Backend](#connecting-to-local-spring-boot-backend)
+5. [Release & Packaging](#5-release--packaging)
 
 ---
 
-## 1. Overview & Strategy
+## 1. Overview & Architecture
 
-The **Mobile Application** expands the AI-Powered Upskilling Platform to native Android and iOS devices, catering to learners who require on-the-go micro-learning, daily habit tracking, and quick diagnostic assessments.
+The **octoByte Mobile Application** packages the responsive React 19 + Tailwind CSS single-page application into high-performance native Android (and iOS) containers using **Capacitor 7**.
 
-The web client (`web-app/`) was engineered mobile-first with touch-friendly UI elements, responsive flex layouts, and safe-area inset compatibility. The mobile client will either wrap the responsive React client via **Capacitor** or deploy as a dedicated **React Native** application, sharing the identical REST API contracts of the Spring Boot Gateway.
+### Key Architectural Benefits:
+- **Zero UI Duplication:** Fully shares the 15+ views, the 56-skill interactive SVG Directed Acyclic Graph (`InteractiveSkillGraph.jsx`), the 1-PL Rasch Computerized Adaptive Testing (CAT) runner, mascot animations, and multi-language i18n.
+- **Hardware-Backed Security:** Refresh tokens are never stored in unencrypted browser storage (`localStorage` / `sessionStorage`). Instead, they are persisted directly in native hardware-backed storage (`@capacitor/preferences` on Android KeyStore / iOS Keychain).
+- **Native Hardware Access:** Seamless access to device vibration / haptics, status bar styling, splash screens, network status detection, and deep links.
 
 ---
 
-## 2. Mobile Integration Contract
+## 2. Mobile Integration Contract Implementation
 
-Because mobile applications run in native webview or native thread contexts without shared browser cookie storage, the Spring Boot Gateway implements dedicated mobile adaptations:
-
-### The `X-Client-Platform` Header
-All HTTP requests originating from the mobile client must include the header:
+### The `X-Client-Platform: mobile` Header
+All HTTP requests made via `web-app/src/services/api.js` detect native mobile execution via `Capacitor.isNativePlatform()` and inject:
 
 ```http
 X-Client-Platform: mobile
 ```
 
-#### Gateway Behavior with `mobile` Header:
-1. **Refresh Token Delivery:** Instead of writing the `refresh_token` to an `HttpOnly` cookie (which mobile webviews often drop across sandboxed origins), the backend returns the raw refresh token string directly in the JSON response payload:
-   ```json
-   {
-     "success": true,
-     "message": "Login successful",
-     "data": {
-       "accessToken": "eyJhbGciOiJIUzI1Ni...",
-       "tokenType": "Bearer",
-       "expiresInSeconds": 900,
-       "refreshToken": "7a8b9c0d-1e2f-4a5b-8c9d-0e1f2a3b4c5d",
-       "user": {
-         "id": 1,
-         "email": "learner@epam.com",
-         "fullName": "Learner Name",
-         "role": "USER"
-       }
-     }
-   }
-   ```
-2. **Refresh Token Consumption:** When rotating tokens via `POST /api/auth/refresh`, the mobile client sends the refresh token in the JSON request body:
-   ```json
-   {
-     "refreshToken": "7a8b9c0d-1e2f-4a5b-8c9d-0e1f2a3b4c5d"
-   }
-   ```
+### Secure Hardware Token Storage
+- **Access Tokens:** Retained exclusively in volatile memory (`setAccessToken` in `api.js`).
+- **Refresh Tokens:** Retrieved from and persisted to native storage via `web-app/src/services/mobileStorage.js` using `@capacitor/preferences`.
+- **Silent Refresh:** On `401 Unauthorized`, `apiClient` reads the refresh token from native storage, issues `POST /api/auth/refresh` with `{ "refreshToken": "<token>" }` in the JSON body, and updates the stored refresh token when the server rotates it.
 
-### Deep-Link Authentication Callbacks
-For OAuth2 login flows (Google and GitHub):
-1. The mobile app opens an in-app browser (`ASWebAuthenticationSession` on iOS or `CustomTabs` on Android) to:
-   ```
-   http://localhost:8080/oauth2/authorization/{provider}
-   ```
-2. Upon successful authentication, the Gateway inspects the client platform and redirects to the configured mobile deep link:
-   - Success: `myapp://auth/callback?code=<ONE_TIME_CODE>`
-   - Error: `myapp://auth/error?error=<ERROR_CODE>`
-3. The native app catches the deep-link URL, extracts the single-use code, and completes the handshake via `POST /api/auth/oauth2/exchange`.
+### Deep-Link OAuth2 Handshake (`octobyte://auth/callback`)
+For Google and GitHub OAuth:
+1. `authService.loginWithGoogle()` and `authService.loginWithGitHub()` trigger `openOAuthProvider()` in `mobileAuth.js`, launching the OAuth URL in an in-app browser (`@capacitor/browser`).
+2. Upon successful authentication, the Spring Boot Gateway redirects to `octobyte://auth/callback?code=<ONE_TIME_CODE>`.
+3. `@capacitor/app` captures the deep link, closes the in-app browser, and navigates React Router to `/auth/callback?code=...` where `AuthCallbackPage.jsx` completes the exchange via `POST /api/auth/oauth2/exchange`.
 
 ---
 
-## 3. Token Storage & Security Guidelines
+## 3. Native Mobile Plugins & UX Enhancements
 
-- **Access Token:** Maintained strictly in-memory (e.g., inside mobile state management like Zustand or Redux). Never persist raw access tokens to unencrypted storage.
-- **Refresh Token:** Stored exclusively in hardware-backed secure storage:
-  - **iOS:** iOS Keychain Services via `kSecClassGenericPassword`.
-  - **Android:** Android KeyStore / `EncryptedSharedPreferences`.
-- **Biometric Unlock (Planned):** Secure biometric prompt (Face ID / Fingerprint) before retrieving refresh tokens after app backgrounding.
+| Feature | Plugin | Implementation |
+| :--- | :--- | :--- |
+| **Tactile Haptics** | `@capacitor/haptics` | Selection ticks on question choices, medium impact on answer submission, and success vibration on assessment completion (`hapticsService.js`). |
+| **Status Bar** | `@capacitor/status-bar` | Warm Deep Craft theme `#F7F3E8` with dark typography icons (`App.jsx`). |
+| **Hardware Back Button** | `@capacitor/app` | Graceful back navigation with React Router; prompts or exits cleanly when on root `/` or `/dashboard`. |
+| **Network Status** | `@capacitor/network` | Detection of offline status to avoid broken API calls and surface offline banners. |
+| **In-App Browser** | `@capacitor/browser` | Clean modal OAuth login sessions without leaving the app sandbox. |
 
 ---
 
-## 4. Mobile Experience & Feature Roadmap
+## 4. Developer Workflow: Build, Emulation & Running
 
-- **Phase 1: Mobile Adaptive Diagnostic:**
-  - One-card-at-a-time touch-optimized question runner.
-  - Haptic feedback on answer submission.
-  - Instant diagnostic report rendering.
-- **Phase 2: Offline Micro-Learning:**
-  - Cached reading materials and offline practice flashcards.
-  - Background synchronization when network connectivity restores.
-- **Phase 3: Push Notifications & Daily Streaks:**
-  - Scheduled study reminders aligned with learner's chosen daily time budget.
-  - Milestone unlock alerts and weekly competency digests.
+### Prerequisites
+- **Node.js:** v20+ (tested on Node v24)
+- **Java:** JDK 17+ or Android Studio JBR
+- **Android SDK:** Installed (default location: `%LOCALAPPDATA%\Android\Sdk`)
+- **Android Studio:** Recommended for emulator management and APK profiling
+
+### One-Command Web Build & Mobile Sync
+From the project root:
+
+```powershell
+cd mobile-app
+npm run build:mobile
+```
+*This command executes `vite build` in `web-app/` and immediately syncs the production bundle and Capacitor plugins into `mobile-app/android/app/src/main/assets/public`.*
+
+### Opening in Android Studio
+To launch the native Android project in Android Studio:
+
+```powershell
+cd mobile-app
+npm run open:android
+```
+*(Or manually open the `mobile-app/android` directory in Android Studio).*
+
+### Running on Android Emulator / Physical Device
+```powershell
+cd mobile-app
+npx cap run android
+```
+
+### Connecting to Local Spring Boot Backend
+When testing against a local Spring Boot Gateway (`gateway/ai-upskilling-platform` on port 8080):
+
+1. **Android Emulator:**
+   - Android emulators access the host machine via `http://10.0.2.2:8080`.
+   - `web-app/src/services/api.js` automatically defaults to `http://10.0.2.2:8080` when running inside Capacitor.
+2. **Physical Device over USB:**
+   - Run: `adb reverse tcp:8080 tcp:8080`
+   - The device can now reach `http://localhost:8080`.
+3. **Physical Device over Wi-Fi / LAN:**
+   - Specify `VITE_MOBILE_API_BASE_URL` in `web-app/.env`:
+     ```env
+     VITE_MOBILE_API_BASE_URL=http://192.168.1.X:8080
+     ```
+   - Re-run `npm run build:mobile`.
+
+---
+
+## 5. Release & Packaging
+
+To generate an unsigned release APK or Android App Bundle (AAB):
+
+```powershell
+cd mobile-app\android
+.\gradlew.bat assembleRelease
+```
+The generated APK will be located at:
+`mobile-app/android/app/build/outputs/apk/release/app-release-unsigned.apk`
