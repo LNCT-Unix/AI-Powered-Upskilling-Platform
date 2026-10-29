@@ -1,6 +1,6 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Map, ClipboardCheck, FlaskConical,
+  LayoutDashboard, Map, ClipboardCheck, History, FlaskConical,
   BarChart2, Briefcase, UserCircle2,
   LogOut
 } from 'lucide-react';
@@ -10,6 +10,7 @@ const LEARNER_NAV = [
   { path: '/dashboard',  label: 'Dashboard',          icon: LayoutDashboard },
   { path: '/roadmap',    label: 'My Roadmap',          icon: Map, badge: 'Soon' },
   { path: '/assessment', label: 'Diagnostic Test',     icon: ClipboardCheck },
+  { path: '/history',    label: 'Test History',        icon: History },
   { path: '/graph',      label: 'Skill Graph',         icon: FlaskConical },
   { path: '/analytics',  label: 'Progress & Weakness', icon: BarChart2 },
   { path: '/career',     label: 'Careers Hub',         icon: Briefcase, badge: 'Soon' },

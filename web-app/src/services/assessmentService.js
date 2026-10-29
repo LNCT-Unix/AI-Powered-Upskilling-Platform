@@ -164,6 +164,17 @@ export const assessmentService = {
   },
 
   /**
+   * Retrieve the list of all previously taken diagnostic tests for the authenticated user.
+   * Endpoint: GET /api/v1/assessments/history
+   * @returns {Promise<Array<{assessmentId: string, trackId: string, trackName: string, status: string, level: string, theta: number, itemsAdministered: number, correctCount: number, accuracyPct: number, stopReason: string, completedAt: string}>>}
+   */
+  async getHistory() {
+    return apiClient('/api/v1/assessments/history', {
+      method: 'GET',
+    });
+  },
+
+  /**
    * Fetch 5 questions served all together directly to unlock a specific skill node.
    * Endpoint: GET /api/v1/assessments/skills/{skillSlug}/quiz
    * @param {string} skillSlug - Human-readable unique skill slug (e.g. 'sql-joins-aggregation').
