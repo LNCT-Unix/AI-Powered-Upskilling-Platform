@@ -272,6 +272,30 @@ public class AssessmentService {
         );
     }
 
+    // ---------- history ----------
+
+    @Transactional(readOnly = true)
+    public List<AssessmentHistoryItem> getHistory(UUID userId) {
+        List<Assessment> assessments = assessmentRepo.findHistoryByUserId(userId);
+        Map<UUID, String> trackNames = trackRepo.findAll().stream()
+                .collect(Collectors.toMap(Track::getId, Track::getName, (a, b) -> a));
+
+        return assessments.stream()
+                .map(a -> new AssessmentHistoryItem(
+                        a.getId(),
+                        a.getTrackId(),
+                        trackNames.getOrDefault(a.getTrackId(), "Backend Engineering"),
+                        a.getStatus(),
+                        a.getLevel(),
+                        a.getTheta(),
+                        a.getItemsAdministered() != null ? a.getItemsAdministered() : 0,
+                        a.getCorrectCount() != null ? a.getCorrectCount() : 0,
+                        a.getStopReason(),
+                        a.getCompletedAt()
+                ))
+                .collect(Collectors.toList());
+    }
+
     // ---------- 5-question node unlock quiz ----------
 
     /**

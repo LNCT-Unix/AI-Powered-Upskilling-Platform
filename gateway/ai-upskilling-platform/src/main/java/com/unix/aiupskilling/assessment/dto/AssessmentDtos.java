@@ -110,6 +110,52 @@ public final class AssessmentDtos {
         public double getDifficulty() { return difficulty; }
     }
 
+    /** Summary of a previously taken assessment for history listing. */
+    public static class AssessmentHistoryItem {
+        private final UUID assessmentId;
+        private final UUID trackId;
+        private final String trackName;
+        private final String status;
+        private final String level;
+        private final Double theta;
+        private final int itemsAdministered;
+        private final int correctCount;
+        private final int accuracyPct;
+        private final String stopReason;
+        private final java.time.Instant completedAt;
+
+        public AssessmentHistoryItem(UUID assessmentId, UUID trackId, String trackName,
+                                     String status, String level, Double theta,
+                                     int itemsAdministered, int correctCount,
+                                     String stopReason, java.time.Instant completedAt) {
+            this.assessmentId = assessmentId;
+            this.trackId = trackId;
+            this.trackName = trackName;
+            this.status = status;
+            this.level = level;
+            this.theta = theta;
+            this.itemsAdministered = itemsAdministered;
+            this.correctCount = correctCount;
+            this.accuracyPct = itemsAdministered > 0
+                    ? (int) Math.round((100.0 * correctCount) / itemsAdministered)
+                    : 0;
+            this.stopReason = stopReason;
+            this.completedAt = completedAt;
+        }
+
+        public UUID getAssessmentId() { return assessmentId; }
+        public UUID getTrackId() { return trackId; }
+        public String getTrackName() { return trackName; }
+        public String getStatus() { return status; }
+        public String getLevel() { return level; }
+        public Double getTheta() { return theta; }
+        public int getItemsAdministered() { return itemsAdministered; }
+        public int getCorrectCount() { return correctCount; }
+        public int getAccuracyPct() { return accuracyPct; }
+        public String getStopReason() { return stopReason; }
+        public java.time.Instant getCompletedAt() { return completedAt; }
+    }
+
     /** One question as the learner sees it. */
     public static class Question {
         private final UUID itemId;

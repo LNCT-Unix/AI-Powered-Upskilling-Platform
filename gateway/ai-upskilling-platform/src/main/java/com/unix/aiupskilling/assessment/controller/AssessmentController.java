@@ -73,6 +73,12 @@ public class AssessmentController {
         return service.start(userId(auth), request.getTrackId(), request.getKnownSkillSlugs());
     }
 
+    /** Lists all previously taken assessments for the authenticated user, latest first. */
+    @GetMapping("/history")
+    public List<AssessmentHistoryItem> history(Authentication auth) {
+        return service.getHistory(userId(auth));
+    }
+
     /** Returns the current state of an assessment: the next question, or done=true when finished. */
     @GetMapping("/{id}")
     public AssessmentState state(Authentication auth, @PathVariable UUID id) {

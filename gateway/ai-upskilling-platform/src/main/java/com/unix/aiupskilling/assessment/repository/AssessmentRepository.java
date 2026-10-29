@@ -1,9 +1,12 @@
 package com.unix.aiupskilling.assessment.repository;
 
 import com.unix.aiupskilling.assessment.model.entity.Assessment;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface AssessmentRepository extends JpaRepository<Assessment, UUID> {
 
@@ -18,4 +21,8 @@ public interface AssessmentRepository extends JpaRepository<Assessment, UUID> {
 
     /** Most recent finished assessment for user. */
     Optional<Assessment> findFirstByUserIdOrderByCompletedAtDesc(UUID userId);
+
+    /** All assessments taken by this user, ordered with latest completed first. */
+    @Query("SELECT a FROM Assessment a WHERE a.userId = :userId ORDER BY a.completedAt DESC NULLS LAST, a.id DESC")
+    List<Assessment> findHistoryByUserId(@Param("userId") UUID userId);
 }

@@ -621,6 +621,24 @@ class AssessmentEndpointIntegrationTest {
     }
 
     @Test
+    @DisplayName("GET /api/v1/assessments/history returns user diagnostic history")
+    void testGetAssessmentHistory() throws Exception {
+        StartRequest request = new StartRequest(activeTrack.getId());
+        mockMvc.perform(post("/api/v1/assessments")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/v1/assessments/history")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].trackName").value("Backend Engineering"))
+                .andExpect(jsonPath("$[0].status").value("IN_PROGRESS"));
+    }
+
+    @Test
     @DisplayName("POST /api/v1/assessments/skills/{slug}/quiz/submit - fails when score < 3/5 and keeps node locked")
     void testSubmitSkillQuiz_Fail() throws Exception {
         // 1. Get 5 questions

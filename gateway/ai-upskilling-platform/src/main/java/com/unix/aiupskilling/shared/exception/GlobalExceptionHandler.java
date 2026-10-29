@@ -116,6 +116,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(reason, ErrorData.of(ex.getStatusCode().toString())));
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<ErrorData>> handleMethodArgumentTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        String msg = String.format("Invalid parameter '%s': %s", ex.getName(), ex.getValue());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(msg, ErrorData.of("INVALID_PARAMETER")));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<ErrorData>> handleGeneralException(Exception ex) {
         String correlationId = UUID.randomUUID().toString();
