@@ -8,13 +8,11 @@ import {
   Target,
   BookOpen,
   ChevronRight,
-  MessageCircle,
   ArrowUpRight,
   ArrowRight,
   Zap,
   TrendingUp,
   Award,
-  Calendar,
   Compass,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
@@ -76,7 +74,6 @@ export default function DashboardPage() {
   // Greeting logic
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
   const skillsFromReady = lockedSkills.length;
   const nextUpSkill = lockedSkills[0]?.name ?? 'Diagnostic CAT';
@@ -92,21 +89,7 @@ export default function DashboardPage() {
           <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-[#FF9838]/12 blur-2xl pointer-events-none" />
           <div className="absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-[#7C5CFA]/12 blur-xl pointer-events-none" />
 
-          {/* Floating badge for visual flair */}
-          <div className="hidden sm:flex absolute right-6 top-6 items-center gap-2 rounded-2xl bg-white/95 backdrop-blur-xs border border-[#E8E0CC] px-3.5 py-1.5 shadow-2xs">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FFEEDD] text-[#FF9838] text-xs font-bold">
-              ⚡
-            </span>
-            <span className="text-[11px] font-bold text-[#2F2A3E]">
-              {totalCount > 0 ? `${readinessPct}% Ready` : 'Ready to Calibrate'}
-            </span>
-          </div>
-
           <div className="relative z-10 max-w-xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/90 backdrop-blur-xs border border-[#E8E0CC] px-3 py-1 mb-3 shadow-2xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#7C5CFA] animate-pulse" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#6E6880]">{today}</p>
-            </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#2F2A3E] tracking-tight leading-tight">
               <span className="flex items-center gap-3">
@@ -364,40 +347,6 @@ export default function DashboardPage() {
             className="mt-4 w-full rounded-full border border-[#E8E0CC] bg-white py-2.5 text-xs font-bold text-[#2F2A3E] hover:bg-[#F7F3E8] transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
           >
             View Full Adaptive Roadmap <ChevronRight size={13} />
-          </button>
-        </div>
-
-        {/* Weekly Focus Micro Card */}
-        <div className="rounded-3xl border border-[#FFD9B8] bg-gradient-to-br from-[#FFEEDD] to-[#FFF3CF]/60 p-5 shadow-xs">
-          <div className="flex items-center gap-2.5 mb-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#FF9838] text-white font-bold text-xs shadow-2xs">
-              🎯
-            </span>
-            <p className="text-xs font-bold uppercase tracking-wider text-[#B45A14]">Weekly Target</p>
-          </div>
-          <p className="text-xs font-medium text-[#6A3906] leading-relaxed">
-            Unlock 2 skills this week to reach <span className="font-bold text-[#B45A14]">{Math.min(readinessPct + 15, 100)}%</span> readiness for junior developer opportunities.
-          </p>
-        </div>
-
-        {/* AI Learning Coach Pill / CTA */}
-        <div className="rounded-3xl border border-[#7C5CFA]/30 bg-gradient-to-br from-[#6C4BEF] via-[#7C5CFA] to-[#8F74F2] p-5 text-white shadow-md shadow-[#7C5CFA]/20 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 backdrop-blur-xs text-white">
-              <Sparkles size={15} />
-            </span>
-            <p className="text-xs font-bold uppercase tracking-wider text-white">AI Learning Coach</p>
-          </div>
-          <p className="text-xs text-[#EFEAFC] leading-relaxed">
-            Stuck on a concept or need tailored code examples? Ask your AI coach for immediate guidance.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/assessment')}
-            className="w-full flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-[#7C5CFA] hover:bg-[#FAF8F5] transition shadow-2xs cursor-pointer"
-          >
-            <MessageCircle size={14} />
-            Ask AI Coach
           </button>
         </div>
 
