@@ -3,6 +3,7 @@ package com.unix.aiupskilling.assessment.model.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.util.UUID;
 
@@ -13,7 +14,10 @@ import java.util.UUID;
  * skillSlug links this question back to the Skill it primarily tests.
  */
 @Entity
-@Table(name = "assessment_items")
+@Table(name = "assessment_items", indexes = {
+        // supports the findNext anti-join: WHERE track_id = ? AND status = 'ACTIVE'
+        @Index(name = "idx_assessment_items_track_status_difficulty", columnList = "track_id, status, difficulty")
+})
 public class AssessmentItem {
 
     @Id

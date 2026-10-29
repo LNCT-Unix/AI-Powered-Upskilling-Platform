@@ -40,51 +40,53 @@ import org.springframework.web.server.ResponseStatusException;
  * <ol>
  *   <li>User picks a track (e.g. Backend Engineering dropdown).
  *   <li>User selects a few skills they are already comfortable in.
- *   <li>POST /api/v1/assessments with {trackId, knownSkillSlugs} begins the test with an
- *       initial theta (IRT) of 0.0.
- *   <li>If the user answers a question correctly, difficulty increases; otherwise it decreases.
- *   <li>Once completed, GET /api/v1/assessments/{id}/report provides a comprehensive breakdown
- *       of questions answered, correctness, and skills unlocked to update the graph.
+ *   <li>POST /api/v1/assessments with {trackId, knownSkillSlugs} begins the test.
+ *   <li>If the user answers correctly, difficulty increases; otherwise it decreases.
+ *   <li>Once completed, GET /api/v1/assessments/{id}/report gives the full breakdown.
  * </ol>
+ *
+ * <h2>Algorithm & Query design</h2>
+ * <ul>
+ *   <li>Adaptive item selection queries the question pool using an indexed anti-join on answered responses.
+ *   <li>Theta calculation, difficulty stepping, and early-stop checks run dynamically.
+ * </ul>
  */
 @Service
 public class AssessmentService {
 
     private static final Logger log = LoggerFactory.getLogger(AssessmentService.class);
 
-    // ----- test settings (plain constants; change here instead of application.yml) -----
-    private static final int MIN_ITEMS = 5;             // never stop before this many questions
-    private static final int MAX_ITEMS = 9;             // hard limit on test length
-    private static final double START_DIFFICULTY = 0.0; // initial theta value for every learner
-    private static final double STEP = 0.35;            // how far the estimate moves per answer
-    private static final double MASTERY_MARGIN = 0.25;  // mastered = difficulty <= theta - margin
-    private static final double BEGINNER_BELOW = -0.5;  // level cut-offs
+    private static final int MIN_ITEMS = 5;
+    private static final int MAX_ITEMS = 9;
+    private static final double START_DIFFICULTY = 0.0;
+    private static final double STEP = 0.35;
+    private static final double MASTERY_MARGIN = 0.25;
+    private static final double BEGINNER_BELOW = -0.5;
     private static final double ADVANCED_ABOVE = 0.75;
 
     private final TrackRepository trackRepo;
     private final AssessmentRepository assessmentRepo;
-    private final AssessmentItemRepository itemRepo;
     private final AssessmentResponseRepository responseRepo;
     private final SkillRepository skillRepo;
     private final AssessmentSkillResultRepository skillResultRepo;
+    private final AssessmentItemRepository itemRepo;
     private final ObjectMapper mapper;
 
     public AssessmentService(TrackRepository trackRepo, AssessmentRepository assessmentRepo,
-                             AssessmentItemRepository itemRepo, AssessmentResponseRepository responseRepo,
+                             AssessmentResponseRepository responseRepo,
                              SkillRepository skillRepo, AssessmentSkillResultRepository skillResultRepo,
-                             ObjectMapper mapper) {
+                             AssessmentItemRepository itemRepo, ObjectMapper mapper) {
         this.trackRepo = trackRepo;
         this.assessmentRepo = assessmentRepo;
-        this.itemRepo = itemRepo;
         this.responseRepo = responseRepo;
         this.skillRepo = skillRepo;
         this.skillResultRepo = skillResultRepo;
+        this.itemRepo = itemRepo;
         this.mapper = (mapper != null) ? mapper : new ObjectMapper();
     }
 
     // ---------- onboarding helpers ----------
 
-    /** Returns all ACTIVE tracks for the onboarding track-picker dropdown. */
     @Transactional(readOnly = true)
     public List<TrackSummary> listTracks() {
         return trackRepo.findByStatusOrderByNameAsc("ACTIVE").stream()
@@ -92,7 +94,6 @@ public class AssessmentService {
                 .collect(Collectors.toList());
     }
 
-    /** Returns all skills for a track (for the onboarding skill pre-selection). */
     @Transactional(readOnly = true)
     public List<SkillSummary> listSkillsForTrack(UUID trackId) {
         if (!trackRepo.existsById(trackId)) {
@@ -110,13 +111,6 @@ public class AssessmentService {
         return start(userId, trackId, List.of());
     }
 
-    /**
-     * Starts a new assessment (or resumes an in-progress one).
-     *
-     * @param userId          the authenticated user
-     * @param trackId         the track to assess
-     * @param knownSkillSlugs skills the user declared they are comfortable in
-     */
     @Transactional
     public AssessmentState start(UUID userId, UUID trackId, List<String> knownSkillSlugs) {
         Track track = trackRepo.findById(trackId)
@@ -125,12 +119,10 @@ public class AssessmentService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Track is not available yet");
         }
 
-        // One test in progress per user and track: return it instead of starting again.
         Assessment existing = assessmentRepo
                 .findFirstByUserIdAndTrackIdAndStatus(userId, trackId, "IN_PROGRESS").orElse(null);
         if (existing != null) return state(userId, existing.getId());
 
-        // Assessment starts with initial theta = 0.0
         double initialTheta = START_DIFFICULTY;
 
         Assessment a = new Assessment();
@@ -146,19 +138,25 @@ public class AssessmentService {
             }
         }
         a = assessmentRepo.save(a);
-        return stateWithTheta(userId, a.getId(), initialTheta);
+
+        AssessmentItem first = pickNext(trackId, a.getId(), initialTheta);
+        if (first == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No questions available");
+        }
+        return asState(a.getId(), a.getStatus(), false, first, 0);
     }
 
-    // ---------- current state (also used to resume) ----------
+    // ---------- current state ----------
 
     @Transactional(readOnly = true)
     public AssessmentState state(UUID userId, UUID assessmentId) {
-        Assessment a = owned(userId, assessmentId, false);
+        Assessment a = owned(userId, assessmentId);
         if (!"IN_PROGRESS".equals(a.getStatus())) return finishedState(a);
 
         List<AssessmentResponse> answers = responseRepo.findByAssessmentIdOrderBySeq(assessmentId);
         double theta = thetaOf(answers, a.getInitialTheta());
-        AssessmentItem next = nextItem(a.getTrackId(), a.getId(), theta);
+
+        AssessmentItem next = pickNext(a.getTrackId(), a.getId(), theta);
         if (next == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No questions available");
         }
@@ -169,7 +167,7 @@ public class AssessmentService {
 
     @Transactional
     public AssessmentState answer(UUID userId, UUID assessmentId, UUID itemId, Integer selectedOption) {
-        Assessment a = owned(userId, assessmentId, true);   // row lock: no double submits
+        Assessment a = owned(userId, assessmentId);
         if (!"IN_PROGRESS".equals(a.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Assessment already finished");
         }
@@ -177,8 +175,8 @@ public class AssessmentService {
         List<AssessmentResponse> answers = responseRepo.findByAssessmentIdOrderBySeq(assessmentId);
         double theta = thetaOf(answers, a.getInitialTheta());
 
-        // The submitted question must be exactly the next one the algorithm would serve.
-        AssessmentItem expected = nextItem(a.getTrackId(), a.getId(), theta);
+        // Validate that submitted item matches expected item
+        AssessmentItem expected = pickNext(a.getTrackId(), a.getId(), theta);
         if (expected == null || !expected.getId().equals(itemId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "That is not the current question");
         }
@@ -188,25 +186,30 @@ public class AssessmentService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid option");
         }
 
+        // Persist response
+        boolean isCorrect = selectedOption == expected.getCorrectOption();
         AssessmentResponse response = new AssessmentResponse();
         response.setAssessment(a);
         response.setSeq(answers.size() + 1);
         response.setItem(expected);
         response.setSelectedOption(selectedOption);
-        response.setCorrect(selectedOption == expected.getCorrectOption());
-        responseRepo.save(response);
+        response.setCorrect(isCorrect);
+        responseRepo.saveAndFlush(response);
 
+        // Update in-memory state
         answers.add(response);
 
+        // Check stop condition
         String stop = stopReason(answers);
         if (stop == null) {
-            double newTheta = thetaOf(answers, a.getInitialTheta());
-            AssessmentItem next = nextItem(a.getTrackId(), a.getId(), newTheta);
+            double newTheta = theta + (isCorrect ? STEP : -STEP);
+            AssessmentItem next = pickNext(a.getTrackId(), a.getId(), newTheta);
             if (next != null) {
                 return asState(a.getId(), "IN_PROGRESS", false, next, answers.size());
             }
-            stop = "NO_QUESTIONS_LEFT";   // the pool ran out: finish with what we have
+            stop = "NO_QUESTIONS_LEFT";
         }
+
         return finishAssessment(a, answers, stop);
     }
 
@@ -214,11 +217,10 @@ public class AssessmentService {
 
     @Transactional(readOnly = true)
     public ResultView result(UUID userId, UUID assessmentId) {
-        Assessment a = owned(userId, assessmentId, false);
+        Assessment a = owned(userId, assessmentId);
         if (!"COMPLETED".equals(a.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Assessment not finished yet");
         }
-
         List<SkillResult> skills = buildSkillResults(assessmentId, a.getTrackId());
         return new ResultView(a.getId(), a.getLevel(), a.getTheta(),
                 a.getItemsAdministered(), a.getCorrectCount(), skills);
@@ -226,29 +228,19 @@ public class AssessmentService {
 
     // ---------- detailed report ----------
 
-    /**
-     * Full post-assessment report.
-     * Returns:
-     * - Question-by-question breakdown of answers given, correct answers, and skills tested.
-     * - Overall counts (answered, correct) and final ability level.
-     * - Full skill graph states (MASTERED, FRONTIER, LOCKED).
-     * - Unlocked skills (MASTERED and FRONTIER) to update the graph.
-     */
     @Transactional(readOnly = true)
     public AssessmentReport report(UUID userId, UUID assessmentId) {
-        Assessment a = owned(userId, assessmentId, false);
+        Assessment a = owned(userId, assessmentId);
         if (!"COMPLETED".equals(a.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Assessment not finished yet");
         }
 
-        // Build name lookup for skill slugs (from the question pool)
         List<Skill> allSkills = skillRepo.findByTrackIdOrderByDifficultyAsc(a.getTrackId());
         Map<String, String> slugToName = new HashMap<>();
         for (Skill s : allSkills) {
             if (s.getSlug() != null) slugToName.put(s.getSlug(), s.getName());
         }
 
-        // Build per-response detail (with item eagerly fetched)
         List<AssessmentResponse> responses =
                 responseRepo.findByAssessmentIdWithItemOrderBySeq(assessmentId);
         List<ResponseDetail> responseDetails = new ArrayList<>();
@@ -257,54 +249,35 @@ public class AssessmentService {
             List<String> opts = parseOptions(item.getOptions());
             String slug = item.getSkillSlug();
             responseDetails.add(new ResponseDetail(
-                    r.getSeq(),
-                    item.getStem(),
-                    opts,
-                    r.getSelectedOption(),
-                    item.getCorrectOption(),
-                    r.isCorrect(),
-                    slug,
-                    slug != null ? slugToName.getOrDefault(slug, slug) : null
+                    r.getSeq(), item.getStem(), opts,
+                    r.getSelectedOption(), item.getCorrectOption(), r.isCorrect(),
+                    slug, slug != null ? slugToName.getOrDefault(slug, slug) : null
             ));
         }
 
-        // Build full skill graph state
         List<SkillResult> skillResults = buildSkillResults(assessmentId, a.getTrackId());
-
-        // unlockedSkills = all skills that are now accessible (MASTERED or FRONTIER)
         List<SkillResult> unlocked = skillResults.stream()
                 .filter(sr -> !"LOCKED".equals(sr.getState()))
                 .collect(Collectors.toList());
 
         double initialTheta = a.getInitialTheta() != null ? a.getInitialTheta() : START_DIFFICULTY;
-
         return new AssessmentReport(
-                a.getId(),
-                a.getLevel(),
-                initialTheta,
+                a.getId(), a.getLevel(), initialTheta,
                 a.getTheta() != null ? a.getTheta() : initialTheta,
                 a.getItemsAdministered() != null ? a.getItemsAdministered() : 0,
                 a.getCorrectCount() != null ? a.getCorrectCount() : 0,
-                a.getStopReason(),
-                responseDetails,
-                skillResults,
-                unlocked
+                a.getStopReason(), responseDetails, skillResults, unlocked
         );
     }
 
-    // ---------- core algorithm ----------
+    // ---------- core algorithm (all in-memory) ----------
 
-    /**
-     * Running ability estimate.
-     * Starts at initialTheta (0.0), then steps up by STEP for correct and down by STEP for incorrect.
-     */
     private double thetaOf(List<AssessmentResponse> answers, Double initialTheta) {
         double theta = (initialTheta != null) ? initialTheta : START_DIFFICULTY;
         for (AssessmentResponse r : answers) theta += r.isCorrect() ? STEP : -STEP;
         return theta;
     }
 
-    /** How often the answers switched between correct and wrong. */
     private int directionChanges(List<AssessmentResponse> answers) {
         int changes = 0;
         for (int i = 1; i < answers.size(); i++) {
@@ -313,17 +286,16 @@ public class AssessmentService {
         return changes;
     }
 
-    /** Null means keep going. */
     private String stopReason(List<AssessmentResponse> answers) {
         if (answers.size() >= MAX_ITEMS) return "MAX_ITEMS";
         if (answers.size() >= MIN_ITEMS && directionChanges(answers) >= 2) return "LEVEL_CONFIRMED";
         return null;
     }
 
-    /** The unused ACTIVE question whose difficulty is closest to the estimate, or null. */
-    private AssessmentItem nextItem(UUID trackId, UUID assessmentId, double theta) {
-        List<AssessmentItem> found = itemRepo.findNext(trackId, assessmentId, theta, Limit.of(1));
-        return found.isEmpty() ? null : found.get(0);
+    private AssessmentItem pickNext(UUID trackId, UUID assessmentId, double theta) {
+        return itemRepo.findNext(trackId, assessmentId, theta, Limit.of(1)).stream()
+                .findFirst()
+                .orElse(null);
     }
 
     private String levelOf(double theta) {
@@ -332,13 +304,6 @@ public class AssessmentService {
         return "INTERMEDIATE";
     }
 
-    /**
-     * Skill mapping:
-     *   MASTERED - the skill sits clearly below the learner's ability (difficulty <= theta - margin)
-     *              OR was declared by the user as a comfortable skill during onboarding
-     *   FRONTIER - not mastered yet, but every prerequisite is mastered: ready to unlock next in graph
-     *   LOCKED   - everything else
-     */
     private void saveSkillResults(Assessment a, double theta) {
         List<Skill> skills = skillRepo.findByTrackIdWithPrerequisites(a.getTrackId());
         Set<String> declaredSlugs = parseSkillSlugs(a.getKnownSkillSlugs());
@@ -347,9 +312,7 @@ public class AssessmentService {
         for (Skill s : skills) {
             boolean isDeclared = s.getSlug() != null && declaredSlugs.contains(s.getSlug());
             boolean isMasteredByScore = s.getDifficulty() <= theta - MASTERY_MARGIN;
-            if (isDeclared || isMasteredByScore) {
-                mastered.add(s.getId());
-            }
+            if (isDeclared || isMasteredByScore) mastered.add(s.getId());
         }
 
         List<AssessmentSkillResult> results = new ArrayList<>();
@@ -367,12 +330,10 @@ public class AssessmentService {
         skillResultRepo.saveAll(results);
     }
 
-    /** Stores the final result and the per-skill states, then returns the finished state. */
     private AssessmentState finishAssessment(Assessment a, List<AssessmentResponse> answers, String stop) {
         int answered = answers.size();
         int correct = 0;
         for (AssessmentResponse r : answers) if (r.isCorrect()) correct++;
-
         double finalTheta = thetaOf(answers, a.getInitialTheta());
 
         a.setStatus("COMPLETED");
@@ -388,16 +349,14 @@ public class AssessmentService {
         return finishedState(a);
     }
 
-    /** Reads back the saved skill results for an assessment as DTOs. */
     private List<SkillResult> buildSkillResults(UUID assessmentId, UUID trackId) {
-        // Pre-fetch track skills with prerequisites in a single joined query to avoid N+1 queries
         Map<UUID, Set<UUID>> prereqMap = new HashMap<>();
         if (trackId != null) {
             for (Skill s : skillRepo.findByTrackIdWithPrerequisites(trackId)) {
-                prereqMap.put(s.getId(), s.getPrerequisites() != null ? new HashSet<>(s.getPrerequisites()) : Collections.emptySet());
+                prereqMap.put(s.getId(), s.getPrerequisites() != null
+                        ? new HashSet<>(s.getPrerequisites()) : Collections.emptySet());
             }
         }
-
         List<SkillResult> skills = new ArrayList<>();
         for (AssessmentSkillResult r : skillResultRepo
                 .findByAssessmentIdOrderBySkillClusterAscSkillDifficultyAsc(assessmentId)) {
@@ -415,10 +374,8 @@ public class AssessmentService {
 
     // ---------- small helpers ----------
 
-    /** Loads the assessment and checks it belongs to this user. lock=true also locks the row. */
-    private Assessment owned(UUID userId, UUID assessmentId, boolean lock) {
-        return (lock ? assessmentRepo.findByIdAndUserIdForUpdate(assessmentId, userId)
-                     : assessmentRepo.findByIdAndUserId(assessmentId, userId))
+    private Assessment owned(UUID userId, UUID assessmentId) {
+        return assessmentRepo.findByIdAndUserId(assessmentId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assessment not found"));
     }
 
@@ -440,29 +397,14 @@ public class AssessmentService {
         }
     }
 
-    /** State with the next question attached. */
-    private AssessmentState asState(UUID assessmentId, String status, boolean done, AssessmentItem item, int answered) {
+    private AssessmentState asState(UUID assessmentId, String status, boolean done,
+                                    AssessmentItem item, int answered) {
         Question question = new Question(item.getId(), item.getStem(), parseOptions(item.getOptions()));
         return new AssessmentState(assessmentId, status, done, question, answered, MAX_ITEMS);
     }
 
-    /** State after the test is over: no question, just the counts. */
     private AssessmentState finishedState(Assessment a) {
         return new AssessmentState(a.getId(), a.getStatus(), true, null,
                 a.getItemsAdministered() != null ? a.getItemsAdministered() : 0, MAX_ITEMS);
-    }
-
-    /** Used internally by state() when we have the initialTheta in hand already. */
-    private AssessmentState stateWithTheta(UUID userId, UUID assessmentId, double initialTheta) {
-        Assessment a = owned(userId, assessmentId, false);
-        if (!"IN_PROGRESS".equals(a.getStatus())) return finishedState(a);
-
-        List<AssessmentResponse> answers = responseRepo.findByAssessmentIdOrderBySeq(assessmentId);
-        double theta = thetaOf(answers, initialTheta);
-        AssessmentItem next = nextItem(a.getTrackId(), a.getId(), theta);
-        if (next == null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No questions available");
-        }
-        return asState(a.getId(), a.getStatus(), false, next, answers.size());
     }
 }

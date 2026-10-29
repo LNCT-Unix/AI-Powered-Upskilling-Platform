@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -11,7 +12,12 @@ import org.hibernate.annotations.UuidGenerator;
 
 /** One placement test run for one user and track. Created by start(), updated after every answer. */
 @Entity
-@Table(name = "assessments")
+@Table(name = "assessments", indexes = {
+        // used by start() to check for an existing IN_PROGRESS test, and by all ownership checks
+        @Index(name = "idx_assessments_user_track_status", columnList = "user_id, track_id, status"),
+        // used by owned() — findByIdAndUserId
+        @Index(name = "idx_assessments_id_user", columnList = "id, user_id")
+})
 public class Assessment {
 
     @Id

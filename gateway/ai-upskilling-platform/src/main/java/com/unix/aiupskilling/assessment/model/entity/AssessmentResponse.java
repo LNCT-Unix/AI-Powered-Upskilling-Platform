@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -13,7 +14,12 @@ import org.hibernate.annotations.UuidGenerator;
 
 /** One answer the learner gave, in order (seq 1, 2, 3, ...). */
 @Entity
-@Table(name = "assessment_responses")
+@Table(name = "assessment_responses", indexes = {
+        // supports findByAssessmentIdOrderBySeq and the anti-join in findNext
+        @Index(name = "idx_assessment_responses_assessment_seq", columnList = "assessment_id, seq"),
+        // supports the LEFT JOIN ON item_id used by the anti-join query in findNext
+        @Index(name = "idx_assessment_responses_item", columnList = "item_id")
+})
 public class AssessmentResponse {
 
     @Id

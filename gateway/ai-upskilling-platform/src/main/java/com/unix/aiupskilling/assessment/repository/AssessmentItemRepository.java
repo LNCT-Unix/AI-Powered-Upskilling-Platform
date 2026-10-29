@@ -11,14 +11,22 @@ import org.springframework.data.repository.query.Param;
 public interface AssessmentItemRepository extends JpaRepository<AssessmentItem, UUID> {
 
     /**
-     * The unused ACTIVE questions of a track, closest difficulty to the estimate first
-     * (ties by id, so replays are identical). Call with Limit.of(1) to get just the next one.
+     * Loads all ACTIVE items for a track ordered by difficulty.
+     */
+    List<AssessmentItem> findByTrackIdAndStatusOrderByDifficultyAsc(UUID trackId, String status);
+
+    /**
+     * The unused ACTIVE question of a track whose difficulty is closest to the current theta.
+     * Uses a LEFT JOIN anti-join instead of NOT IN (correlated subquery) for an efficient
+     * query plan on larger item pools. Call with Limit.of(1) to get just the next question.
      */
     @Query("""
             SELECT i FROM AssessmentItem i
-            WHERE i.trackId = :trackId AND i.status = 'ACTIVE'
-              AND i.id NOT IN (SELECT r.item.id FROM AssessmentResponse r
-                               WHERE r.assessment.id = :assessmentId)
+            LEFT JOIN AssessmentResponse r
+                ON r.item.id = i.id AND r.assessment.id = :assessmentId
+            WHERE i.trackId = :trackId
+              AND i.status = 'ACTIVE'
+              AND r.id IS NULL
             ORDER BY ABS(i.difficulty - :theta), i.id""")
     List<AssessmentItem> findNext(@Param("trackId") UUID trackId,
                                   @Param("assessmentId") UUID assessmentId,
