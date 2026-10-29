@@ -434,7 +434,7 @@ export default function AssessmentPage() {
   const currentQ = assessmentState?.question;
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-6 space-y-6">
+    <div className="mx-auto max-w-3xl p-4 sm:p-6 pb-24 lg:pb-6 space-y-6">
       {/* Header */}
       <div className="border-b border-slate-200/80 pb-5">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
@@ -824,6 +824,28 @@ export default function AssessmentPage() {
               </Button>
             </div>
           </Card>
+          {/* Mobile Floating Sticky Submit Bar - Placed above MobileNav, strictly lg:hidden */}
+          {selectedOption !== null && !submitting && (
+            <div className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 p-3 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg lg:hidden">
+              <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Selected Option</span>
+                  <span className="text-xs font-extrabold text-indigo-700 truncate">
+                    Option {String.fromCharCode(65 + selectedOption)}
+                  </span>
+                </div>
+                <Button
+                  variant="indigo"
+                  size="md"
+                  loading={submitting}
+                  onClick={handleSubmitAnswer}
+                  className="flex-1 max-w-[210px] shadow-sm justify-center font-bold text-xs"
+                >
+                  Submit & Next <ArrowRight size={15} />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       ) : isCompleted && result ? (
         /* Real CAT Assessment Result View */

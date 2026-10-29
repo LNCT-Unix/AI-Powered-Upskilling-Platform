@@ -131,7 +131,7 @@ export default function DashboardShell() {
         </header>
 
         {/* Page content */}
-        <main id="main-content" className="flex-1 w-full">
+        <main id="main-content" className="flex-1 w-full pb-20 lg:pb-0">
           <Outlet />
         </main>
 
