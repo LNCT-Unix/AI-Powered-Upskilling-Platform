@@ -11,14 +11,21 @@ web-app/src/
 ├── components/auth/
 │   ├── login.jsx          # Interactive Login form (Email/Password, Google & GitHub OAuth triggers)
 │   ├── signup.jsx         # Interactive Signup form (Full Name, Email, Password, Validation, OAuth)
+│   ├── forgotPass.jsx     # Interactive Password Reset form (Email input, OTP verification, new password)
+│   ├── AuthView.jsx       # Unified interactive auth modal/view (Sign-in, Register, OTP confirmation)
+│   ├── AuthPage.css       # Dedicated responsive auth styling and animations
+│   ├── ProtectedRoute.jsx # Route guard verifying authentication before granting dashboard access
 │   └── README.md          # This component specification
 │
 ├── pages/
 │   ├── LoginPage.jsx      # Page view at `/login` (handles state, useAuth & redirection)
-│   └── SignupPage.jsx     # Page view at `/signup` (handles registration & redirection)
+│   ├── SignupPage.jsx     # Page view at `/signup` (handles registration & redirection)
+│   ├── VerifyEmailPage.jsx# Page view at `/verify-email` (handles 6-digit OTP verification & resend)
+│   ├── AuthCallbackPage.jsx # Page view at `/auth/callback` (exchanges OAuth2 login code for JWT)
+│   └── AuthErrorPage.jsx  # Page view at `/auth/error` (displays OAuth failure guidance)
 │
 ├── context/
-│   └── AuthContext.jsx    # Central authentication provider (login, register, logout, user session)
+│   └── AuthContext.jsx    # Central authentication provider (login, register, OTP confirm, logout, session)
 │
 └── services/
     └── authService.js     # Client communicating with Spring Boot Gateway (`/api/auth/*`)
@@ -46,26 +53,36 @@ web-app/src/
 | `onGitHubSignIn` | `Function: () => void` | Required | Triggers GitHub OAuth authorization redirect. |
 | `loginHref` | `string` | `"/login"` | Link destination for returning users to log in. |
 
+### `<ForgotPass />` (`forgotPass.jsx`)
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `onBack` | `Function: () => void` | Optional | Navigates back to login view. |
+
 ---
 
 ## 3. How to Test Authentication Locally
 
 ### 1. Mock Mode (Default)
-In `.env` or `.env.example`:
+In `.env`:
 ```env
 VITE_USE_MOCK_AUTH=true
 ```
-- Submitting either form logs in immediately using simulated credentials and redirects to `/dashboard`.
-- No backend setup or database is needed.
+- Submitting login or signup simulates a valid session immediately and navigates to `/dashboard`.
+- No database or gateway service required.
 
 ### 2. Live Spring Boot Gateway Mode
-When running alongside Aadi & Riya's backend on port `8080`:
+When running alongside the Spring Boot Gateway on port `8080`:
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 VITE_USE_MOCK_AUTH=false
 ```
 - **Login Endpoint:** `POST /api/auth/login` (Body: `{ email, password }`)
-- **Register Endpoint:** `POST /api/auth/register` (Body: `{ fullName, email, password }`)
+- **Register Endpoint:** `POST /api/auth/register` (Body: `{ fullName, email, password }`) -> dispatches 6-digit OTP via Gmail SMTP.
+- **Confirm Email OTP:** `POST /api/auth/email-verification/confirm` (Body: `{ email, otp }`)
+- **Resend OTP:** `POST /api/auth/email-verification/resend` (Body: `{ email }`)
+- **Forgot Password:** `POST /api/auth/forgot-password` (Body: `{ email }`)
+- **Verify Reset OTP:** `POST /api/auth/verify-reset-otp` (Body: `{ email, otp }`)
+- **Reset Password:** `POST /api/auth/reset-password` (Body: `{ email, resetToken, newPassword }`)
 - **OAuth Google:** Redirects to `http://localhost:8080/oauth2/authorization/google`
 - **OAuth GitHub:** Redirects to `http://localhost:8080/oauth2/authorization/github`
 - **OAuth Callback:** Handled automatically at `/auth/callback` via `POST /api/auth/oauth2/exchange`
