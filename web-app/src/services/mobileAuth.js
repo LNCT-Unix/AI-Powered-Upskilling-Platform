@@ -48,10 +48,10 @@ export async function openOAuthProvider(providerAuthorizationUrl) {
     await Browser.open({
       url: providerAuthorizationUrl,
       windowName: '_blank',
-      presentationStyle: 'popover'
+      presentationStyle: 'popover',
+      toolbarColor: '#F7F3E8',
     });
   } else {
     window.location.href = providerAuthorizationUrl;
   }
 }
-
