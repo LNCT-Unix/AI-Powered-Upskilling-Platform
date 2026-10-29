@@ -9,6 +9,7 @@ $srcImage = [System.Drawing.Image]::FromFile($srcLogoPath)
 $resDir = "$PSScriptRoot\android\app\src\main\res"
 $bgCream = [System.Drawing.Color]::FromArgb(247, 243, 232) # #F7F3E8
 $bgWhite = [System.Drawing.Color]::White
+$bgSplash = [System.Drawing.Color]::FromArgb(10, 10, 12) # #0A0A0C
 
 function Create-SquareIcon([int]$size, [string]$outPath) {
     $bmp = New-Object System.Drawing.Bitmap $size, $size
@@ -104,8 +105,8 @@ function Create-SplashScreen([int]$width, [int]$height, [string]$outPath) {
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
 
-    # Warm cream background
-    $brush = New-Object System.Drawing.SolidBrush $bgCream
+    # Sleek black monochrome background (#0A0A0C)
+    $brush = New-Object System.Drawing.SolidBrush $bgSplash
     $g.FillRectangle($brush, 0, 0, $width, $height)
     $brush.Dispose()
 
