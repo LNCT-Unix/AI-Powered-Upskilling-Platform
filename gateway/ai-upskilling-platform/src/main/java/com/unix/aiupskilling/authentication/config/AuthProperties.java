@@ -30,15 +30,15 @@ public class AuthProperties {
     @Data
     public static class FrontendProperties {
         private String webCallbackUrl = "http://localhost:5173/auth/callback";
-        private String mobileCallbackUrl = "myapp://auth/callback";
+        private String mobileCallbackUrl = "octobyte://auth/callback";
         private String webErrorUrl = "http://localhost:5173/auth/error";
-        private String mobileErrorUrl = "myapp://auth/error";
+        private String mobileErrorUrl = "octobyte://auth/error";
         private String verificationUrl = "http://localhost:5173/verify-email";
     }
 
     @Data
     public static class CorsProperties {
-        private List<String> allowedOrigins = new ArrayList<>(List.of("http://localhost:5173", "http://localhost:3000"));
+        private List<String> allowedOrigins = new ArrayList<>(List.of("http://localhost:5173", "http://localhost:3000", "https://localhost", "http://localhost", "capacitor://localhost", "ionic://localhost"));
     }
 
     @Data

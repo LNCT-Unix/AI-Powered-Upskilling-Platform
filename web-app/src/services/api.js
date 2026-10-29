@@ -1,13 +1,17 @@
 import { isNativeMobile, mobileStorage } from './mobileStorage';
 
 export const getApiBaseUrl = () => {
+  const customUrl = typeof window !== 'undefined' ? localStorage.getItem('octobyte_api_url') : null;
+  if (customUrl) {
+    return customUrl.replace(/\/+$/, '');
+  }
   if (isNativeMobile()) {
-    return import.meta.env.VITE_MOBILE_API_BASE_URL || 'http://10.0.2.2:8080';
+    // When connected over USB with `adb reverse tcp:8080 tcp:8080`, localhost:8080 reaches the host.
+    // If running over Wi-Fi, set VITE_MOBILE_API_BASE_URL or localStorage 'octobyte_api_url'.
+    return import.meta.env.VITE_MOBILE_API_BASE_URL || 'http://localhost:8080';
   }
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 };
-
-const API_BASE_URL = getApiBaseUrl();
 
 let inMemoryToken = null;
 let refreshPromise = null;
@@ -21,6 +25,7 @@ export const getAccessToken = () => inMemoryToken;
 export async function apiClient(endpoint, options = {}, isRetry = false) {
   const { headers = {}, body, ...customConfig } = options;
   const isMobile = isNativeMobile();
+  const baseUrl = getApiBaseUrl();
 
   const defaultHeaders = {
     'Content-Type': 'application/json',
@@ -48,7 +53,7 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  const response = await fetch(`${baseUrl}${endpoint}`, config);
 
   // If 401 Unauthorized and not already refreshing or attempting auth, try silent token refresh
   if (
@@ -73,7 +78,7 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
             refreshBody = JSON.stringify({ refreshToken: storedRefreshToken });
           }
 
-          const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+          const refreshRes = await fetch(`${baseUrl}/api/auth/refresh`, {
             method: 'POST',
             headers: refreshHeaders,
             credentials: isMobile ? 'omit' : 'include',
