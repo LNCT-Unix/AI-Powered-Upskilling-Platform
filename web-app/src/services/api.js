@@ -1,4 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import { isNativeMobile, mobileStorage } from './mobileStorage';
+
+export const getApiBaseUrl = () => {
+  if (isNativeMobile()) {
+    return import.meta.env.VITE_MOBILE_API_BASE_URL || 'http://10.0.2.2:8080';
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 let inMemoryToken = null;
 let refreshPromise = null;
@@ -11,10 +20,15 @@ export const getAccessToken = () => inMemoryToken;
 
 export async function apiClient(endpoint, options = {}, isRetry = false) {
   const { headers = {}, body, ...customConfig } = options;
+  const isMobile = isNativeMobile();
 
   const defaultHeaders = {
     'Content-Type': 'application/json',
   };
+
+  if (isMobile) {
+    defaultHeaders['X-Client-Platform'] = 'mobile';
+  }
 
   if (inMemoryToken) {
     defaultHeaders.Authorization = `Bearer ${inMemoryToken}`;
@@ -27,7 +41,7 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
       ...defaultHeaders,
       ...headers,
     },
-    credentials: 'include', // Ensures HttpOnly refresh_token cookie is sent across ports
+    credentials: isMobile ? 'omit' : 'include', // Ensures HttpOnly refresh_token cookie is sent on web
   };
 
   if (body) {
@@ -47,14 +61,33 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
     try {
       if (!refreshPromise) {
         refreshPromise = (async () => {
+          let refreshBody = null;
+          const refreshHeaders = { 'Content-Type': 'application/json' };
+
+          if (isMobile) {
+            refreshHeaders['X-Client-Platform'] = 'mobile';
+            const storedRefreshToken = await mobileStorage.getRefreshToken();
+            if (!storedRefreshToken) {
+              throw new Error('No refresh token available on device');
+            }
+            refreshBody = JSON.stringify({ refreshToken: storedRefreshToken });
+          }
+
           const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            headers: refreshHeaders,
+            credentials: isMobile ? 'omit' : 'include',
+            ...(refreshBody ? { body: refreshBody } : {}),
           });
+
           if (!refreshRes.ok) throw new Error('Token refresh failed');
           const data = await refreshRes.json();
           const newToken = data?.data?.accessToken;
+
+          if (isMobile && data?.data?.refreshToken) {
+            await mobileStorage.setRefreshToken(data.data.refreshToken);
+          }
+
           if (newToken) {
             setAccessToken(newToken);
             return newToken;
@@ -71,6 +104,9 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
     } catch {
       // Refresh failed; clear token and proceed to throw standard error
       setAccessToken(null);
+      if (isMobile) {
+        await mobileStorage.clearRefreshToken();
+      }
     }
   }
 
@@ -92,5 +128,12 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
     return { success: true };
   }
 
-  return response.json();
+  const responseJson = await response.json();
+
+  // If mobile and response contains a new refreshToken, save it
+  if (isMobile && responseJson?.data?.refreshToken) {
+    await mobileStorage.setRefreshToken(responseJson.data.refreshToken);
+  }
+
+  return responseJson;
 }
