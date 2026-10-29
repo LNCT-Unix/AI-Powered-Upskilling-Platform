@@ -24,6 +24,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import ScoreRing from '../components/ui/ScoreRing';
 import { assessmentService, BACKEND_TRACK_ID } from '../services/assessmentService';
+import { triggerHaptic } from '../services/hapticsService';
 
 const ASSESSMENT_ID_KEY = 'skillpath_assessment_id';
 const ASSESSMENT_RESULT_KEY = 'skillpath_assessment_result';
@@ -280,6 +281,7 @@ export default function AssessmentPage() {
   const handleStartTestWithSkills = async (declaredSkills) => {
     setSubmitting(true);
     setError(null);
+    triggerHaptic.submit();
 
     try {
       const activeTrackId = selectedTrackId || BACKEND_TRACK_ID;
@@ -321,6 +323,7 @@ export default function AssessmentPage() {
 
     setSubmitting(true);
     setError(null);
+    triggerHaptic.submit();
 
     try {
       const updatedState = await assessmentService.submitAnswer(
@@ -334,6 +337,7 @@ export default function AssessmentPage() {
 
       // Check if assessment completed
       if (updatedState.done || updatedState.status === 'COMPLETED') {
+        triggerHaptic.success();
         setPreparingReport(true);
         try {
           const report = await fetchFinalReport(updatedState.assessmentId);
@@ -384,6 +388,7 @@ export default function AssessmentPage() {
     setResult(null);
     setSelectedOption(null);
     setError(null);
+    triggerHaptic.submit();
     setSelectedSkillSlugs(new Set());
     setPreparingReport(false);
     setIsConfiguring(true);
@@ -766,7 +771,12 @@ export default function AssessmentPage() {
                       key={option}
                       type="button"
                       disabled={submitting}
-                      onClick={() => !submitting && setSelectedOption(optIdx)}
+                      onClick={() => {
+                        if (!submitting) {
+                          triggerHaptic.selection();
+                          setSelectedOption(optIdx);
+                        }
+                      }}
                       className={`flex w-full items-center justify-between rounded-2xl border p-3.5 sm:p-4 text-left text-xs sm:text-sm font-medium transition ${
                         submitting ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
                       } ${
