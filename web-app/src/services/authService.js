@@ -5,11 +5,15 @@ import { openOAuthProvider } from './mobileAuth';
 export const authService = {
   // 1. Initiate OAuth Redirects (In-App Browser on Mobile, Standard Redirect on Web)
   async loginWithGoogle() {
-    await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/google`);
+    const isMobile = isNativeMobile();
+    const query = isMobile ? '?client=mobile' : '';
+    await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/google${query}`);
   },
 
   async loginWithGitHub() {
-    await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/github`);
+    const isMobile = isNativeMobile();
+    const query = isMobile ? '?client=mobile' : '';
+    await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/github${query}`);
   },
 
   // 2. Exchange One-Time Code for JWT Access Token
