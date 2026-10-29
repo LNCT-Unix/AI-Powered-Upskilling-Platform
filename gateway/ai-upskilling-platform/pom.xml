@@ -139,6 +139,9 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<jvmArguments>-Djava.net.preferIPv4Stack=true</jvmArguments>
+				</configuration>
 			</plugin>
 
 			<!-- Java compiler and Lombok annotation processing -->
@@ -163,3 +166,4 @@
 	</build>
 
 </project>
+
