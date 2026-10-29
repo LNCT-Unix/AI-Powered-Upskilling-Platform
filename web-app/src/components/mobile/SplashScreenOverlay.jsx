@@ -102,3 +102,4 @@ export default function SplashScreenOverlay({ isReady, onFinish }) {
     </div>
   );
 }
+

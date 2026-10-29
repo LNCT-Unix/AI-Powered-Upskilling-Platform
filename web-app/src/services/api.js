@@ -1,6 +1,17 @@
 import { isNativeMobile, mobileStorage } from './mobileStorage';
 
+let activeMobileUrl = null;
+
 export const getApiBaseUrl = () => {
+  const customUrl = typeof window !== 'undefined' ? localStorage.getItem('octobyte_api_url') : null;
+  if (customUrl) {
+    return customUrl.replace(/\/+$/, '');
+  }
+  if (isNativeMobile()) {
+    if (activeMobileUrl) return activeMobileUrl;
+    // Default to the host Wi-Fi LAN IP so untethered mobile works out-of-the-box!
+    return import.meta.env.VITE_MOBILE_API_BASE_URL || 'http://10.71.104.22:8080';
+  }
   return (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 };
 
@@ -16,7 +27,7 @@ export const getAccessToken = () => inMemoryToken;
 export async function apiClient(endpoint, options = {}, isRetry = false) {
   const { headers = {}, body, ...customConfig } = options;
   const isMobile = isNativeMobile();
-  const baseUrl = getApiBaseUrl();
+  let baseUrl = getApiBaseUrl();
 
   const defaultHeaders = {
     'Content-Type': 'application/json',
@@ -44,7 +55,25 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${baseUrl}${endpoint}`, config);
+  let response;
+  try {
+    response = await fetch(`${baseUrl}${endpoint}`, config);
+  } catch (netErr) {
+    // If running on native mobile and initial endpoint failed (e.g. USB plugged out or Wi-Fi switch),
+    // try the alternative endpoint (switching between Wi-Fi LAN IP and localhost)
+    if (isMobile && !isRetry) {
+      const altUrl = baseUrl.includes('localhost') ? 'http://10.71.104.22:8080' : 'http://localhost:8080';
+      try {
+        response = await fetch(`${altUrl}${endpoint}`, config);
+        activeMobileUrl = altUrl; // Remember working endpoint
+        baseUrl = altUrl;
+      } catch {
+        throw new Error('Server unreachable. Please check your network or Wi-Fi connection.');
+      }
+    } else {
+      throw new Error(isMobile ? 'Server unreachable. Please check your network or Wi-Fi connection.' : (netErr.message || 'Network request failed'));
+    }
+  }
 
   // If 401 Unauthorized and not already refreshing or attempting auth, try silent token refresh
   if (
@@ -69,14 +98,28 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
             refreshBody = JSON.stringify({ refreshToken: storedRefreshToken });
           }
 
-          const refreshRes = await fetch(`${baseUrl}/api/auth/refresh`, {
-            method: 'POST',
-            headers: refreshHeaders,
-            credentials: isMobile ? 'omit' : 'include',
-            ...(refreshBody ? { body: refreshBody } : {}),
-          });
+          let refreshRes;
+          try {
+            refreshRes = await fetch(`${baseUrl}/api/auth/refresh`, {
+              method: 'POST',
+              headers: refreshHeaders,
+              credentials: isMobile ? 'omit' : 'include',
+              ...(refreshBody ? { body: refreshBody } : {}),
+            });
+          } catch {
+            if (isMobile) {
+              const altUrl = baseUrl.includes('localhost') ? 'http://10.71.104.22:8080' : 'http://localhost:8080';
+              refreshRes = await fetch(`${altUrl}/api/auth/refresh`, {
+                method: 'POST',
+                headers: refreshHeaders,
+                credentials: isMobile ? 'omit' : 'include',
+                ...(refreshBody ? { body: refreshBody } : {}),
+              });
+              activeMobileUrl = altUrl;
+            }
+          }
 
-          if (!refreshRes.ok) throw new Error('Token refresh failed');
+          if (!refreshRes || !refreshRes.ok) throw new Error('Token refresh failed');
           const data = await refreshRes.json();
           const newToken = data?.data?.accessToken;
 
