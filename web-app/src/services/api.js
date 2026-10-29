@@ -1,16 +1,7 @@
 import { isNativeMobile, mobileStorage } from './mobileStorage';
 
 export const getApiBaseUrl = () => {
-  const customUrl = typeof window !== 'undefined' ? localStorage.getItem('octobyte_api_url') : null;
-  if (customUrl) {
-    return customUrl.replace(/\/+$/, '');
-  }
-  if (isNativeMobile()) {
-    // When connected over USB with `adb reverse tcp:8080 tcp:8080`, localhost:8080 reaches the host.
-    // If running over Wi-Fi, set VITE_MOBILE_API_BASE_URL or localStorage 'octobyte_api_url'.
-    return import.meta.env.VITE_MOBILE_API_BASE_URL || 'http://localhost:8080';
-  }
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  return (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 };
 
 let inMemoryToken = null;
