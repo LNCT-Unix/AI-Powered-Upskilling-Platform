@@ -13,7 +13,7 @@ const LEARNER_NAV = [
   { path: '/graph',      label: 'Skill Graph',         icon: FlaskConical },
   { path: '/analytics',  label: 'Progress & Weakness', icon: BarChart2 },
   { path: '/career',     label: 'Careers Hub',         icon: Briefcase },
-  { path: '/projects',   label: 'Profile & Badges',    icon: UserCircle2 },
+  { path: '/projects',   label: 'Profile & Badges',    icon: UserCircle2, badge: 'Soon' },
 ];
 
 function NavItem({ path, label, icon: Icon, badge, onClose }) {

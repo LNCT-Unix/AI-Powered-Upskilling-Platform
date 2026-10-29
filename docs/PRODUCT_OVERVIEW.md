@@ -114,8 +114,8 @@ flowchart TD
 ### Phase 2: Initial Knowledge Assessment
 - **Psychometric Diagnostic Engine:**
   - Item Response Theory (IRT 1-PL Rasch Model): $P_i(\theta) = \frac{1}{1 + e^{-(\theta - b_i)}}$.
-  - Sequential delivery: 5 to 9 questions with step adjustments ($\pm 0.35$ logits).
-  - Early stopping rule: Terminates upon confirmed ability level (`directionChanges >= 2` after minimum 5 questions).
+  - Sequential delivery: 8 to 9 questions with step adjustments ($\pm 0.35$ logits).
+  - Early stopping rule: Terminates upon confirmed ability level (`directionChanges >= 2` after minimum 8 questions).
   - High-performance indexed anti-join queries ensuring fast, deterministic item retrieval.
 - **Post-Assessment Diagnostic Report:**
   - Final ability estimate ($\theta$), competency level (`BEGINNER`, `INTERMEDIATE`, `ADVANCED`), and correct count.

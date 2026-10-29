@@ -11,7 +11,7 @@
 The **Diagnostic Assessment** is powered by an adaptive Computerized Adaptive Testing (CAT) Item Response Theory (1-PL Rasch Model) engine running in the Spring Boot Gateway:
 1. **One Question at a Time:** Questions are fetched sequentially; correct answers are never exposed to the client during active testing.
 2. **Pre-Test Calibration:** During onboarding or before starting the diagnostic, learners select known skills (`knownSkillSlugs`). These declared skills pre-populate the learner's mastered set and calibrate initial difficulty.
-3. **5 to 9 Questions:** The engine dynamically terminates when the learner's level is confirmed (`directionChanges >= 2` after at least 5 questions) or when 9 questions are reached.
+3. **8 to 9 Questions:** The engine dynamically terminates when the learner's level is confirmed (`directionChanges >= 2` after at least 8 questions) or when 9 questions are reached.
 4. **Comprehensive Post-Test Report:** Upon completion, `GET /api/v1/assessments/{id}/report` returns an itemized question review (learner answer, correct answer, tested skill) and the full skill graph with `unlockedSkills`.
 
 ```mermaid

@@ -569,9 +569,9 @@ The platform evaluates learner proficiency using an Item Response Theory (IRT) s
 3. **Adaptive Item Selection**: The backend dynamically queries the unused item pool whose calibrated difficulty is closest to the candidate's current $\theta$.
    - **Direct Indexed Anti-Join:** Candidate selection queries the item pool using an indexed `LEFT JOIN ... WHERE r.id IS NULL` anti-join on sequential responses, ensuring consistent state and zero proxy bypass issues.
 4. **Early Termination Rules**:
-   - Minimum: **5 questions**.
+   - Minimum: **8 questions**.
    - Maximum: **9 questions**.
-   - Stop condition: Once at least 5 questions are answered, if the answers have oscillated direction at least twice (`directionChanges >= 2`), the ability level is confirmed (`LEVEL_CONFIRMED`) and the assessment terminates early.
+   - Stop condition: Once at least 8 questions are answered, if the answers have oscillated direction at least twice (`directionChanges >= 2`), the ability level is confirmed (`LEVEL_CONFIRMED`) and the assessment terminates early.
 5. **Proficiency Levels**:
    - `BEGINNER`: $\theta < -0.5$
    - `INTERMEDIATE`: $-0.5 \le \theta \le 0.75$

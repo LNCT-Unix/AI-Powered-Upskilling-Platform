@@ -128,7 +128,7 @@ Where:
    - Incorrect answer: $\hat{\theta}_{k+1} = \hat{\theta}_k - 0.35$ logits.
 4. **Stopping Criteria:**
    - Maximum items reached: 9 questions (`MAX_ITEMS`).
-   - Ability confirmed: Minimum 5 questions answered (`MIN_ITEMS`) **and** the learner has changed answer direction at least 2 times (`LEVEL_CONFIRMED`).
+   - Ability confirmed: Minimum 8 questions answered (`MIN_ITEMS`) **and** the learner has changed answer direction at least 2 times (`LEVEL_CONFIRMED`).
    - Pool exhaustion: No questions remain (`NO_QUESTIONS_LEFT`).
 5. **Competency Level Assignment:**
    - $\theta < -0.5 \implies$ **BEGINNER**
