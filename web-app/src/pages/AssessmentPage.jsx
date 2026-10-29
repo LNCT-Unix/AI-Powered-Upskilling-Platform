@@ -807,7 +807,7 @@ export default function AssessmentPage() {
             </div>
 
             {/* Stepper Navigation Buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+            <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
               <span className="text-xs text-slate-400">
                 {selectedOption !== null
                   ? `Selected: Option ${String.fromCharCode(65 + selectedOption)}`
