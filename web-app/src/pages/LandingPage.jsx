@@ -225,15 +225,6 @@ export default function LandingPage() {
             >
               See how it works
             </a>
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('octobyte:open-chat'))}
-              className="inline-flex items-center gap-2 rounded-full bg-[#EFEAFC] border border-[#7C5CFA]/30 px-6 py-3.5 text-sm font-bold text-[#6244E8] hover:bg-[#E2D8FA] transition shadow-xs cursor-pointer"
-            >
-              <MessageSquare size={16} />
-              <span>Ask Octo AI</span>
-              <span className="text-base">🐙</span>
-            </button>
           </div>
           <div className="mt-4 text-xs text-slate-500 font-medium">
             Free for learners &middot; Seeded with 56 Backend skills across 9 core clusters &middot; Takes ~4 minutes

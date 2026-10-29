@@ -1077,24 +1077,6 @@
   }
 }
 
-@keyframes confetti-fall {
-  0% {
-    transform: translateY(-20px) rotate(0deg) scale(0.8);
-    opacity: 1;
-  }
-  80% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(260px) rotate(360deg) scale(1);
-    opacity: 0;
-  }
-}
-
-.animate-confetti-particle {
-  animation: confetti-fall 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;
