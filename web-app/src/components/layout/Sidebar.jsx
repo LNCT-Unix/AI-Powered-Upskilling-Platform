@@ -12,7 +12,7 @@ const LEARNER_NAV = [
   { path: '/assessment', label: 'Diagnostic Test',     icon: ClipboardCheck },
   { path: '/graph',      label: 'Skill Graph',         icon: FlaskConical },
   { path: '/analytics',  label: 'Progress & Weakness', icon: BarChart2 },
-  { path: '/career',     label: 'Careers Hub',         icon: Briefcase },
+  { path: '/career',     label: 'Careers Hub',         icon: Briefcase, badge: 'Soon' },
   { path: '/projects',   label: 'Profile & Badges',    icon: UserCircle2, badge: 'Soon' },
 ];
 
