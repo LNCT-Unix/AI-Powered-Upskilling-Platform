@@ -150,9 +150,10 @@ export function buildGraphModel(skills) {
     const skillId = s.skillId ? String(s.skillId) : (s.id ? String(s.id) : null);
     const id = slug || skillId || `skill-${index}`;
 
-    // Map backend state: MASTERED -> unlocked, FRONTIER -> frontier, LOCKED -> locked
-    const rawStatus = String(s.state || 'locked').toLowerCase();
-    const status = rawStatus === 'mastered' ? 'unlocked' : rawStatus;
+    // Map backend state: MASTERED / UNLOCKED -> unlocked (Ready to Learn), all other states -> locked
+    const rawStatus = String(s.state || s.status || 'locked').toLowerCase().trim();
+    const isReady = rawStatus === 'mastered' || rawStatus === 'unlocked' || rawStatus === 'ready to learn' || rawStatus === 'ready';
+    const status = isReady ? 'unlocked' : 'locked';
 
     const nameSlug = toSkillSlug(s.name);
     const prereqRefs = normalizePrereqList(s.prerequisites);
@@ -166,13 +167,8 @@ export function buildGraphModel(skills) {
       label: s.name || s.slug || id,
       cluster: (s.cluster || '').toString() || 'core',
       icon: iconFor(s.name || s.slug || id, clusterTitle(s.cluster)),
-      status: ['unlocked', 'frontier', 'locked'].includes(status) ? status : 'locked',
-      progress:
-        status === 'frontier'
-          ? Math.min(90, Math.max(15, Math.round(Number(s.progress) || 50)))
-          : status === 'unlocked'
-          ? 100
-          : 0,
+      status,
+      progress: status === 'unlocked' ? 100 : 0,
       desc:
         s.description ||
         `${s.name || s.slug || id} competency in ${(s.cluster || 'backend').toString()} — evaluated by the adaptive IRT diagnostic.`,

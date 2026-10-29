@@ -12,10 +12,8 @@
   --sg-faint: #a8a29e;
   --sg-unlocked: #16a34a;
   --sg-unlocked-rgb: 22, 163, 74;
-  --sg-mastered: var(--sg-unlocked);
-  --sg-mastered-rgb: var(--sg-unlocked-rgb);
-  --sg-frontier: #ea580c;
-  --sg-frontier-rgb: 234, 88, 12;
+  --sg-ready: var(--sg-unlocked);
+  --sg-ready-rgb: var(--sg-unlocked-rgb);
   --sg-locked: #a8a29e;
   --sg-locked-rgb: 168, 162, 158;
   --sg-shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05), 0 6px 18px rgba(28, 25, 23, 0.05);
@@ -558,12 +556,8 @@
 }
 
 .sg-arrow-fill-unlocked,
-.sg-arrow-fill-mastered {
+.sg-arrow-fill-ready {
   fill: rgba(var(--sg-unlocked-rgb), 0.6);
-}
-
-.sg-arrow-fill-frontier {
-  fill: rgba(var(--sg-frontier-rgb), 0.9);
 }
 
 .sg-arrow-fill-locked {
@@ -578,16 +572,8 @@
 }
 
 .sg-edge.to-unlocked,
-.sg-edge.to-mastered {
+.sg-edge.to-ready {
   stroke: rgba(var(--sg-unlocked-rgb), 0.45);
-}
-
-.sg-edge.to-frontier {
-  stroke: rgba(var(--sg-frontier-rgb), 0.85);
-  stroke-width: 2.4;
-  stroke-dasharray: 8 7;
-  /* Flow animation capped at 12 iterations (~16 s) instead of infinite */
-  animation: sgEdgeIn 0.7s ease backwards, sgFlow 1.3s linear 12;
 }
 
 .sg-edge.to-locked {
@@ -602,10 +588,6 @@
   stroke-width: 1.6;
   stroke-dasharray: 3 7;
   opacity: 0.42;
-}
-
-.sg-edge.cross.to-frontier {
-  stroke-width: 1.8;
 }
 
 @keyframes sgFlow {
@@ -746,39 +728,8 @@
 }
 
 .sg-node.unlocked .sg-n-sub,
-.sg-node.mastered .sg-n-sub {
+.sg-node.ready .sg-n-sub {
   color: rgba(var(--sg-unlocked-rgb), 0.85);
-}
-
-/* Frontier Node */
-.sg-node.frontier {
-  border-color: rgba(var(--sg-frontier-rgb), 0.5);
-  background: linear-gradient(180deg, #fffdf9, #fff4e6);
-  /* Entrance animation plays once; breathing pulse limited to 3 cycles to save GPU */
-  animation: sgNodeIn 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1) backwards, sgBreathe 2.8s ease-in-out 1s 3;
-}
-
-.sg-node.frontier .sg-n-icon {
-  background: #ffedd5;
-  color: var(--sg-frontier);
-}
-
-.sg-node.frontier .sg-n-state {
-  background: #fed7aa;
-  color: #c2410c;
-}
-
-.sg-node.frontier .sg-n-sub {
-  color: rgba(var(--sg-frontier-rgb), 0.9);
-}
-
-@keyframes sgBreathe {
-  0%, 100% {
-    box-shadow: var(--sg-shadow-sm), 0 0 0 0 rgba(var(--sg-frontier-rgb), 0.22);
-  }
-  50% {
-    box-shadow: var(--sg-shadow-sm), 0 0 0 7px rgba(var(--sg-frontier-rgb), 0);
-  }
 }
 
 /* Locked Node */
@@ -804,10 +755,6 @@
 /* Filter Dimming */
 .sg-stage[data-filter="unlocked"] .sg-node:not(.unlocked):not(.mastered),
 .sg-stage[data-filter="unlocked"] .sg-edge:not(.to-unlocked):not(.to-mastered),
-.sg-stage[data-filter="mastered"] .sg-node:not(.mastered):not(.unlocked),
-.sg-stage[data-filter="mastered"] .sg-edge:not(.to-mastered):not(.to-unlocked),
-.sg-stage[data-filter="frontier"] .sg-node:not(.frontier),
-.sg-stage[data-filter="frontier"] .sg-edge:not(.to-frontier),
 .sg-stage[data-filter="locked"] .sg-node:not(.locked),
 .sg-stage[data-filter="locked"] .sg-edge:not(.to-locked) {
   opacity: 0.12;
@@ -980,14 +927,9 @@
 }
 
 .sg-p-badge.unlocked,
-.sg-p-badge.mastered {
+.sg-p-badge.ready {
   background: #f0fdf4;
   color: var(--sg-unlocked);
-}
-
-.sg-p-badge.frontier {
-  background: #fff3e6;
-  color: var(--sg-frontier);
 }
 
 .sg-p-badge.locked {
@@ -1016,40 +958,6 @@
   font-size: 12.8px;
   line-height: 1.68;
   color: var(--sg-muted);
-}
-
-.sg-prog-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.sg-prog-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--sg-faint);
-  font-weight: 600;
-}
-
-.sg-prog-label span:last-child {
-  color: var(--sg-frontier);
-}
-
-.sg-progress {
-  height: 6px;
-  border-radius: 999px;
-  background: #f0eee9;
-  overflow: hidden;
-}
-
-.sg-progress i {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  width: 0;
-  background: linear-gradient(90deg, #fb923c, #ea580c);
-  transition: width 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .sg-rel h4 {
@@ -1085,9 +993,9 @@
 }
 
 .sg-chips button:hover {
-  border-color: rgba(var(--sg-frontier-rgb), 0.55);
-  color: var(--sg-frontier);
-  background: #fff7ed;
+  border-color: rgba(var(--sg-unlocked-rgb), 0.55);
+  color: var(--sg-unlocked);
+  background: #f0fdf4;
 }
 
 .sg-none {
@@ -1106,8 +1014,8 @@
   font-weight: 650;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(135deg, #fb923c, #ea580c);
-  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.3);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
   transition: all 0.2s;
 }
 

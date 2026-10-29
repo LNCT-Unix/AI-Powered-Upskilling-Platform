@@ -39,7 +39,7 @@ export default function SkillGraphPage() {
             Take Initial Screening Test to Unlock Your Personal Graph
           </h1>
           <p className="mt-3 text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
-            Select your track and familiar skills during onboarding to launch your adaptive diagnostic test. Your personal mastery level and unblocked frontier nodes will be dynamically rendered on this interactive graph.
+            Select your track and familiar skills during onboarding to launch your adaptive diagnostic test. Your personal learning path and competency nodes will be dynamically rendered on this interactive graph.
           </p>
 
           {/* Value cards */}
@@ -60,7 +60,7 @@ export default function SkillGraphPage() {
                 <span className="text-xs font-bold text-slate-900">Adaptive Calibration</span>
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                Uses 1D Item Response Theory to classify skills into Mastered, Frontier, and Locked states.
+                Uses 1D Item Response Theory to classify skills into Ready to Learn and Locked states.
               </p>
             </div>
 
@@ -96,13 +96,6 @@ export default function SkillGraphPage() {
         <div className="flex items-center gap-2 text-xs">
           <span className="font-bold text-slate-800">
             {assessmentResult?.level ? `${assessmentResult.level} Learner Graph` : 'Calibrated Skill Graph'}
-          </span>
-          <span className="text-slate-300">•</span>
-          <span className="text-emerald-700 bg-emerald-50 border border-emerald-100 font-semibold px-2 py-0.5 rounded-full text-[11px]">
-            {skills.filter((s) => s.state === 'MASTERED').length} Mastered
-          </span>
-          <span className="text-indigo-700 bg-indigo-50 border border-indigo-100 font-semibold px-2 py-0.5 rounded-full text-[11px]">
-            {skills.filter((s) => s.state === 'FRONTIER').length} Frontier
           </span>
         </div>
 
