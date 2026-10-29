@@ -145,6 +145,27 @@ export default function AssessmentPage() {
 
     async function loadInitialAssessment() {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAssessmentId = urlParams.get('id');
+
+        // 0. If a specific assessment ID is requested via URL query param (e.g. from Test History)
+        if (urlAssessmentId) {
+          setPreparingReport(true);
+          try {
+            const report = await fetchFinalReport(urlAssessmentId);
+            if (ignore) return;
+            setResult(report);
+            sessionStorage.setItem(ASSESSMENT_ID_KEY, urlAssessmentId);
+            localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+            setLoading(false);
+            return;
+          } catch (err) {
+            console.warn('Unable to load assessment from URL parameter:', err);
+          } finally {
+            if (!ignore) setPreparingReport(false);
+          }
+        }
+
         const savedId = sessionStorage.getItem(ASSESSMENT_ID_KEY);
 
         // 1. If an assessment ID is in session, attempt to resume it
