@@ -84,7 +84,7 @@ export default function DashboardPage() {
       <div className="flex-1 min-w-0 p-4 sm:p-7 space-y-6">
 
         {/* ── Landing Page Themed Hero Welcome Banner ── */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFFDF7] via-[#F8F3E8] to-[#EFEAFC]/70 p-6 sm:p-8 border border-[#E8E0CC] shadow-xs">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFFDF7] via-[#F8F3E8] to-[#EFEAFC]/70 p-5 sm:p-8 border border-[#E8E0CC] shadow-xs">
           {/* Subtle decorative circles */}
           <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-[#FF9838]/12 blur-2xl pointer-events-none" />
           <div className="absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-[#7C5CFA]/12 blur-xl pointer-events-none" />
@@ -92,10 +92,10 @@ export default function DashboardPage() {
           <div className="relative z-10 max-w-xl">
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#2F2A3E] tracking-tight leading-tight">
-              <span className="flex items-center gap-3">
-                <UserAvatar user={user} size="md" className="border-2 border-white shadow-xs inline-flex" />
-                <span>{greeting}, {firstName}!</span>
+              <span className="hidden lg:inline-flex items-center mr-3">
+                <UserAvatar user={user} size="md" className="border-2 border-white shadow-xs" />
               </span>
+              <span>{greeting}, {firstName}!</span>
             </h1>
 
             <p className="mt-2 text-xs sm:text-sm text-[#6E6880] leading-relaxed max-w-lg">
