@@ -46,7 +46,7 @@ export default function DashboardShell() {
       {/* Main area */}
       <div className="min-w-0 flex-1 flex flex-col">
         {/* ── Top bar ── matching Landing Page aesthetic ─────── */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E8E0CC] px-4 py-3 sm:px-8 gap-4 bg-[#F7F3E8]/90 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E8E0CC] px-4 py-2.5 sm:py-3 sm:px-8 gap-4 bg-[#F7F3E8]/95 backdrop-blur-md pt-[max(env(safe-area-inset-top),0.625rem)]">
           {/* Left: mobile hamburger + search */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
