@@ -205,20 +205,6 @@ export default function AuthView({ initialMode = 'login' }) {
 
   return (
     <div className="auth-container">
-      {isNativeMobile() && (
-        <button
-          type="button"
-          onClick={() => setServerModalOpen(true)}
-          className="fixed top-3 right-3 z-50 rounded-full p-2 bg-white/80 backdrop-blur-md border border-[#E8E0CC] text-slate-600 shadow-md sm:hidden"
-          aria-label="Server Settings"
-        >
-          <Server size={16} />
-        </button>
-      )}
-      <ServerSwitcherModal
-        isOpen={serverModalOpen}
-        onClose={() => setServerModalOpen(false)}
-      />
       {/* ================= LEFT · ART ================= */}
       <aside className="auth-art">
         <div className="auth-glow auth-glow-a"></div>
