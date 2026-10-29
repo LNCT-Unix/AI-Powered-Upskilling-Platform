@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { buildGraphModel, computeLayout, clusterTitle, clusterHue } from './graphModel';
+import { buildGraphModel, computeLayout, clusterTitle, clusterHue, toSkillSlug } from './graphModel';
+import SkillQuizModal from './SkillQuizModal';
 import '../../pages/SkillGraphPage.css';
 
 /* ================= Inline SVG Icons matching the prototype ================= */
@@ -134,13 +135,13 @@ const ICONS = {
    SkillNode — memoized so it only re-renders when its own props
    change, not when any other node is hovered / selected.
    =============================================================== */
-const SkillNode = memo(function SkillNode({ n, isSelected, isDim, subText, onClick, onMouseEnter, onMouseLeave, onKeyDown, animDelay }) {
+const SkillNode = memo(function SkillNode({ n, isSelected, isDim, isJustUnlocked, subText, onClick, onMouseEnter, onMouseLeave, onKeyDown, animDelay }) {
   const isUnlocked = n.status === 'unlocked' || n.status === 'mastered';
   const stateIcon = isUnlocked ? 'check' : 'lock';
   const statusClass = isUnlocked ? 'unlocked' : 'locked';
   return (
     <div
-      className={`sg-node ${statusClass}${isSelected ? ' active' : ''}${isDim ? ' dim' : ''}`}
+      className={`sg-node ${statusClass}${isSelected ? ' active' : ''}${isDim ? ' dim' : ''}${isJustUnlocked ? ' just-unlocked' : ''}`}
       style={{ left: `${n.x}px`, top: `${n.y}px`, animationDelay: animDelay }}
       tabIndex={0}
       role="button"
@@ -160,7 +161,15 @@ const SkillNode = memo(function SkillNode({ n, isSelected, isDim, subText, onCli
   );
 });
 
-export default function InteractiveSkillGraph({ skills = [], height = 480, showHeader = false, initialCluster = null }) {
+export default function InteractiveSkillGraph({ skills = [], height = 480, showHeader = false, initialCluster = null, onSkillUnlocked = null }) {
+  const [liveSkills, setLiveSkills] = useState(skills);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [quizNode, setQuizNode] = useState(null);
+  const [recentlyUnlockedId, setRecentlyUnlockedId] = useState(null);
+
+  useEffect(() => {
+    setLiveSkills(skills);
+  }, [skills]);
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -195,7 +204,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
   }, []);
 
   // Build the graph model, then lay out the cluster sub-graphs (islands)
-  const graph = useMemo(() => buildGraphModel(skills), [skills]);
+  const graph = useMemo(() => buildGraphModel(liveSkills), [liveSkills]);
 
   // Extract available cluster modules
   const clusterOptions = useMemo(() => {
@@ -237,6 +246,69 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
       return isChecked ? prev.filter((k) => k !== clusterKey) : [...prev, clusterKey];
     });
   }, []);
+
+  const handleQuizSuccess = useCallback((quizResult) => {
+    const unlockedSlug = quizResult?.skillSlug || quizNode?.slug || quizNode?.id;
+    if (!unlockedSlug) return;
+
+    // 1. Update localStorage
+    try {
+      const raw = localStorage.getItem('skillpath_assessment_result');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const skillList = Array.isArray(parsed) ? parsed : (parsed.skills || []);
+        const updatedList = skillList.map((s) => {
+          const sSlug = s.slug || toSkillSlug(s.name);
+          if (sSlug === unlockedSlug || s.id === unlockedSlug || s.skillId === unlockedSlug) {
+            return { ...s, state: 'READY_TO_LEARN', status: 'unlocked' };
+          }
+          return s;
+        });
+
+        if (Array.isArray(parsed)) {
+          localStorage.setItem('skillpath_assessment_result', JSON.stringify(updatedList));
+        } else {
+          parsed.skills = updatedList;
+          if (Array.isArray(parsed.unlockedSkills)) {
+            const alreadyInUnlocked = parsed.unlockedSkills.some(
+              (u) => (u.slug || toSkillSlug(u.name)) === unlockedSlug
+            );
+            if (!alreadyInUnlocked) {
+              const newlyUnlocked = updatedList.find(
+                (s) => (s.slug || toSkillSlug(s.name)) === unlockedSlug
+              );
+              if (newlyUnlocked) parsed.unlockedSkills.push(newlyUnlocked);
+            }
+          }
+          localStorage.setItem('skillpath_assessment_result', JSON.stringify(parsed));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to update localStorage assessment result', err);
+    }
+
+    // 2. Update local state so graph reacts immediately
+    setLiveSkills((prev) =>
+      prev.map((s) => {
+        const sSlug = s.slug || toSkillSlug(s.name);
+        if (sSlug === unlockedSlug || s.id === unlockedSlug || s.skillId === unlockedSlug) {
+          return { ...s, state: 'READY_TO_LEARN', status: 'unlocked' };
+        }
+        return s;
+      })
+    );
+
+    // 3. Trigger visual celebratory pulse on the canvas node
+    setRecentlyUnlockedId(unlockedSlug);
+    setTimeout(() => {
+      setRecentlyUnlockedId(null);
+    }, 2500);
+
+    // 4. Notify parent callback if provided
+    if (onSkillUnlocked) {
+      onSkillUnlocked(unlockedSlug, quizResult);
+    }
+  }, [quizNode, onSkillUnlocked]);
 
   const handleEnsureClusterVisible = useCallback((clusterKey) => {
     userSelectedClusterRef.current = true;
@@ -663,6 +735,7 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                   n={n}
                   isSelected={isSelected}
                   isDim={!!isDim}
+                  isJustUnlocked={Boolean(recentlyUnlockedId && (n.id === recentlyUnlockedId || n.slug === recentlyUnlockedId))}
                   subText={subText}
                   animDelay={`${Math.min((n.layer || 0) * 110, 700) + (i % 5) * 70}ms`}
                   onClick={() => handleNodeClick(n.id)}
@@ -811,7 +884,12 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
               <button
                 className={`sg-p-cta ${selectedNode.status === 'unlocked' || selectedNode.status === 'mastered' ? 'unlocked' : 'locked'}`}
                 onClick={() => {
-                  navigate(selectedNode.status === 'locked' ? '/assessment' : '/roadmap');
+                  if (selectedNode.status === 'locked') {
+                    setQuizNode(selectedNode);
+                    setIsQuizModalOpen(true);
+                  } else {
+                    navigate('/roadmap');
+                  }
                 }}
               >
                 {selectedNode.status === 'unlocked' || selectedNode.status === 'mastered'
@@ -821,6 +899,14 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
             </>
           )}
         </aside>
+
+        {/* 5-Question Node Unlock Quiz Modal */}
+        <SkillQuizModal
+          isOpen={isQuizModalOpen}
+          onClose={() => setIsQuizModalOpen(false)}
+          node={quizNode}
+          onSuccess={handleQuizSuccess}
+        />
       </div>
     </div>
   );

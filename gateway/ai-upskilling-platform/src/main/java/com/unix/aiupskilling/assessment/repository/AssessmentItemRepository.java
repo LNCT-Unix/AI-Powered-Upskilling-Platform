@@ -1,6 +1,7 @@
 package com.unix.aiupskilling.assessment.repository;
 
 import com.unix.aiupskilling.assessment.model.entity.AssessmentItem;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
@@ -14,6 +15,16 @@ public interface AssessmentItemRepository extends JpaRepository<AssessmentItem, 
      * Loads all ACTIVE items for a track ordered by difficulty.
      */
     List<AssessmentItem> findByTrackIdAndStatusOrderByDifficultyAsc(UUID trackId, String status);
+
+    /**
+     * Loads active items associated with a particular skill slug.
+     */
+    List<AssessmentItem> findBySkillSlugAndStatus(String skillSlug, String status);
+
+    /**
+     * Loads active items associated with any of the specified skill slugs.
+     */
+    List<AssessmentItem> findBySkillSlugInAndStatus(Collection<String> skillSlugs, String status);
 
     /**
      * The unused ACTIVE question of a track whose difficulty is closest to the current theta.

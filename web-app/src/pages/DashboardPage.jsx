@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -20,6 +20,7 @@ import {
 import Button from '../components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
 import InteractiveSkillGraph from '../components/graph/InteractiveSkillGraph';
+import UserAvatar from '../components/ui/UserAvatar';
 
 /* ── Pretty Stat Card matching Landing Page ───────────────── */
 function StatCard({ label, value, sub, icon: Icon, badgeBg, iconColor, onClick }) {
@@ -46,14 +47,14 @@ export default function DashboardPage() {
   const { user } = useAuth();
 
   // Load real assessment results from localStorage
-  const assessmentResult = useMemo(() => {
+  const [assessmentResult, setAssessmentResult] = useState(() => {
     try {
       const raw = localStorage.getItem('skillpath_assessment_result');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
-  }, []);
+  });
 
   const skills = useMemo(() => {
     return assessmentResult?.skills || [];
@@ -108,7 +109,10 @@ export default function DashboardPage() {
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#2F2A3E] tracking-tight leading-tight">
-              {greeting}, {firstName}!
+              <span className="flex items-center gap-3">
+                <UserAvatar user={user} size="md" className="border-2 border-white shadow-xs inline-flex" />
+                <span>{greeting}, {firstName}!</span>
+              </span>
             </h1>
 
             <p className="mt-2 text-xs sm:text-sm text-[#6E6880] leading-relaxed max-w-lg">
@@ -226,7 +230,19 @@ export default function DashboardPage() {
                   <p className="text-xs text-[#6E6880] mt-0.5">Topological Competency Flow &amp; Dependency Prerequisite Tree</p>
                 </div>
               </div>
-              <InteractiveSkillGraph skills={skills} height={480} showHeader={false} />
+              <InteractiveSkillGraph
+                skills={skills}
+                height={480}
+                showHeader={false}
+                onSkillUnlocked={() => {
+                  try {
+                    const raw = localStorage.getItem('skillpath_assessment_result');
+                    if (raw) setAssessmentResult(JSON.parse(raw));
+                  } catch {
+                    // ignore
+                  }
+                }}
+              />
             </div>
 
             {/* ── Verified Competencies Grid ── */}

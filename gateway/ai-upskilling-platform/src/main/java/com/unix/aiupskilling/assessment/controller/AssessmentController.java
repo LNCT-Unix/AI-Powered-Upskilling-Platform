@@ -108,6 +108,28 @@ public class AssessmentController {
         return service.report(userId(auth), id);
     }
 
+    // ---------- 5-question node unlock quiz ----------
+
+    /**
+     * Serves 5 questions all together directly to test competency for a specific node on the graph.
+     * Withholds the correct answers from the response payload.
+     */
+    @GetMapping("/skills/{skillSlug}/quiz")
+    public SkillQuizResponse getSkillQuiz(@PathVariable String skillSlug) {
+        return service.getQuizForSkill(skillSlug);
+    }
+
+    /**
+     * Evaluates the 5 submitted answers for a skill quiz.
+     * If the user answers at least 3/5 correctly, marks the node as ready to learn and unlocks it.
+     */
+    @PostMapping("/skills/{skillSlug}/quiz/submit")
+    public SkillQuizResult submitSkillQuiz(Authentication auth,
+                                           @PathVariable String skillSlug,
+                                           @Valid @RequestBody SkillQuizSubmission submission) {
+        return service.submitQuizForSkill(userId(auth), skillSlug, submission);
+    }
+
     // ---------- auth helper ----------
 
     /**

@@ -22,6 +22,12 @@ public interface SkillRepository extends JpaRepository<Skill, UUID> {
     /** Find a skill by track and slug (e.g. for known-skills onboarding lookup). */
     Optional<Skill> findByTrackIdAndSlug(UUID trackId, String slug);
 
+    /** Find a skill by its unique slug across tracks. */
+    Optional<Skill> findFirstBySlug(String slug);
+
+    /** Find all skills in a specific track and cluster (e.g. for quiz question pooling). */
+    List<Skill> findByTrackIdAndCluster(UUID trackId, String cluster);
+
     /** Find all skills matching a set of slugs within a track. */
     @Query("SELECT s FROM Skill s WHERE s.trackId = :trackId AND s.slug IN :slugs")
     List<Skill> findByTrackIdAndSlugIn(@Param("trackId") UUID trackId, @Param("slugs") List<String> slugs);

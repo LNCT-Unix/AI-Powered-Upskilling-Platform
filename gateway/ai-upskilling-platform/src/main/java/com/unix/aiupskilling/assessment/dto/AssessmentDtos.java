@@ -332,4 +332,152 @@ public final class AssessmentDtos {
         public List<SkillResult> getSkills() { return skills; }
         public List<SkillResult> getUnlockedSkills() { return unlockedSkills; }
     }
+
+    // ---------- 5-question node unlock quiz ----------
+
+    /** One question in the 5-question unlock quiz (correct answer is excluded). */
+    public static class SkillQuizQuestion {
+        private final UUID itemId;
+        private final int questionNumber;
+        private final String stem;
+        private final List<String> options;
+
+        public SkillQuizQuestion(UUID itemId, int questionNumber, String stem, List<String> options) {
+            this.itemId = itemId;
+            this.questionNumber = questionNumber;
+            this.stem = stem;
+            this.options = options;
+        }
+
+        public UUID getItemId() { return itemId; }
+        public int getQuestionNumber() { return questionNumber; }
+        public String getStem() { return stem; }
+        public List<String> getOptions() { return options; }
+    }
+
+    /** The 5 questions served all together directly for a skill node. */
+    public static class SkillQuizResponse {
+        private final String skillSlug;
+        private final String skillName;
+        private final int totalQuestions;
+        private final int passingScore;
+        private final List<SkillQuizQuestion> questions;
+
+        public SkillQuizResponse(String skillSlug, String skillName, int totalQuestions,
+                                 int passingScore, List<SkillQuizQuestion> questions) {
+            this.skillSlug = skillSlug;
+            this.skillName = skillName;
+            this.totalQuestions = totalQuestions;
+            this.passingScore = passingScore;
+            this.questions = questions;
+        }
+
+        public String getSkillSlug() { return skillSlug; }
+        public String getSkillName() { return skillName; }
+        public int getTotalQuestions() { return totalQuestions; }
+        public int getPassingScore() { return passingScore; }
+        public List<SkillQuizQuestion> getQuestions() { return questions; }
+    }
+
+    /** One answer in a quiz submission. */
+    public static class SkillQuizAnswer {
+        @NotNull
+        private UUID itemId;
+        @NotNull
+        private Integer selectedOption;
+
+        public SkillQuizAnswer() {}
+
+        public SkillQuizAnswer(UUID itemId, Integer selectedOption) {
+            this.itemId = itemId;
+            this.selectedOption = selectedOption;
+        }
+
+        public UUID getItemId() { return itemId; }
+        public void setItemId(UUID itemId) { this.itemId = itemId; }
+        public Integer getSelectedOption() { return selectedOption; }
+        public void setSelectedOption(Integer selectedOption) { this.selectedOption = selectedOption; }
+    }
+
+    /** Request body to submit answers for the 5-question unlock quiz. */
+    public static class SkillQuizSubmission {
+        private UUID assessmentId;
+        @NotNull
+        private List<SkillQuizAnswer> answers = new ArrayList<>();
+
+        public SkillQuizSubmission() {}
+
+        public SkillQuizSubmission(UUID assessmentId, List<SkillQuizAnswer> answers) {
+            this.assessmentId = assessmentId;
+            this.answers = answers != null ? answers : new ArrayList<>();
+        }
+
+        public UUID getAssessmentId() { return assessmentId; }
+        public void setAssessmentId(UUID assessmentId) { this.assessmentId = assessmentId; }
+        public List<SkillQuizAnswer> getAnswers() { return answers; }
+        public void setAnswers(List<SkillQuizAnswer> answers) {
+            this.answers = answers != null ? answers : new ArrayList<>();
+        }
+    }
+
+    /** Individual question review inside quiz result. */
+    public static class QuestionReviewItem {
+        private final UUID itemId;
+        private final String stem;
+        private final List<String> options;
+        private final int selectedOption;
+        private final int correctOption;
+        private final boolean correct;
+
+        public QuestionReviewItem(UUID itemId, String stem, List<String> options,
+                                  int selectedOption, int correctOption, boolean correct) {
+            this.itemId = itemId;
+            this.stem = stem;
+            this.options = options;
+            this.selectedOption = selectedOption;
+            this.correctOption = correctOption;
+            this.correct = correct;
+        }
+
+        public UUID getItemId() { return itemId; }
+        public String getStem() { return stem; }
+        public List<String> getOptions() { return options; }
+        public int getSelectedOption() { return selectedOption; }
+        public int getCorrectOption() { return correctOption; }
+        public boolean isCorrect() { return correct; }
+    }
+
+    /** Evaluation result of the 5-question unlock quiz. */
+    public static class SkillQuizResult {
+        private final boolean passed;
+        private final int score;
+        private final int total;
+        private final int passingScore;
+        private final String skillSlug;
+        private final String newState; // READY_TO_LEARN or LOCKED
+        private final String message;
+        private final List<QuestionReviewItem> breakdown;
+
+        public SkillQuizResult(boolean passed, int score, int total, int passingScore,
+                               String skillSlug, String newState, String message,
+                               List<QuestionReviewItem> breakdown) {
+            this.passed = passed;
+            this.score = score;
+            this.total = total;
+            this.passingScore = passingScore;
+            this.skillSlug = skillSlug;
+            this.newState = newState;
+            this.message = message;
+            this.breakdown = breakdown;
+        }
+
+        public boolean isPassed() { return passed; }
+        public int getScore() { return score; }
+        public int getTotal() { return total; }
+        public int getPassingScore() { return passingScore; }
+        public String getSkillSlug() { return skillSlug; }
+        public String getNewState() { return newState; }
+        public String getMessage() { return message; }
+        public List<QuestionReviewItem> getBreakdown() { return breakdown; }
+    }
 }

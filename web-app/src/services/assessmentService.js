@@ -162,4 +162,41 @@ export const assessmentService = {
       method: 'GET',
     });
   },
+
+  /**
+   * Fetch 5 questions served all together directly to unlock a specific skill node.
+   * Endpoint: GET /api/v1/assessments/skills/{skillSlug}/quiz
+   * @param {string} skillSlug - Human-readable unique skill slug (e.g. 'sql-joins-aggregation').
+   * @returns {Promise<{skillSlug: string, skillName: string, totalQuestions: number, passingScore: number, questions: Array<{itemId: string, questionNumber: number, stem: string, options: string[]}>}>}
+   */
+  async getSkillQuiz(skillSlug) {
+    if (!skillSlug) {
+      throw new Error('Skill slug is required');
+    }
+    return apiClient(`/api/v1/assessments/skills/${encodeURIComponent(skillSlug)}/quiz`, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Submit all 5 answers for a skill unlock quiz.
+   * If the user answers at least 3/5 correctly, the node is marked as ready to learn and unlocked.
+   * Endpoint: POST /api/v1/assessments/skills/{skillSlug}/quiz/submit
+   * @param {string} skillSlug - Skill slug being unlocked.
+   * @param {Array<{itemId: string, selectedOption: number}>} answers - List of 5 answers.
+   * @param {string|null} [assessmentId=null] - Optional current assessment ID.
+   * @returns {Promise<{passed: boolean, score: number, total: number, passingScore: number, skillSlug: string, newState: string, message: string, breakdown: Array}>}
+   */
+  async submitSkillQuiz(skillSlug, answers, assessmentId = null) {
+    if (!skillSlug) {
+      throw new Error('Skill slug is required');
+    }
+    return apiClient(`/api/v1/assessments/skills/${encodeURIComponent(skillSlug)}/quiz/submit`, {
+      method: 'POST',
+      body: {
+        assessmentId,
+        answers: Array.isArray(answers) ? answers : [],
+      },
+    });
+  },
 };

@@ -452,4 +452,212 @@ class AssessmentEndpointIntegrationTest {
             assertThat(unlockedNode.get("state").asText()).isNotEqualTo("LOCKED");
         }
     }
+
+    @Test
+    @DisplayName("Initial track assessment concludes at 8 questions when level is confirmed (never fewer)")
+    void testAssessmentConcludesAt8QuestionsWhenLevelConfirmed() throws Exception {
+        StartRequest request = new StartRequest(activeTrack.getId());
+        MvcResult startResult = mockMvc.perform(post("/api/v1/assessments")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        var stateJson = objectMapper.readTree(startResult.getResponse().getContentAsString());
+        String assessmentId = stateJson.get("assessmentId").asText();
+
+        for (int i = 0; i < 7; i++) {
+            String currentItemId = stateJson.get("question").get("itemId").asText();
+            AssessmentItem item = itemRepo.findById(UUID.fromString(currentItemId)).orElseThrow();
+            int selectedOption = (i % 2 == 0) ? item.getCorrectOption() : (item.getCorrectOption() + 1) % 4;
+
+            MvcResult answerResult = mockMvc.perform(post("/api/v1/assessments/" + assessmentId + "/responses")
+                            .header("Authorization", "Bearer " + userToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new AnswerRequest(UUID.fromString(currentItemId), selectedOption))))
+                    .andExpect(status().isOk())
+                    .andReturn();
+
+            stateJson = objectMapper.readTree(answerResult.getResponse().getContentAsString());
+            assertThat(stateJson.get("done").asBoolean()).isFalse();
+            assertThat(stateJson.get("answered").asInt()).isEqualTo(i + 1);
+        }
+
+        String currentItemId8 = stateJson.get("question").get("itemId").asText();
+        AssessmentItem item8 = itemRepo.findById(UUID.fromString(currentItemId8)).orElseThrow();
+        int selectedOption8 = item8.getCorrectOption();
+
+        MvcResult finalResult = mockMvc.perform(post("/api/v1/assessments/" + assessmentId + "/responses")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AnswerRequest(UUID.fromString(currentItemId8), selectedOption8))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var finalJson = objectMapper.readTree(finalResult.getResponse().getContentAsString());
+        assertThat(finalJson.get("done").asBoolean()).isTrue();
+        assertThat(finalJson.get("status").asText()).isEqualTo("COMPLETED");
+        assertThat(finalJson.get("answered").asInt()).isEqualTo(8);
+
+        mockMvc.perform(get("/api/v1/assessments/" + assessmentId + "/report")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.answered").value(8))
+                .andExpect(jsonPath("$.stopReason").value("LEVEL_CONFIRMED"));
+    }
+
+    @Test
+    @DisplayName("Initial track assessment concludes at 9 questions when direction changes < 2")
+    void testAssessmentConcludesAt9QuestionsWhenDirectionChangesLessThan2() throws Exception {
+        StartRequest request = new StartRequest(activeTrack.getId());
+        MvcResult startResult = mockMvc.perform(post("/api/v1/assessments")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        var stateJson = objectMapper.readTree(startResult.getResponse().getContentAsString());
+        String assessmentId = stateJson.get("assessmentId").asText();
+
+        for (int i = 0; i < 8; i++) {
+            String currentItemId = stateJson.get("question").get("itemId").asText();
+            AssessmentItem item = itemRepo.findById(UUID.fromString(currentItemId)).orElseThrow();
+
+            MvcResult answerResult = mockMvc.perform(post("/api/v1/assessments/" + assessmentId + "/responses")
+                            .header("Authorization", "Bearer " + userToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new AnswerRequest(UUID.fromString(currentItemId), item.getCorrectOption()))))
+                    .andExpect(status().isOk())
+                    .andReturn();
+
+            stateJson = objectMapper.readTree(answerResult.getResponse().getContentAsString());
+            assertThat(stateJson.get("done").asBoolean()).isFalse();
+            assertThat(stateJson.get("answered").asInt()).isEqualTo(i + 1);
+        }
+
+        String currentItemId9 = stateJson.get("question").get("itemId").asText();
+        AssessmentItem item9 = itemRepo.findById(UUID.fromString(currentItemId9)).orElseThrow();
+
+        MvcResult finalResult = mockMvc.perform(post("/api/v1/assessments/" + assessmentId + "/responses")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AnswerRequest(UUID.fromString(currentItemId9), item9.getCorrectOption()))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var finalJson = objectMapper.readTree(finalResult.getResponse().getContentAsString());
+        assertThat(finalJson.get("done").asBoolean()).isTrue();
+        assertThat(finalJson.get("status").asText()).isEqualTo("COMPLETED");
+        assertThat(finalJson.get("answered").asInt()).isEqualTo(9);
+
+        mockMvc.perform(get("/api/v1/assessments/" + assessmentId + "/report")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.answered").value(9))
+                .andExpect(jsonPath("$.stopReason").value("MAX_ITEMS"));
+    }
+    @Test
+    @DisplayName("GET /api/v1/assessments/skills/{slug}/quiz - serves 5 questions directly without answers")
+    void testGetSkillQuiz() throws Exception {
+        mockMvc.perform(get("/api/v1/assessments/skills/core-fundamentals/quiz")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.skillSlug").value("core-fundamentals"))
+                .andExpect(jsonPath("$.skillName").value("Core Fundamentals"))
+                .andExpect(jsonPath("$.totalQuestions").value(5))
+                .andExpect(jsonPath("$.passingScore").value(3))
+                .andExpect(jsonPath("$.questions").isArray())
+                .andExpect(jsonPath("$.questions.length()").value(5))
+                .andExpect(jsonPath("$.questions[0].itemId").isNotEmpty())
+                .andExpect(jsonPath("$.questions[0].stem").isNotEmpty())
+                .andExpect(jsonPath("$.questions[0].options").isArray())
+                .andExpect(jsonPath("$.questions[0].correctOption").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/assessments/skills/{slug}/quiz/submit - passes when score >= 3/5 and unlocks node")
+    void testSubmitSkillQuiz_Pass() throws Exception {
+        // 1. Get 5 questions
+        MvcResult quizResult = mockMvc.perform(get("/api/v1/assessments/skills/core-fundamentals/quiz")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var quizJson = objectMapper.readTree(quizResult.getResponse().getContentAsString());
+        var questionsArray = quizJson.get("questions");
+
+        // 2. Prepare 5 answers: answer at least 4 correctly using known correctOption from poolItems
+        Map<UUID, Integer> correctAnswers = new HashMap<>();
+        for (AssessmentItem item : poolItems) {
+            correctAnswers.put(item.getId(), item.getCorrectOption());
+        }
+
+        List<AssessmentDtos.SkillQuizAnswer> answers = new ArrayList<>();
+        for (int i = 0; i < questionsArray.size(); i++) {
+            UUID itemId = UUID.fromString(questionsArray.get(i).get("itemId").asText());
+            int correctChoice = correctAnswers.getOrDefault(itemId, 0);
+            // 4 correct, 1 wrong
+            int choice = (i < 4) ? correctChoice : (correctChoice + 1) % 4;
+            answers.add(new AssessmentDtos.SkillQuizAnswer(itemId, choice));
+        }
+
+        AssessmentDtos.SkillQuizSubmission submission = new AssessmentDtos.SkillQuizSubmission(null, answers);
+
+        // 3. Submit
+        mockMvc.perform(post("/api/v1/assessments/skills/core-fundamentals/quiz/submit")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(submission)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.passed").value(true))
+                .andExpect(jsonPath("$.score").value(4))
+                .andExpect(jsonPath("$.total").value(5))
+                .andExpect(jsonPath("$.passingScore").value(3))
+                .andExpect(jsonPath("$.newState").value("READY_TO_LEARN"))
+                .andExpect(jsonPath("$.breakdown").isArray())
+                .andExpect(jsonPath("$.breakdown.length()").value(5));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/assessments/skills/{slug}/quiz/submit - fails when score < 3/5 and keeps node locked")
+    void testSubmitSkillQuiz_Fail() throws Exception {
+        // 1. Get 5 questions
+        MvcResult quizResult = mockMvc.perform(get("/api/v1/assessments/skills/core-fundamentals/quiz")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var quizJson = objectMapper.readTree(quizResult.getResponse().getContentAsString());
+        var questionsArray = quizJson.get("questions");
+
+        // 2. Prepare 5 wrong answers
+        Map<UUID, Integer> correctAnswers = new HashMap<>();
+        for (AssessmentItem item : poolItems) {
+            correctAnswers.put(item.getId(), item.getCorrectOption());
+        }
+
+        List<AssessmentDtos.SkillQuizAnswer> answers = new ArrayList<>();
+        for (int i = 0; i < questionsArray.size(); i++) {
+            UUID itemId = UUID.fromString(questionsArray.get(i).get("itemId").asText());
+            int correctChoice = correctAnswers.getOrDefault(itemId, 0);
+            int wrongChoice = (correctChoice + 1) % 4;
+            answers.add(new AssessmentDtos.SkillQuizAnswer(itemId, wrongChoice));
+        }
+
+        AssessmentDtos.SkillQuizSubmission submission = new AssessmentDtos.SkillQuizSubmission(null, answers);
+
+        // 3. Submit
+        mockMvc.perform(post("/api/v1/assessments/skills/core-fundamentals/quiz/submit")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(submission)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.passed").value(false))
+                .andExpect(jsonPath("$.score").value(0))
+                .andExpect(jsonPath("$.total").value(5))
+                .andExpect(jsonPath("$.passingScore").value(3))
+                .andExpect(jsonPath("$.newState").value("LOCKED"));
+    }
 }

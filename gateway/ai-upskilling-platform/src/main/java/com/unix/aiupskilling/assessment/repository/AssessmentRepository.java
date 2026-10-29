@@ -12,4 +12,10 @@ public interface AssessmentRepository extends JpaRepository<Assessment, UUID> {
 
     /** Used by start(): an unfinished test for this user and track, if any. */
     Optional<Assessment> findFirstByUserIdAndTrackIdAndStatus(UUID userId, UUID trackId, String status);
+
+    /** Most recent finished assessment for user and track. */
+    Optional<Assessment> findFirstByUserIdAndTrackIdOrderByCompletedAtDesc(UUID userId, UUID trackId);
+
+    /** Most recent finished assessment for user. */
+    Optional<Assessment> findFirstByUserIdOrderByCompletedAtDesc(UUID userId);
 }

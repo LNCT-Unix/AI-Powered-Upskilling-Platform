@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GitFork, Sparkles, ArrowRight, Compass, CheckCircle2 } from 'lucide-react';
 import Button from '../components/ui/Button';
@@ -8,14 +8,14 @@ import './SkillGraphPage.css';
 export default function SkillGraphPage() {
   const navigate = useNavigate();
 
-  const assessmentResult = useMemo(() => {
+  const [assessmentResult, setAssessmentResult] = useState(() => {
     try {
       const raw = localStorage.getItem('skillpath_assessment_result');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
-  }, []);
+  });
 
   const skills = useMemo(() => {
     if (!assessmentResult) return [];
@@ -120,7 +120,19 @@ export default function SkillGraphPage() {
       </div>
 
       <div className="flex-1 overflow-hidden relative">
-        <InteractiveSkillGraph skills={skills} height="100%" showHeader={true} />
+        <InteractiveSkillGraph
+          skills={skills}
+          height="100%"
+          showHeader={true}
+          onSkillUnlocked={() => {
+            try {
+              const raw = localStorage.getItem('skillpath_assessment_result');
+              if (raw) setAssessmentResult(JSON.parse(raw));
+            } catch {
+              // ignore
+            }
+          }}
+        />
       </div>
     </div>
   );

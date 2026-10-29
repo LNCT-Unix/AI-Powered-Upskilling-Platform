@@ -18,6 +18,8 @@ import com.unix.aiupskilling.assessment.repository.TrackRepository;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +58,7 @@ public class AssessmentService {
 
     private static final Logger log = LoggerFactory.getLogger(AssessmentService.class);
 
-    private static final int MIN_ITEMS = 5;
+    private static final int MIN_ITEMS = 8;
     private static final int MAX_ITEMS = 9;
     private static final double START_DIFFICULTY = 0.0;
     private static final double STEP = 0.35;
@@ -268,6 +270,206 @@ public class AssessmentService {
                 a.getCorrectCount() != null ? a.getCorrectCount() : 0,
                 a.getStopReason(), responseDetails, skillResults, unlocked
         );
+    }
+
+    // ---------- 5-question node unlock quiz ----------
+
+    /**
+     * Serves 5 questions for a specific skill node on the competency graph.
+     * Direct matches are loaded first, falling back to same-cluster and track items
+     * to guarantee that 5 questions are always provided.
+     */
+    @Transactional(readOnly = true)
+    public SkillQuizResponse getQuizForSkill(String skillSlug) {
+        Skill skill = skillRepo.findFirstBySlug(skillSlug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Skill not found: " + skillSlug));
+
+        List<AssessmentItem> selectedItems = new ArrayList<>();
+        Set<UUID> seenItemIds = new HashSet<>();
+
+        // 1. Primary: Load active items directly linked to this skill
+        List<AssessmentItem> directItems = itemRepo.findBySkillSlugAndStatus(skillSlug, "ACTIVE");
+        for (AssessmentItem item : directItems) {
+            if (seenItemIds.add(item.getId())) {
+                selectedItems.add(item);
+            }
+            if (selectedItems.size() == 5) break;
+        }
+
+        // 2. Secondary fallback: Load active items from the same cluster
+        if (selectedItems.size() < 5 && skill.getCluster() != null) {
+            List<Skill> clusterSkills = skillRepo.findByTrackIdAndCluster(skill.getTrackId(), skill.getCluster());
+            List<String> clusterSlugs = clusterSkills.stream()
+                    .map(Skill::getSlug)
+                    .filter(s -> s != null && !s.equals(skillSlug))
+                    .collect(Collectors.toList());
+            if (!clusterSlugs.isEmpty()) {
+                List<AssessmentItem> clusterItems = itemRepo.findBySkillSlugInAndStatus(clusterSlugs, "ACTIVE");
+                for (AssessmentItem item : clusterItems) {
+                    if (seenItemIds.add(item.getId())) {
+                        selectedItems.add(item);
+                    }
+                    if (selectedItems.size() == 5) break;
+                }
+            }
+        }
+
+        // 3. Tertiary fallback: Any active items from the track closest to skill difficulty
+        if (selectedItems.size() < 5) {
+            List<AssessmentItem> trackItems = new ArrayList<>(itemRepo.findByTrackIdAndStatusOrderByDifficultyAsc(skill.getTrackId(), "ACTIVE"));
+            trackItems.sort(Comparator.comparingDouble(i -> Math.abs(i.getDifficulty() - skill.getDifficulty())));
+            for (AssessmentItem item : trackItems) {
+                if (seenItemIds.add(item.getId())) {
+                    selectedItems.add(item);
+                }
+                if (selectedItems.size() == 5) break;
+            }
+        }
+
+        if (selectedItems.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No questions available for skill: " + skillSlug);
+        }
+
+        List<SkillQuizQuestion> questions = new ArrayList<>();
+        for (int i = 0; i < selectedItems.size(); i++) {
+            AssessmentItem item = selectedItems.get(i);
+            questions.add(new SkillQuizQuestion(
+                    item.getId(),
+                    i + 1,
+                    item.getStem(),
+                    parseOptions(item.getOptions())
+            ));
+        }
+
+        return new SkillQuizResponse(
+                skill.getSlug(),
+                skill.getName(),
+                questions.size(),
+                3,
+                questions
+        );
+    }
+
+    /**
+     * Evaluates the 5 submitted answers for a skill unlock quiz.
+     * If the user answers at least 3/5 correctly, marks the node as ready to learn and unlocks it.
+     */
+    @Transactional
+    public SkillQuizResult submitQuizForSkill(UUID userId, String skillSlug, SkillQuizSubmission submission) {
+        Skill skill = skillRepo.findFirstBySlug(skillSlug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Skill not found: " + skillSlug));
+
+        List<SkillQuizAnswer> answers = (submission != null && submission.getAnswers() != null)
+                ? submission.getAnswers()
+                : Collections.emptyList();
+
+        if (answers.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No answers submitted");
+        }
+
+        List<UUID> itemIds = answers.stream().map(SkillQuizAnswer::getItemId).collect(Collectors.toList());
+        Map<UUID, AssessmentItem> itemMap = itemRepo.findAllById(itemIds).stream()
+                .collect(Collectors.toMap(AssessmentItem::getId, item -> item));
+
+        int correctCount = 0;
+        List<QuestionReviewItem> breakdown = new ArrayList<>();
+
+        for (SkillQuizAnswer ans : answers) {
+            AssessmentItem item = itemMap.get(ans.getItemId());
+            if (item == null) {
+                continue;
+            }
+            boolean isCorrect = (ans.getSelectedOption() != null && ans.getSelectedOption() == item.getCorrectOption());
+            if (isCorrect) {
+                correctCount++;
+            }
+            breakdown.add(new QuestionReviewItem(
+                    item.getId(),
+                    item.getStem(),
+                    parseOptions(item.getOptions()),
+                    ans.getSelectedOption() != null ? ans.getSelectedOption() : -1,
+                    item.getCorrectOption(),
+                    isCorrect
+            ));
+        }
+
+        int total = answers.size();
+        int passingScore = 3;
+        boolean passed = correctCount >= passingScore;
+
+        String newState = passed ? "READY_TO_LEARN" : "LOCKED";
+        String message = passed
+                ? String.format("Passed! You scored %d/%d. %s is unlocked and ready to learn.", correctCount, total, skill.getName())
+                : String.format("You scored %d/%d. At least %d correct answers are needed to unlock %s.", correctCount, total, passingScore, skill.getName());
+
+        if (passed) {
+            Assessment assessment = null;
+            if (submission != null && submission.getAssessmentId() != null) {
+                assessment = assessmentRepo.findByIdAndUserId(submission.getAssessmentId(), userId).orElse(null);
+            }
+            if (assessment == null) {
+                assessment = assessmentRepo.findFirstByUserIdAndTrackIdOrderByCompletedAtDesc(userId, skill.getTrackId())
+                        .or(() -> assessmentRepo.findFirstByUserIdOrderByCompletedAtDesc(userId))
+                        .orElse(null);
+            }
+
+            if (assessment != null) {
+                Optional<AssessmentSkillResult> existing = skillResultRepo.findByAssessmentIdAndSkillId(assessment.getId(), skill.getId());
+                if (existing.isPresent()) {
+                    AssessmentSkillResult asr = existing.get();
+                    asr.setState(newState);
+                    skillResultRepo.save(asr);
+                } else {
+                    AssessmentSkillResult asr = new AssessmentSkillResult(assessment, skill, newState);
+                    skillResultRepo.save(asr);
+                }
+
+                // Check downstream skills: if all prerequisites of a locked skill are now satisfied, advance to FRONTIER
+                updateDownstreamSkillStates(assessment.getId(), assessment.getTrackId());
+            }
+        }
+
+        return new SkillQuizResult(
+                passed,
+                correctCount,
+                total,
+                passingScore,
+                skill.getSlug(),
+                newState,
+                message,
+                breakdown
+        );
+    }
+
+    private void updateDownstreamSkillStates(UUID assessmentId, UUID trackId) {
+        if (trackId == null) return;
+        List<Skill> allSkills = skillRepo.findByTrackIdWithPrerequisites(trackId);
+        List<AssessmentSkillResult> results = skillResultRepo.findByAssessmentIdOrderBySkillClusterAscSkillDifficultyAsc(assessmentId);
+        Map<UUID, AssessmentSkillResult> resultMap = results.stream()
+                .collect(Collectors.toMap(r -> r.getSkill().getId(), r -> r));
+
+        Set<UUID> unlockedIds = new HashSet<>();
+        for (AssessmentSkillResult r : results) {
+            String st = r.getState();
+            if ("MASTERED".equalsIgnoreCase(st) || "READY_TO_LEARN".equalsIgnoreCase(st) || "UNLOCKED".equalsIgnoreCase(st)) {
+                unlockedIds.add(r.getSkill().getId());
+            }
+        }
+
+        List<AssessmentSkillResult> toUpdate = new ArrayList<>();
+        for (Skill s : allSkills) {
+            AssessmentSkillResult r = resultMap.get(s.getId());
+            if (r != null && "LOCKED".equalsIgnoreCase(r.getState())) {
+                Set<UUID> prereqs = s.getPrerequisites();
+                if (prereqs == null || prereqs.isEmpty() || unlockedIds.containsAll(prereqs)) {
+                    r.setState("FRONTIER");
+                    toUpdate.add(r);
+                }
+            }
+        }
+        if (!toUpdate.isEmpty()) {
+            skillResultRepo.saveAll(toUpdate);
+        }
     }
 
     // ---------- core algorithm (all in-memory) ----------

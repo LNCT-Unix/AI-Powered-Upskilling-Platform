@@ -727,7 +727,7 @@ export default function AssessmentPage() {
               />
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-400">
-              <span>Calibration threshold: 5 questions</span>
+              <span>Calibration threshold: 8 questions</span>
               <span>θ Convergence auto-stop</span>
             </div>
           </Card>
