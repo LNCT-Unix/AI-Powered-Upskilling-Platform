@@ -443,6 +443,72 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     return () => el.removeEventListener('wheel', onWheel);
   }, [zoomAt]);
 
+  // Touch pinch-to-zoom for mobile screens
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+
+    let initialDist = null;
+    let initialScale = 1;
+
+    const getDistance = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.hypot(dx, dy);
+    };
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        initialDist = getDistance(e.touches[0], e.touches[1]);
+        initialScale = transformRef.current.scale;
+        isPointerDownRef.current = false;
+        stageRef.current?.classList.remove('panning');
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.touches.length === 2 && initialDist) {
+        e.preventDefault();
+        const currentDist = getDistance(e.touches[0], e.touches[1]);
+        if (currentDist > 0) {
+          const rect = el.getBoundingClientRect();
+          const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+          const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+          const factor = currentDist / initialDist;
+
+          const prev = transformRef.current;
+          const targetScale = Math.min(2.4, Math.max(0.12, initialScale * factor));
+          const t = {
+            x: midX - (midX - prev.x) * (targetScale / prev.scale),
+            y: midY - (midY - prev.y) * (targetScale / prev.scale),
+            scale: targetScale,
+          };
+          transformRef.current = t;
+          applyTransform(t);
+          scheduleZoomLabel(targetScale);
+        }
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) {
+        initialDist = null;
+      }
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [applyTransform, scheduleZoomLabel]);
+
   // ── Derived helpers ──────────────────────────────────────────────────────────
   const selectedNode = selectedNodeId
     ? (layout.byId.get(selectedNodeId) || layout.fullById?.get(selectedNodeId))

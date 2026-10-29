@@ -768,6 +768,30 @@
   }
 }
 
+@media (max-width: 640px) {
+  .auth-art {
+    min-height: 105px;
+    padding: 14px 18px 10px;
+  }
+  .art-inner {
+    padding: 0;
+    gap: 14px;
+  }
+  .octo {
+    width: 64px;
+  }
+  .octo-shadow {
+    display: none;
+  }
+  .tagline {
+    font-size: 16px;
+    line-height: 1.25;
+  }
+  .auth-form-wrap {
+    padding: 20px 18px 40px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-container *,
   .auth-container *::before,
