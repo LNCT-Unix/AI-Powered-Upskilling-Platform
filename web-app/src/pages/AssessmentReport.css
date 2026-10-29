@@ -1,0 +1,624 @@
+/* Skill Report Page - Aesthetic & Inspo System */
+.skill-report-page {
+  --bg: #f6f1e7;
+  --card: #fffdf9;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #ece5d6;
+  --accent: #5b3df5;
+  --accent-soft: #ece8ff;
+  --gap: #e11d48;
+  --gap-soft: #ffe9ee;
+  --ok: #059669;
+  --ok-soft: #dcf7ec;
+  --mid: #d97706;
+  --radius: 16px;
+
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+@media (min-width: 640px) {
+  .skill-report-page {
+    padding: 28px 32px 64px;
+  }
+}
+
+.skill-report-page h1 {
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.skill-report-page .sub {
+  color: var(--muted);
+  margin: 0 0 24px;
+  max-width: 60ch;
+  font-size: 14px;
+}
+
+.skill-report-page .layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.skill-report-page .report-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.skill-report-page .report-card + .report-card {
+  margin-top: 20px;
+}
+
+.skill-report-page h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: var(--ink);
+}
+
+.skill-report-page .hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+/* Summary */
+.skill-report-page .summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.skill-report-page .ring {
+  --p: 11;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--p) * 1%), #ebe6f8 0);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.skill-report-page .ring div {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.skill-report-page .ring b {
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.skill-report-page .ring span {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.skill-report-page .level {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.skill-report-page .stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.skill-report-page .stat {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.skill-report-page .stat b {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.skill-report-page .stat span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.skill-report-page .info {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: help;
+  position: relative;
+}
+
+.skill-report-page .info:hover::after,
+.skill-report-page .info:focus::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: 140%;
+  transform: translateX(-50%);
+  width: 240px;
+  background: var(--ink);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.4;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+/* Skill breakdown */
+.skill-report-page .skill {
+  display: grid;
+  grid-template-columns: 190px 1fr 86px;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 0;
+}
+
+.skill-report-page .skill + .skill {
+  border-top: 1px solid var(--line);
+}
+
+.skill-report-page .skill .name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-report-page .bar {
+  height: 10px;
+  border-radius: 99px;
+  background: #ece7da;
+  overflow: hidden;
+}
+
+.skill-report-page .bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.skill-report-page .badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  text-align: center;
+}
+
+.skill-report-page .badge.gap {
+  background: var(--gap-soft);
+  color: var(--gap);
+}
+
+.skill-report-page .badge.mid {
+  background: #fef3dc;
+  color: var(--mid);
+}
+
+.skill-report-page .badge.ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+/* Question review */
+.skill-report-page .review-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.skill-report-page .tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.skill-report-page .tabs button {
+  border: 0;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.skill-report-page .tabs button[aria-pressed="true"] {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.skill-report-page .link-btn {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.skill-report-page .link-btn:hover {
+  text-decoration: underline;
+}
+
+.skill-report-page .q {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: var(--card);
+  transition: border-color 0.15s ease;
+}
+
+.skill-report-page .q-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px 1fr auto 18px;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 12px 14px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.skill-report-page .q-row:hover {
+  background: #faf6ee;
+}
+
+.skill-report-page .num {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.skill-report-page .num.bad {
+  background: var(--gap-soft);
+  color: var(--gap);
+}
+
+.skill-report-page .num.good {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.skill-report-page .q-topic {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.skill-report-page .q-topic small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.skill-report-page .q-ans {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-report-page .q-ans b.bad {
+  color: var(--gap);
+}
+
+.skill-report-page .q-ans b.good {
+  color: var(--ok);
+}
+
+.skill-report-page .chev {
+  transition: transform 0.2s ease;
+  color: var(--muted);
+}
+
+.skill-report-page .q.open .chev {
+  transform: rotate(180deg);
+}
+
+.skill-report-page .q-body {
+  display: none;
+  padding: 6px 16px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.skill-report-page .q.open .q-body {
+  display: block;
+}
+
+.skill-report-page .q-body p {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 12px 0;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.skill-report-page .opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #334155;
+  background: var(--card);
+}
+
+.skill-report-page .opt .k {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #f1ece0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+.skill-report-page .opt em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.skill-report-page .opt.wrong {
+  background: var(--gap-soft);
+  border-color: #f9b8c5;
+  color: var(--gap);
+}
+
+.skill-report-page .opt.wrong .k {
+  background: #fed7de;
+  color: var(--gap);
+}
+
+.skill-report-page .opt.right {
+  background: var(--ok-soft);
+  border-color: #9be3c6;
+  color: var(--ok);
+}
+
+.skill-report-page .opt.right .k {
+  background: #bbf0dc;
+  color: var(--ok);
+}
+
+/* Right rail */
+.skill-report-page .rail {
+  position: sticky;
+  top: 80px;
+}
+
+.skill-report-page .rail ol {
+  margin: 14px 0 20px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.skill-report-page .rail li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  font-size: 14px;
+  align-items: start;
+}
+
+.skill-report-page .rail li span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+}
+
+.skill-report-page .rail li b {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+}
+
+.skill-report-page .rail li small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.skill-report-page .btn-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  text-align: center;
+  border-radius: 99px;
+  padding: 11px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.skill-report-page .btn-action:hover {
+  background: #faf6ee;
+}
+
+.skill-report-page .btn-action.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.skill-report-page .btn-action.primary:hover {
+  background: #4f33d8;
+  border-color: #4f33d8;
+}
+
+.skill-report-page .btn-action + .btn-action {
+  margin-top: 8px;
+}
+
+.skill-report-page .rail .text-link {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+  background: none;
+  border: 0;
+  width: 100%;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.skill-report-page .rail .text-link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 1080px) {
+  .skill-report-page .layout {
+    grid-template-columns: 1fr;
+  }
+  .skill-report-page .rail {
+    position: static;
+  }
+}
+
+@media (max-width: 820px) {
+  .skill-report-page {
+    padding: 16px 14px 80px;
+  }
+  .skill-report-page .summary {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: 16px;
+  }
+  .skill-report-page .skill {
+    grid-template-columns: 1fr 80px;
+  }
+  .skill-report-page .skill .bar {
+    grid-column: 1 / -1;
+    order: 3;
+    margin-top: 4px;
+  }
+  .skill-report-page .q-row {
+    grid-template-columns: 28px 1fr 18px;
+  }
+  .skill-report-page .q-ans {
+    display: none;
+  }
+}
+
+/* Print styling */
+@media print {
+  body {
+    background: #fff !important;
+  }
+  .skill-report-page {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .skill-report-page .layout {
+    grid-template-columns: 1fr !important;
+  }
+  .skill-report-page .rail button,
+  .skill-report-page .rail .text-link,
+  .skill-report-page .tabs,
+  .skill-report-page .link-btn {
+    display: none !important;
+  }
+  .skill-report-page .q-body {
+    display: block !important;
+  }
+  .skill-report-page .chev {
+    display: none !important;
+  }
+}
+
