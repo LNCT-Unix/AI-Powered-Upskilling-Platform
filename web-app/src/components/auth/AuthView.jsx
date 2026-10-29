@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, RotateCcw, Server } from 'lucide-react';
-import ServerSwitcherModal from '../mobile/ServerSwitcherModal';
-import { isNativeMobile } from '../../services/mobileStorage';
+import { Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './AuthPage.css';
 
@@ -25,7 +23,6 @@ export default function AuthView({ initialMode = 'login' }) {
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showSignupPass, setShowSignupPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [serverModalOpen, setServerModalOpen] = useState(false);
 
   // Form states
   const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('skillpath_remember_email') || '');
