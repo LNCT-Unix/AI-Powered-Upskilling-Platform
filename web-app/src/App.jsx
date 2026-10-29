@@ -24,6 +24,7 @@ function MobileBridge() {
       try {
         await StatusBar.setStyle({ style: Style.Light });
         await StatusBar.setBackgroundColor({ color: '#0A0A0C' });
+        await StatusBar.setOverlaysWebView({ overlay: false });
       } catch (err) {
         console.warn('Splash status bar styling notice:', err);
       }
@@ -75,11 +76,12 @@ function MobileBridge() {
       }
     }
 
-    // Switch status bar to warm app theme once main screen is revealed
+    // Switch status bar to warm app theme once main screen is revealed and ensure it does not overlap content
     (async () => {
       try {
         await StatusBar.setStyle({ style: Style.Dark });
         await StatusBar.setBackgroundColor({ color: '#F7F3E8' });
+        await StatusBar.setOverlaysWebView({ overlay: false });
       } catch (err) {
         console.warn('App status bar styling notice:', err);
       }
