@@ -8,7 +8,6 @@ import {
   Sparkles,
   Layers,
   Loader2,
-  Lock,
   Compass,
   Zap,
   XCircle,
@@ -70,7 +69,6 @@ export default function AssessmentPage() {
   const [preparingReport, setPreparingReport] = useState(false);
   const [error, setError] = useState(null);
   const [expandedQuestions, setExpandedQuestions] = useState({});
-  const [skillFilter, setSkillFilter] = useState('all');
 
   const toggleQuestionExpand = (seq) => {
     setExpandedQuestions((prev) => ({
@@ -95,7 +93,7 @@ export default function AssessmentPage() {
       return {
         ...report,
         theta: report.finalTheta !== undefined ? report.finalTheta : (report.theta ?? 0),
-        unlockedSkills: report.unlockedSkills || (report.skills || []).filter(s => s.state === 'MASTERED' || s.state === 'FRONTIER'),
+        unlockedSkills: report.unlockedSkills || (report.skills || []).filter(s => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN'),
         responses: report.responses || [],
       };
     } catch {
@@ -103,7 +101,7 @@ export default function AssessmentPage() {
       return {
         ...legacyResult,
         finalTheta: legacyResult?.theta ?? 0,
-        unlockedSkills: (legacyResult?.skills || []).filter(s => s.state === 'MASTERED' || s.state === 'FRONTIER'),
+        unlockedSkills: (legacyResult?.skills || []).filter(s => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN'),
         responses: [],
       };
     }
@@ -400,7 +398,7 @@ export default function AssessmentPage() {
         <Loader2 size={36} className="animate-spin text-indigo-600" aria-hidden="true" />
         <div className="text-center">
           <p className="text-sm font-bold text-slate-800">Connecting to CAT Adaptive Engine...</p>
-          <p className="text-xs text-slate-500 mt-1">Calibrating question difficulty to your skill frontier</p>
+          <p className="text-xs text-slate-500 mt-1">Calibrating question difficulty to your skill baseline</p>
         </div>
       </div>
     );
@@ -430,22 +428,6 @@ export default function AssessmentPage() {
   const maxQuestions = assessmentState?.max ?? assessmentState?.progress?.max ?? 9;
   const currentQ = assessmentState?.question;
 
-  const allSkillsList = result?.skills || [];
-  const unlockedSkills =
-    result?.unlockedSkills && result.unlockedSkills.length > 0
-      ? result.unlockedSkills
-      : allSkillsList.filter((s) => s.state === 'MASTERED' || s.state === 'FRONTIER');
-  const masteredSkills = allSkillsList.filter((s) => s.state === 'MASTERED');
-  const frontierSkills = allSkillsList.filter((s) => s.state === 'FRONTIER');
-  const lockedSkills = allSkillsList.filter((s) => s.state === 'LOCKED');
-
-  const displayedSkills = allSkillsList.filter((skill) => {
-    if (skillFilter === 'UNLOCKED') return skill.state === 'MASTERED' || skill.state === 'FRONTIER';
-    if (skillFilter === 'MASTERED') return skill.state === 'MASTERED';
-    if (skillFilter === 'FRONTIER') return skill.state === 'FRONTIER';
-    return true;
-  });
-
   return (
     <div className="mx-auto max-w-3xl p-4 sm:p-6 space-y-6">
       {/* Header */}
@@ -465,7 +447,7 @@ export default function AssessmentPage() {
             : isConfiguring
             ? 'Select your specialization track and mark the skills you already know before starting your adaptive test.'
             : isCompleted
-            ? 'Your ability parameter (θ) has converged. Verified strengths and frontier gaps are mapped below.'
+            ? 'Your ability parameter (θ) has converged. Verified strengths and learning paths are mapped below.'
             : 'Question difficulty dynamically calibrates after every answer based on your performance.'}
         </p>
       </div>
@@ -497,7 +479,7 @@ export default function AssessmentPage() {
               Preparing Your Diagnostic Skill Report...
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-              Our diagnostic engine is calculating your final ability parameter (θ), verifying correct answers, and unlocking your personalized skill graph frontier.
+              Our diagnostic engine is calculating your final ability parameter (θ), verifying correct answers, and unlocking your personalized skill graph.
             </p>
           </div>
 
@@ -509,7 +491,7 @@ export default function AssessmentPage() {
             </div>
             <div className="flex items-center gap-2.5 text-indigo-700 font-semibold">
               <Loader2 size={15} className="shrink-0 animate-spin text-indigo-600" />
-              <span>Calibrating theta (θ) ability estimate & frontier nodes...</span>
+              <span>Calibrating theta (θ) ability estimate & skill nodes...</span>
             </div>
             <div className="flex items-center gap-2.5 text-slate-400 font-medium">
               <div className="h-3.5 w-3.5 rounded-full border border-slate-300 grid place-items-center shrink-0">
@@ -536,7 +518,7 @@ export default function AssessmentPage() {
               Pre-Assessment Calibration Questions
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-              Before your adaptive diagnostic test begins, select your target track and identify the concepts you already feel comfortable with. This calibrates your initial ability baseline and maps your frontier skills.
+              Before your adaptive diagnostic test begins, select your target track and identify the concepts you already feel comfortable with. This calibrates your initial ability baseline and maps your learning nodes.
             </p>
           </div>
 
@@ -614,7 +596,7 @@ export default function AssessmentPage() {
                     Which skills are you already comfortable in?
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Select familiar skills to skip introductory questions and unlock frontier dependencies.
+                    Select familiar skills to skip introductory questions and unlock advanced dependencies.
                   </p>
                 </div>
               </div>
@@ -862,17 +844,6 @@ export default function AssessmentPage() {
                       : result.theta}
                   </span>.
                 </p>
-                <div className="flex items-center gap-4 text-xs font-semibold pt-1">
-                  <span className="text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1">
-                    {(result.skills || []).filter(s => s.state === 'MASTERED').length} Mastered
-                  </span>
-                  <span className="text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1">
-                    {(result.skills || []).filter(s => s.state === 'FRONTIER').length} Frontier Skills
-                  </span>
-                  <span className="text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">
-                    {(result.skills || []).filter(s => s.state === 'LOCKED').length} Locked
-                  </span>
-                </div>
               </div>
 
               <ScoreRing
@@ -912,7 +883,7 @@ export default function AssessmentPage() {
                     Question-by-Question Review
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Detailed breakdown of your answers, solutions, and tested competencies
+                    Detailed breakdown of your answers and solutions
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1079,175 +1050,6 @@ export default function AssessmentPage() {
               </div>
             </Card>
           )}
-
-          {/* Unlocked Competencies & Skill Graph Showcase */}
-          <Card className="space-y-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                    Unlocked Competencies & Skill Graph
-                  </h3>
-                  <Badge variant="indigo" size="sm" icon={Sparkles}>
-                    {unlockedSkills.length} Unlocked
-                  </Badge>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Your personalized knowledge graph has updated. Mastered skills and unlocked frontier nodes ready for study.
-                </p>
-              </div>
-
-              <Button
-                variant="indigo"
-                size="md"
-                onClick={() => navigate('/graph')}
-                className="shrink-0 shadow-sm"
-              >
-                <Network size={15} /> Explore Skill Graph <ArrowRight size={15} />
-              </Button>
-            </div>
-
-            {/* Metrics Breakdown Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-emerald-800">Mastered Skills</span>
-                  <CheckCircle2 size={16} className="text-emerald-600" />
-                </div>
-                <div className="text-2xl font-extrabold text-emerald-900">{masteredSkills.length}</div>
-                <p className="text-[11px] text-emerald-700">Demonstrated or pre-declared</p>
-              </div>
-
-              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-indigo-800">Frontier Skills</span>
-                  <Sparkles size={16} className="text-indigo-600" />
-                </div>
-                <div className="text-2xl font-extrabold text-indigo-900">{frontierSkills.length}</div>
-                <p className="text-[11px] text-indigo-700">Prerequisites met — ready to learn</p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-700">Locked Skills</span>
-                  <Lock size={16} className="text-slate-400" />
-                </div>
-                <div className="text-2xl font-extrabold text-slate-900">{lockedSkills.length}</div>
-                <p className="text-[11px] text-slate-500">Requires completing frontier nodes</p>
-              </div>
-            </div>
-
-            {/* Filter Tabs & Competency Nodes List */}
-            <div className="space-y-4 pt-1">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Verified Skill Nodes ({allSkillsList.length})
-                </h4>
-                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setSkillFilter('all')}
-                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                      skillFilter === 'all'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900'
-                    }`}
-                  >
-                    All ({allSkillsList.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSkillFilter('UNLOCKED')}
-                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                      skillFilter === 'UNLOCKED'
-                        ? 'bg-white text-indigo-700 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900'
-                    }`}
-                  >
-                    Unlocked ({unlockedSkills.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSkillFilter('MASTERED')}
-                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                      skillFilter === 'MASTERED'
-                        ? 'bg-white text-emerald-700 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900'
-                    }`}
-                  >
-                    Mastered ({masteredSkills.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSkillFilter('FRONTIER')}
-                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
-                      skillFilter === 'FRONTIER'
-                        ? 'bg-white text-indigo-700 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900'
-                    }`}
-                  >
-                    Frontier ({frontierSkills.length})
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                {displayedSkills.map((skill) => {
-                  const isMastered = skill.state === 'MASTERED';
-                  const isFrontier = skill.state === 'FRONTIER';
-                  return (
-                    <div
-                      key={skill.skillId || skill.slug || skill.name}
-                      className={`rounded-2xl border p-4 transition ${
-                        isMastered
-                          ? 'border-emerald-200/80 bg-emerald-50/20 hover:border-emerald-300'
-                          : isFrontier
-                          ? 'border-indigo-200/80 bg-indigo-50/20 hover:border-indigo-300 ring-1 ring-indigo-500/10'
-                          : 'border-slate-100 bg-slate-50/40 opacity-70'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                          {skill.name}
-                        </span>
-                        <Badge
-                          variant={isMastered ? 'emerald' : isFrontier ? 'indigo' : 'neutral'}
-                          size="sm"
-                          icon={isMastered ? CheckCircle2 : isFrontier ? Sparkles : Lock}
-                        >
-                          {isMastered ? 'Mastered' : isFrontier ? 'Frontier' : 'Locked'}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Cluster: {skill.cluster || 'Core'}</span>
-                        {skill.slug && <span className="font-mono text-slate-400">{skill.slug}</span>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Bottom Callout Banner */}
-            <div className="rounded-2xl bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-purple-500/10 border border-indigo-100 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="space-y-1 text-center sm:text-left">
-                <h4 className="text-sm font-bold text-slate-900">
-                  Ready to map your complete learning progression?
-                </h4>
-                <p className="text-xs text-slate-500">
-                  View interactive dependency links, prerequisite paths, and begin mastering your unlocked frontier skills.
-                </p>
-              </div>
-              <Button
-                variant="indigo"
-                size="md"
-                onClick={() => navigate('/graph')}
-                className="shrink-0 shadow-sm"
-              >
-                <Network size={15} /> Explore Updated Skill Graph <ArrowRight size={15} />
-              </Button>
-            </div>
-          </Card>
         </div>
       ) : (
         <Card className="text-center py-10 space-y-3">

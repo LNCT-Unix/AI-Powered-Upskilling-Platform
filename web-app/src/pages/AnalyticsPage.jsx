@@ -6,7 +6,7 @@ import {
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
-import { Flame, TrendingUp, Award, ChartNoAxesColumnIncreasing, ArrowRight } from 'lucide-react';
+import { Flame, TrendingUp, Award, ChartNoAxesColumnIncreasing, ArrowRight, Lock } from 'lucide-react';
 
 export default function AnalyticsPage() {
   const navigate = useNavigate();
@@ -33,24 +33,24 @@ export default function AnalyticsPage() {
     skills.forEach(s => {
       const c = s.cluster || 'General';
       if (!clusterMap[c]) {
-        clusterMap[c] = { total: 0, mastered: 0 };
+        clusterMap[c] = { total: 0, ready: 0 };
       }
       clusterMap[c].total += 1;
-      if (s.state === 'MASTERED') clusterMap[c].mastered += 1;
+      if (s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN') clusterMap[c].ready += 1;
     });
 
-    return Object.entries(clusterMap).map(([name, { total, mastered }]) => ({
+    return Object.entries(clusterMap).map(([name, { total, ready }]) => ({
       name,
-      score: Math.round((mastered / total) * 100),
+      score: Math.round((ready / total) * 100),
       total,
-      mastered,
+      ready,
     }));
   }, [skills]);
 
-  const masteredCount = skills.filter(s => s.state === 'MASTERED').length;
-  const frontierCount = skills.filter(s => s.state === 'FRONTIER').length;
+  const readyCount = skills.filter(s => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN').length;
+  const lockedCount = skills.filter(s => s.state === 'LOCKED' || (!['MASTERED', 'READY_TO_LEARN', 'unlocked'].includes(s.state) && s.status !== 'unlocked')).length;
   const totalCount = skills.length;
-  const overallPct = totalCount > 0 ? Math.round((masteredCount / totalCount) * 100) : 0;
+  const overallPct = totalCount > 0 ? Math.round((readyCount / totalCount) * 100) : 0;
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
@@ -121,24 +121,24 @@ export default function AnalyticsPage() {
                 <Award size={18} />
               </span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Mastered</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Ready to Learn</p>
                 <p className="text-lg font-extrabold text-slate-900 tabular-nums">
-                  {masteredCount} / {totalCount}
+                  {readyCount} / {totalCount}
                 </p>
                 <p className="text-[11px] text-slate-400">{overallPct}% Track Coverage</p>
               </div>
             </Card>
 
             <Card className="flex items-center gap-4 shadow-sm">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-indigo-50 border-indigo-100 text-indigo-600">
-                <ChartNoAxesColumnIncreasing size={18} />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-slate-100 border-slate-200 text-slate-600">
+                <Lock size={18} />
               </span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Frontiers</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Locked</p>
                 <p className="text-lg font-extrabold text-slate-900 tabular-nums">
-                  {frontierCount} Active
+                  {lockedCount} Pending
                 </p>
-                <p className="text-[11px] text-slate-400">Next Priority Nodes</p>
+                <p className="text-[11px] text-slate-400">Prerequisites Required</p>
               </div>
             </Card>
           </div>
@@ -147,8 +147,8 @@ export default function AnalyticsPage() {
           {clusterScores.length >= 3 && (
             <Card className="space-y-4 shadow-sm">
               <div className="border-b border-slate-100 pb-3">
-                <h2 className="text-base font-bold text-slate-900">Skill Cluster Mastery Radar</h2>
-                <p className="text-xs text-slate-500">Proportion of verified mastered competencies across technical clusters</p>
+                <h2 className="text-base font-bold text-slate-900">Skill Cluster Competency Radar</h2>
+                <p className="text-xs text-slate-500">Proportion of ready to learn competencies across technical clusters</p>
               </div>
               <ResponsiveContainer width="100%" height={260}>
                 <RadarChart data={clusterScores} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
               <thead>
                 <tr className="border-b border-slate-100">
                   <th className="text-left py-2.5 font-semibold text-slate-500 uppercase tracking-wide text-[10px]">Cluster Area</th>
-                  <th className="text-right py-2.5 font-semibold text-slate-500 uppercase tracking-wide text-[10px]">Mastered Ratio</th>
+                  <th className="text-right py-2.5 font-semibold text-slate-500 uppercase tracking-wide text-[10px]">Ready Ratio</th>
                   <th className="text-right py-2.5 font-semibold text-slate-500 uppercase tracking-wide text-[10px]">Score</th>
                   <th className="text-right py-2.5 font-semibold text-slate-500 uppercase tracking-wide text-[10px]">State</th>
                 </tr>
@@ -179,11 +179,11 @@ export default function AnalyticsPage() {
                 {clusterScores.map((c) => (
                   <tr key={c.name} className="hover:bg-slate-50 transition-colors">
                     <td className="py-2.5 font-semibold text-slate-800">{c.name}</td>
-                    <td className="py-2.5 text-right font-medium text-slate-500">{c.mastered} / {c.total}</td>
+                    <td className="py-2.5 text-right font-medium text-slate-500">{c.ready} / {c.total}</td>
                     <td className="py-2.5 text-right tabular-nums font-bold text-slate-900">{c.score}%</td>
                     <td className="py-2.5 text-right">
                       <Badge variant={c.score >= 70 ? 'emerald' : c.score >= 40 ? 'indigo' : 'amber'}>
-                        {c.score >= 70 ? 'Mastered' : c.score >= 40 ? 'Developing' : 'Frontier'}
+                        {c.score >= 70 ? 'Ready to Learn' : c.score >= 40 ? 'Developing' : 'Locked'}
                       </Badge>
                     </td>
                   </tr>

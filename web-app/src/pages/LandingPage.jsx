@@ -309,7 +309,7 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3>Plan</h3>
-              <p>Your score is mapped onto the track&rsquo;s skill graph, marking every skill mastered, ready or locked. The AI turns that snapshot into an ordered roadmap &mdash; what to learn first, what to skip, and roughly how long each step takes.</p>
+              <p>Your score is mapped onto the track&rsquo;s skill graph, marking every skill ready to learn or locked. The AI turns that snapshot into an ordered roadmap &mdash; what to learn first, what to skip, and roughly how long each step takes.</p>
               <span className="step-tag">AI roadmap &middot; validated JSON</span>
             </article>
 
@@ -341,15 +341,8 @@ export default function LandingPage() {
                 <div className="legend-item reveal" style={{ '--d': '.2s' }}>
                   <span className="dot g"></span>
                   <span>
-                    <b>Mastered</b>
-                    <p>Proven by your test result. The roadmap routes around what you already know.</p>
-                  </span>
-                </div>
-                <div className="legend-item reveal" style={{ '--d': '.28s' }}>
-                  <span className="dot o"></span>
-                  <span>
                     <b>Ready to learn</b>
-                    <p>Prerequisites met. These are exactly your next steps, in dependency order.</p>
+                    <p>Proven by your test result or unlocked for your study path.</p>
                   </span>
                 </div>
                 <div className="legend-item reveal" style={{ '--d': '.36s' }}>
@@ -373,7 +366,7 @@ export default function LandingPage() {
                 <span className="map-title"><i />backend-engineering &middot; skill map</span>
                 <span className="live">LIVE VIEW</span>
               </div>
-              <svg className="map-svg" viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mini skill map showing mastered, ready and locked skills">
+              <svg className="map-svg" viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A mini skill map showing ready to learn and locked skills">
                 <g stroke="#DCD2BC" strokeWidth="2" strokeDasharray="2 7" strokeLinecap="round" fill="none">
                   <path d="M245 70 C220 95 130 105 108 132" />
                   <path d="M103 178 C103 205 103 225 103 252" />

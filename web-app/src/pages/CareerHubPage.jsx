@@ -67,10 +67,10 @@ export default function CareerHubPage() {
     }
   }, []);
 
-  const masteredNames = useMemo(() => {
+  const readyNames = useMemo(() => {
     if (!assessmentResult?.skills) return [];
     return assessmentResult.skills
-      .filter(s => s.state === 'MASTERED')
+      .filter(s => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN')
       .map(s => s.name.toLowerCase());
   }, [assessmentResult]);
 
@@ -78,7 +78,7 @@ export default function CareerHubPage() {
   const matchedJobs = useMemo(() => {
     return INDUSTRY_TARGET_ROLES.map(job => {
       const haveSkills = job.requiredSkills.filter(req =>
-        masteredNames.some(m => m.includes(req.toLowerCase()) || req.toLowerCase().includes(m))
+        readyNames.some(m => m.includes(req.toLowerCase()) || req.toLowerCase().includes(m))
       );
       const missingSkills = job.requiredSkills.filter(req => !haveSkills.includes(req));
       const match = Math.max(30, Math.round((haveSkills.length / job.requiredSkills.length) * 100));
@@ -90,7 +90,7 @@ export default function CareerHubPage() {
         missingSkills,
       };
     });
-  }, [masteredNames]);
+  }, [readyNames]);
 
   const [selectedId, setSelectedId] = useState(matchedJobs[0].id);
 
@@ -124,7 +124,7 @@ export default function CareerHubPage() {
             <p className="text-sm font-extrabold text-slate-900">{best.role} at {best.company}</p>
             <p className="text-xs text-slate-500">
               {best.missingSkills.length > 0
-                ? `Master ${best.missingSkills.length} more frontier skill${best.missingSkills.length > 1 ? 's' : ''} to unlock 100% readiness.`
+                ? `Learn ${best.missingSkills.length} more skill${best.missingSkills.length > 1 ? 's' : ''} to unlock 100% readiness.`
                 : '100% prerequisite match achieved!'}
             </p>
           </div>

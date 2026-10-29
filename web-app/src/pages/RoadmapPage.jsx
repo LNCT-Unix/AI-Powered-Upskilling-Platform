@@ -29,7 +29,7 @@ export default function RoadmapPage() {
           <div className="font-semibold text-slate-800">What's in progress:</div>
           <ul className="list-disc list-inside space-y-1 text-slate-500">
             <li>Dynamic sequencing from your IRT test results</li>
-            <li>Direct linkage with competency graph frontier</li>
+            <li>Direct linkage with competency graph</li>
             <li>Weekly habit-based pacing calibration</li>
           </ul>
         </div>

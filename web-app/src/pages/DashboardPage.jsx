@@ -59,19 +59,15 @@ export default function DashboardPage() {
     return assessmentResult?.skills || [];
   }, [assessmentResult]);
 
-  const masteredSkills = useMemo(() => {
-    return skills.filter(s => s.state === 'MASTERED');
-  }, [skills]);
-
-  const frontierSkills = useMemo(() => {
-    return skills.filter(s => s.state === 'FRONTIER');
+  const readySkills = useMemo(() => {
+    return skills.filter(s => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN');
   }, [skills]);
 
   const lockedSkills = useMemo(() => {
-    return skills.filter(s => s.state === 'LOCKED');
+    return skills.filter(s => s.state === 'LOCKED' || (!['MASTERED', 'unlocked', 'READY_TO_LEARN'].includes(s.state) && s.status !== 'unlocked'));
   }, [skills]);
 
-  const completedCount = masteredSkills.length;
+  const completedCount = readySkills.length;
   const totalCount = skills.length;
   const readinessPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const firstName = user?.fullName?.split(' ')[0] || 'Learner';
@@ -81,8 +77,8 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const skillsFromReady = frontierSkills.length + lockedSkills.length;
-  const nextUpSkill = frontierSkills[0]?.name || (lockedSkills[0]?.name ?? 'Diagnostic CAT');
+  const skillsFromReady = lockedSkills.length;
+  const nextUpSkill = lockedSkills[0]?.name ?? 'Diagnostic CAT';
 
   return (
     <div className="flex flex-col lg:flex-row min-h-full pb-10">
@@ -123,7 +119,7 @@ export default function DashboardPage() {
                     You have <span className="font-bold text-[#7C5CFA]">{skillsFromReady} milestone{skillsFromReady !== 1 ? 's' : ''}</span> left to complete full competency.
                   </>
                 ) : (
-                  <>Congratulations! You have mastered all competencies in your current learning track.</>
+                  <>Congratulations! You are ready to learn all competencies in your current learning track.</>
                 )
               ) : (
                 <>Welcome to your personalized learning studio. Start your quick Computerized Adaptive Test (CAT) to diagnose skill gaps and build your optimal roadmap.</>
@@ -171,7 +167,7 @@ export default function DashboardPage() {
           <StatCard
             label="Track Readiness"
             value={`${readinessPct}%`}
-            sub={totalCount > 0 ? `${completedCount} of ${totalCount} Mastered` : 'Test pending'}
+            sub={totalCount > 0 ? `${completedCount} of ${totalCount} Ready to Learn` : 'Test pending'}
             icon={BookOpen}
             badgeBg="bg-[#E7F8EF]"
             iconColor="text-[#2FBF8F]"
@@ -187,13 +183,13 @@ export default function DashboardPage() {
             onClick={() => navigate('/assessment')}
           />
           <StatCard
-            label="Frontier Skills"
-            value={frontierSkills.length > 0 ? `${frontierSkills.length} In Progress` : totalCount > 0 ? 'All Mastered' : '0 Pending'}
-            sub={frontierSkills[0]?.name ? `Focus: ${frontierSkills[0].name}` : 'Ready to start'}
+            label="Ready to Learn"
+            value={completedCount > 0 ? `${completedCount} Active` : totalCount > 0 ? 'All Locked' : '0 Pending'}
+            sub={readySkills[0]?.name ? `Focus: ${readySkills[0].name}` : 'Ready to start'}
             icon={Zap}
             badgeBg="bg-[#F0EBFF]"
             iconColor="text-[#7C5CFA]"
-            onClick={() => navigate('/roadmap')}
+            onClick={() => navigate('/graph')}
           />
         </div>
 
@@ -229,17 +225,6 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-xs text-[#6E6880] mt-0.5">Topological Competency Flow &amp; Dependency Prerequisite Tree</p>
                 </div>
-                <div className="flex items-center gap-2.5 text-[11px] font-bold flex-wrap">
-                  <span className="flex items-center gap-1.5 rounded-full bg-[#E7F8EF] px-2.5 py-1 border border-[#BFE9D2] text-[#1F7A55]">
-                    <span className="h-2 w-2 rounded-full bg-[#2FBF8F]" /> Unlocked ({completedCount})
-                  </span>
-                  <span className="flex items-center gap-1.5 rounded-full bg-[#FFEEDD] px-2.5 py-1 border border-[#FFD9B8] text-[#B45A14]">
-                    <span className="h-2 w-2 rounded-full bg-[#FF9838] animate-pulse" /> Frontier ({frontierSkills.length})
-                  </span>
-                  <span className="flex items-center gap-1.5 rounded-full bg-[#F7F3E8] px-2.5 py-1 border border-[#E8E0CC] text-[#8D8471]">
-                    <span className="h-2 w-2 rounded-full bg-[#C6BBA2]" /> Locked ({lockedSkills.length})
-                  </span>
-                </div>
               </div>
               <InteractiveSkillGraph skills={skills} height={480} showHeader={false} />
             </div>
@@ -248,7 +233,7 @@ export default function DashboardPage() {
             <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 sm:p-6 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-base font-extrabold text-[#2F2A3E]">Verified Competencies &amp; Frontier Skills</h2>
+                  <h2 className="text-base font-extrabold text-[#2F2A3E]">Verified Competencies</h2>
                   <p className="text-xs text-[#6E6880] mt-0.5">Real-time status based on your diagnostic answers</p>
                 </div>
                 <Link
@@ -261,29 +246,24 @@ export default function DashboardPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {skills.slice(0, 6).map((skill) => {
-                  const isMastered = skill.state === 'MASTERED';
-                  const isFrontier = skill.state === 'FRONTIER';
+                  const isReady = skill.state === 'MASTERED' || skill.status === 'unlocked' || skill.state === 'READY_TO_LEARN';
                   return (
                     <div
                       key={skill.skillId || skill.name}
                       className={`flex items-center gap-3.5 rounded-2xl border p-3.5 transition ${
-                        isMastered
+                        isReady
                           ? 'border-[#BFE9D2] bg-[#E7F8EF]/60'
-                          : isFrontier
-                          ? 'border-[#FFD9B8] bg-[#FFF1E2]/70 ring-1 ring-[#FF9838]/20'
                           : 'border-[#E8E0CC] bg-[#F7F3E8]/60'
                       }`}
                     >
                       <span
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
-                          isMastered
+                          isReady
                             ? 'bg-[#2FBF8F] text-white shadow-2xs'
-                            : isFrontier
-                            ? 'bg-[#FF9838] text-white shadow-2xs'
                             : 'bg-[#E8E0CC] text-[#8D8471]'
                         }`}
                       >
-                        {isMastered ? '✓' : isFrontier ? '⚡' : '🔒'}
+                        {isReady ? '✓' : '🔒'}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
@@ -291,18 +271,9 @@ export default function DashboardPage() {
                           <span className="text-[10px] font-semibold text-[#8D8471] shrink-0">{skill.cluster || 'Core'}</span>
                         </div>
                         <p className="text-[11px] text-[#6E6880] mt-0.5">
-                          {isMastered ? 'Mastered in diagnostic' : isFrontier ? 'Next frontier milestone' : 'Prerequisites pending'}
+                          {isReady ? 'Ready to learn' : 'Prerequisites pending'}
                         </p>
                       </div>
-                      {isFrontier && (
-                        <button
-                          type="button"
-                          onClick={() => navigate('/roadmap')}
-                          className="rounded-full bg-[#7C5CFA] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#6244E8] transition shrink-0 cursor-pointer shadow-2xs"
-                        >
-                          Learn
-                        </button>
-                      )}
                     </div>
                   );
                 })}
@@ -338,35 +309,30 @@ export default function DashboardPage() {
           <div className="space-y-2">
             {skills.length > 0 ? (
               skills.slice(0, 5).map((item) => {
-                const isMastered = item.state === 'MASTERED';
-                const isFrontier = item.state === 'FRONTIER';
+                const isReady = item.state === 'MASTERED' || item.status === 'unlocked' || item.state === 'READY_TO_LEARN';
                 return (
                   <div
                     key={item.skillId || item.name}
                     className={`flex items-center justify-between gap-2.5 rounded-2xl border p-2.5 transition ${
-                      isMastered
+                      isReady
                         ? 'border-[#BFE9D2] bg-[#E7F8EF]/40'
-                        : isFrontier
-                        ? 'border-[#FFD9B8] bg-[#FFF1E2]/70 ring-1 ring-[#FF9838]/30'
                         : 'border-[#E8E0CC] bg-[#FFFDF7]'
                     }`}
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#2F2A3E] truncate">{item.name}</p>
                       <p className="text-[10px] text-[#8D8471] mt-0.5">
-                        {isMastered ? 'Verified Competency' : isFrontier ? 'Currently Calibrating' : 'Locked'}
+                        {isReady ? 'Ready to Learn' : 'Locked'}
                       </p>
                     </div>
                     <span
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                        isMastered
+                        isReady
                           ? 'bg-[#2FBF8F] text-white shadow-2xs'
-                          : isFrontier
-                          ? 'bg-[#FF9838] text-white shadow-2xs'
                           : 'bg-[#E8E0CC] text-[#8D8471]'
                       }`}
                     >
-                      {isMastered ? '✓' : isFrontier ? '⚡' : '🔒'}
+                      {isReady ? '✓' : '🔒'}
                     </span>
                   </div>
                 );
@@ -394,7 +360,7 @@ export default function DashboardPage() {
             <p className="text-xs font-bold uppercase tracking-wider text-[#B45A14]">Weekly Target</p>
           </div>
           <p className="text-xs font-medium text-[#6A3906] leading-relaxed">
-            Master 2 Frontier skills this week to reach <span className="font-bold text-[#B45A14]">{Math.min(readinessPct + 15, 100)}%</span> readiness for junior developer opportunities.
+            Unlock 2 skills this week to reach <span className="font-bold text-[#B45A14]">{Math.min(readinessPct + 15, 100)}%</span> readiness for junior developer opportunities.
           </p>
         </div>
 
