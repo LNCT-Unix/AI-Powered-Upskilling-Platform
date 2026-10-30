@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -13,12 +13,12 @@ import {
   Users,
 } from 'lucide-react';
 import Button from '../ui/Button';
-import { generateMentorKey } from '../../data/mentorDemoData';
 import {
   MentorModal,
   MentorPageHeader,
   MentorStatCard,
 } from './MentorShared';
+import { mentorService } from '../../services/mentorService';
 
 function fallbackCopy(text) {
   const textarea = document.createElement('textarea');
@@ -36,37 +36,50 @@ function fallbackCopy(text) {
 }
 
 export default function MentorUniqueKey() {
-  const { uniqueKey, setUniqueKey, students, showToast } = useOutletContext();
+  const { uniqueKey, setUniqueKey, showToast } = useOutletContext();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [keyMeta, setKeyMeta] = useState(null);
   const copiedTimer = useRef(null);
 
+  useEffect(() => {
+    mentorService.getKey()
+      .then((res) => {
+        if (res?.data) {
+          setKeyMeta(res.data);
+          if (res.data.key) setUniqueKey(res.data.key);
+        }
+      })
+      .catch(() => {});
+  }, [setUniqueKey]);
+
   const handleCreateClick = () => {
-    if (uniqueKey) {
-      setConfirmOpen(true);
-      return;
-    }
     setConfirmOpen(true);
   };
 
   const handleGenerate = async () => {
     setGenerating(true);
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 550);
-    });
-
-    const nextKey = generateMentorKey();
-    setUniqueKey(nextKey);
-    setGenerating(false);
-    setConfirmOpen(false);
-    setCopied(false);
-    showToast('New demo mentor key generated. Copy it and share it with your cohort.');
+    try {
+      const res = await mentorService.generateOrRotateKey(Boolean(uniqueKey));
+      if (res?.data?.key) {
+        setUniqueKey(res.data.key);
+        setKeyMeta(res.data);
+        showToast('New mentor key generated and saved. Copy it and share it with your cohort.');
+      }
+    } catch (err) {
+      const msg = err?.data?.message || err?.message || 'Could not generate mentor key.';
+      showToast(msg, 'error');
+    } finally {
+      setGenerating(false);
+      setConfirmOpen(false);
+      setCopied(false);
+    }
   };
 
   const handleCopy = async () => {
     if (!uniqueKey) {
-      showToast('Create a demo key before copying.', 'error');
+      showToast('Generate a key before copying.', 'error');
       return;
     }
 
@@ -86,16 +99,18 @@ export default function MentorUniqueKey() {
     }
   };
 
+  const linkedCount = keyMeta?.linkedStudentCount ?? 0;
+
   return (
     <div className="space-y-5 p-4 sm:space-y-6 sm:p-7">
       <MentorPageHeader
         eyebrow="Student connection"
         title="My Unique Key"
-        description="Use a mentor key to connect demo students to your cohort. Generate, copy, and share the key — all state stays in this browser session."
+        description="Use a mentor key to connect students to your cohort. Generate, copy, and share the key."
         icon={KeyRound}
         actions={
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E0CC] bg-white px-3 py-1.5 text-[11px] font-bold text-[#6E6880] shadow-2xs">
-            <ShieldCheck size={13} className="text-[#138A63]" /> Frontend-only key
+            <ShieldCheck size={13} className="text-[#138A63]" /> Active Key
           </span>
         }
       />
@@ -104,30 +119,30 @@ export default function MentorUniqueKey() {
         <MentorStatCard
           label="Key Status"
           value={uniqueKey ? 'Active' : 'Missing'}
-          detail="Demo key available to share"
+          detail={uniqueKey ? 'Key is live and active' : 'No active key yet'}
           icon={KeyRound}
           tint={uniqueKey ? 'green' : 'orange'}
         />
         <MentorStatCard
           label="Connected Students"
-          value={students.length}
-          detail="Illustrative cohort members"
+          value={linkedCount}
+          detail="Linked cohort members"
           icon={Users}
           tint="purple"
         />
         <MentorStatCard
           label="Key Format"
           value="MENTOR-XXXXXX"
-          detail="6 random characters"
+          detail="Standard joining code"
           icon={Sparkles}
           tint="blue"
         />
         <MentorStatCard
           label="Persistence"
-          value="Session"
-          detail="Resets when the page reloads"
+          value="Database"
+          detail="Stored securely in platform"
           icon={ShieldCheck}
-          tint="orange"
+          tint="green"
         />
       </div>
 
@@ -141,9 +156,6 @@ export default function MentorUniqueKey() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] font-extrabold uppercase tracking-widest">
                 <KeyRound size={11} /> Mentor connection key
-              </span>
-              <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-[#FFC93C]/30 bg-[#FFC93C]/15 px-3 py-1 text-[9px] font-extrabold uppercase tracking-widest text-[#FFE7A3]">
-                <Sparkles size={11} /> Demo only
               </span>
             </div>
 
@@ -183,11 +195,13 @@ export default function MentorUniqueKey() {
                 onClick={handleCreateClick}
                 className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-white/25 bg-white/10 px-4 py-2.5 text-[11px] font-extrabold text-white transition hover:bg-white/20"
               >
-                <RefreshCw size={13} /> Create Unique Key
+                <RefreshCw size={13} /> {uniqueKey ? 'Rotate Mentor Key' : 'Create Mentor Key'}
               </button>
-              <span className="inline-flex items-center justify-center gap-1.5 rounded-2xl px-2 text-[10px] font-medium text-white/55">
-                <AlertTriangle size={12} /> Replacing the key requires confirmation.
-              </span>
+              {uniqueKey && (
+                <span className="inline-flex items-center justify-center gap-1.5 rounded-2xl px-2 text-[10px] font-medium text-white/55">
+                  <AlertTriangle size={12} /> Replacing the key revokes the current one.
+                </span>
+              )}
             </div>
           </div>
         </section>
@@ -199,103 +213,79 @@ export default function MentorUniqueKey() {
               <Link2 size={17} />
             </span>
             <div>
-              <h2 className="text-sm font-extrabold text-[#2F2A3E]">How students connect</h2>
-              <p className="text-[10px] text-[#8D8471]">Three simple demo steps</p>
+              <h3 className="text-xs font-extrabold text-[#2F2A3E]">How joining works</h3>
+              <p className="text-[10px] text-[#8D8471]">Cohort connection protocol</p>
             </div>
           </div>
 
-          <ol className="mt-4 space-y-3">
-            {[
-              {
-                title: 'Share your key',
-                description: 'Send the key to students through your usual channel.',
-              },
-              {
-                title: 'Student enters the key',
-                description: 'They link their demo learning profile to your mentor cohort.',
-              },
-              {
-                title: 'Track progress here',
-                description: 'Review skills and test insights from the mentor dashboard.',
-              },
-            ].map((step, index) => (
-              <li key={step.title} className="flex gap-2.5">
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-[#E4D7FF] bg-[#EFEAFC] text-[10px] font-extrabold text-[#7C5CFA]">
-                  {index + 1}
-                </span>
-                <div>
-                  <p className="text-[11px] font-extrabold text-[#2F2A3E]">{step.title}</p>
-                  <p className="mt-0.5 text-[10px] leading-relaxed text-[#8D8471]">
-                    {step.description}
-                  </p>
-                </div>
-              </li>
-            ))}
+          <ol className="mt-4 space-y-3 text-[11px] leading-relaxed text-[#6E6880]">
+            <li className="flex items-start gap-2">
+              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#EFEAFC] text-[10px] font-extrabold text-[#7C5CFA]">
+                1
+              </span>
+              <span>Copy your active key and send it to your students.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#EFEAFC] text-[10px] font-extrabold text-[#7C5CFA]">
+                2
+              </span>
+              <span>Students enter your key in their settings or onboarding.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#EFEAFC] text-[10px] font-extrabold text-[#7C5CFA]">
+                3
+              </span>
+              <span>
+                Their diagnostic test results, progress bands, and verified milestones appear in your studio.
+              </span>
+            </li>
           </ol>
-
-          <div className="mt-4 rounded-2xl border border-dashed border-[#D8CCAE] bg-[#FDF9EE] p-3 text-[10px] leading-relaxed text-[#8D8471]">
-            This key is generated in the browser for demonstration only. It is not validated,
-            persisted, or linked to a real mentor account.
-          </div>
         </section>
       </div>
 
-      {/* Confirmation modal */}
+      {/* Confirmation modal for replacing the key */}
       <MentorModal
         open={confirmOpen}
-        onClose={() => {
-          if (!generating) setConfirmOpen(false);
-        }}
-        title="Create a new unique key?"
-        subtitle="Your current demo key will be replaced in this browser session."
+        onClose={() => !generating && setConfirmOpen(false)}
+        title={uniqueKey ? 'Replace mentor key?' : 'Generate mentor key?'}
         size="sm"
         footer={
           <>
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setConfirmOpen(false)}
               disabled={generating}
+              onClick={() => setConfirmOpen(false)}
             >
               Cancel
             </Button>
-            <Button variant="primary" size="sm" onClick={handleGenerate} disabled={generating}>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={generating}
+              onClick={handleGenerate}
+            >
               {generating ? (
                 <>
-                  <Loader2 size={14} className="animate-spin" /> Generating…
+                  <Loader2 size={14} className="animate-spin" />
+                  Generating…
                 </>
               ) : (
-                <>
-                  <RefreshCw size={14} /> Create new key
-                </>
+                'Generate key'
               )}
             </Button>
           </>
         }
       >
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-2xl border border-[#FFD9B8] bg-[#FFF6EC] p-3.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[#FFD9B8] bg-white text-[#C06A14]">
-              <AlertTriangle size={17} />
-            </span>
-            <div>
-              <p className="text-xs font-extrabold text-[#8A4F0E]">Existing key detected</p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-[#9A5B16]">
-                Students using <strong className="font-mono">{uniqueKey}</strong> would need the new
-                key in a real implementation. Continue only if you want a fresh demo key.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[#E8E0CC] bg-[#FDF9EE] p-3">
-            <p className="text-[9px] font-extrabold uppercase tracking-widest text-[#8D8471]">
-              Current key
-            </p>
-            <p className="mt-1 font-mono text-base font-extrabold tracking-[0.14em] text-[#2F2A3E]">
-              {uniqueKey}
-            </p>
-          </div>
-        </div>
+        <p className="text-xs leading-relaxed text-[#6E6880]">
+          {uniqueKey ? (
+            <>
+              Existing students linked to <strong>{uniqueKey}</strong> remain in your cohort. However, any new student attempting to use <strong>{uniqueKey}</strong> will need the new key.
+            </>
+          ) : (
+            'Generate a new unique joining key for your cohort.'
+          )}
+        </p>
       </MentorModal>
     </div>
   );

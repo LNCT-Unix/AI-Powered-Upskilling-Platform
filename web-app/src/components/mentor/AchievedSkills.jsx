@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Atom,
   Award,
@@ -22,6 +21,7 @@ import {
   ProgressBar,
 } from './MentorShared';
 import { progressTone } from './mentorUtils';
+import { mentorService } from '../../services/mentorService';
 
 const CATEGORY_META = {
   Programming: {
@@ -57,51 +57,89 @@ const CATEGORY_META = {
 };
 
 function proficiencyVariant(proficiency) {
-  if (proficiency === 'Expert') return 'emerald';
-  if (proficiency === 'Advanced') return 'indigo';
-  if (proficiency === 'Intermediate') return 'amber';
+  const p = (proficiency || '').toLowerCase();
+  if (p === 'expert') return 'emerald';
+  if (p === 'advanced') return 'indigo';
+  if (p === 'intermediate') return 'amber';
   return 'neutral';
 }
 
 export default function AchievedSkills() {
-  const { achievements, students } = useOutletContext();
+  const [achievements, setAchievements] = useState([]);
+  const [facets, setFacets] = useState(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All categories');
   const [proficiency, setProficiency] = useState('All levels');
 
-  const categories = useMemo(
-    () => ['All categories', ...Array.from(new Set(achievements.map((item) => item.category)))],
-    [achievements],
-  );
+  useEffect(() => {
+    mentorService.getAchievementFacets()
+      .then((res) => {
+        if (res?.data) {
+          setFacets(res.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  const proficiencyLevels = useMemo(
-    () => ['All levels', ...Array.from(new Set(achievements.map((item) => item.proficiency)))],
-    [achievements],
-  );
+  useEffect(() => {
+    let mounted = true;
+    mentorService.getAchievements({
+      q: query,
+      category,
+      proficiency,
+      page: 0,
+      size: 50,
+    })
+      .then((res) => {
+        if (mounted && res?.data?.content) {
+          setAchievements(res.data.content);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setAchievements([]);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [query, category, proficiency]);
+
+  const categories = useMemo(() => {
+    if (facets?.categories && facets.categories.length > 0) {
+      return ['All categories', ...facets.categories];
+    }
+    return ['All categories'];
+  }, [facets]);
+
+  const proficiencyLevels = ['All levels', 'Beginner', 'Intermediate', 'Advanced', 'Expert'];
 
   const filteredAchievements = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-
     return achievements
       .filter((achievement) => {
         const matchesQuery =
           !normalizedQuery ||
-          achievement.skill.toLowerCase().includes(normalizedQuery) ||
-          achievement.studentName.toLowerCase().includes(normalizedQuery);
+          (achievement.skill || '').toLowerCase().includes(normalizedQuery) ||
+          (achievement.studentName || '').toLowerCase().includes(normalizedQuery);
         const matchesCategory =
           category === 'All categories' || achievement.category === category;
         const matchesProficiency =
-          proficiency === 'All levels' || achievement.proficiency === proficiency;
+          proficiency === 'All levels' || (achievement.proficiency || '').toLowerCase() === proficiency.toLowerCase();
         return matchesQuery && matchesCategory && matchesProficiency;
       })
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [achievements, query, category, proficiency]);
 
-  const studentsWithAchievements = new Set(achievements.map((item) => item.studentId)).size;
-  const uniqueSkills = new Set(achievements.map((item) => item.skill)).size;
-  const topLevelCount = achievements.filter(
-    (item) => item.proficiency === 'Advanced' || item.proficiency === 'Expert',
-  ).length;
+  const summary = facets?.summary || {
+    totalAchievements: achievements.length,
+    uniqueSkills: new Set(achievements.map((item) => item.skill || item.skillKey)).size,
+    studentsWithAchievements: new Set(achievements.map((item) => item.studentId)).size,
+    topLevelCount: achievements.filter(
+      (item) => (item.proficiency || '').toUpperCase() === 'ADVANCED' || (item.proficiency || '').toUpperCase() === 'EXPERT',
+    ).length,
+  };
 
   const hasFilters = query.trim() || category !== 'All categories' || proficiency !== 'All levels';
   const resetFilters = () => {
@@ -115,11 +153,11 @@ export default function AchievedSkills() {
       <MentorPageHeader
         eyebrow="Skill gallery"
         title="Achieved Skills"
-        description="Celebrate the verified skill milestones earned across your demo cohort. Filter by category, proficiency, or student to explore each achievement."
+        description="Celebrate the verified skill milestones earned across your cohort. Filter by category, proficiency, or student to explore each achievement."
         icon={Award}
         actions={
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E0CC] bg-white px-3 py-1.5 text-[11px] font-bold text-[#6E6880] shadow-2xs">
-            <Sparkles size={13} className="text-[#FF9838]" /> Illustrative achievements
+            <Sparkles size={13} className="text-[#FF9838]" /> {summary.totalAchievements} verified achievements
           </span>
         }
       />
@@ -127,28 +165,28 @@ export default function AchievedSkills() {
       <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <MentorStatCard
           label="Achievements"
-          value={achievements.length}
+          value={summary.totalAchievements}
           detail="Total verified milestones"
           icon={Award}
           tint="green"
         />
         <MentorStatCard
           label="Unique Skills"
-          value={uniqueSkills}
+          value={summary.uniqueSkills}
           detail="Across all learning tracks"
           icon={Sparkles}
           tint="purple"
         />
         <MentorStatCard
           label="Students Earning"
-          value={`${studentsWithAchievements}/${students.length}`}
+          value={summary.studentsWithAchievements}
           detail="Students with at least one skill"
           icon={Users}
           tint="blue"
         />
         <MentorStatCard
           label="Advanced Wins"
-          value={topLevelCount}
+          value={summary.topLevelCount}
           detail="Advanced or expert proficiency"
           icon={BrainCircuit}
           tint="orange"
@@ -200,16 +238,17 @@ export default function AchievedSkills() {
               >
                 {proficiencyLevels.map((level) => (
                   <option key={level} value={level}>
-                    {level}
+                    {level === 'All levels' ? 'All proficiencies' : level}
                   </option>
                 ))}
               </select>
             </div>
+
             {hasFilters && (
               <button
                 type="button"
                 onClick={resetFilters}
-                className="rounded-2xl border border-[#E8E0CC] bg-[#F7F3E8] px-3 py-2.5 text-[11px] font-bold text-[#6E6880] transition hover:bg-[#EFEAFC] hover:text-[#7C5CFA]"
+                className="rounded-2xl border border-[#E8E0CC] bg-white px-3 py-2 text-[11px] font-bold text-[#8D8471] transition hover:bg-[#F7F3E8] hover:text-[#2F2A3E]"
               >
                 Reset
               </button>
@@ -217,86 +256,77 @@ export default function AchievedSkills() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {categories.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setCategory(item)}
-              className={`rounded-full border px-3 py-1.5 text-[10px] font-bold transition ${
-                category === item
-                  ? 'border-[#7C5CFA] bg-[#7C5CFA] text-white shadow-2xs'
-                  : 'border-[#E8E0CC] bg-white text-[#6E6880] hover:border-[#7C5CFA]/30 hover:bg-[#EFEAFC] hover:text-[#7C5CFA]'
-              }`}
-            >
-              {item}
-            </button>
-          ))}
+        {/* Category Pills */}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {categories.map((item) => {
+            const active = category === item;
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCategory(item)}
+                className={`rounded-xl px-2.5 py-1 text-[11px] font-bold transition ${
+                  active
+                    ? 'bg-[#7C5CFA] text-white shadow-2xs'
+                    : 'border border-[#E8E0CC] bg-white text-[#6E6880] hover:bg-[#F7F3E8] hover:text-[#2F2A3E]'
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
         </div>
-
-        <p className="px-1 text-[10px] font-semibold text-[#8D8471]">
-          Showing {filteredAchievements.length} of {achievements.length} demo achievements
-        </p>
       </section>
 
-      {filteredAchievements.length === 0 ? (
-        <MentorEmptyState
-          icon={SearchX}
-          title="No achievements match these filters"
-          description="Try another skill, student name, category, or proficiency level. Reset the filters to browse the full demo gallery."
-          action={
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="rounded-full bg-[#7C5CFA] px-4 py-2 text-[11px] font-bold text-white transition hover:bg-[#6244E8]"
-            >
-              Reset filters
-            </button>
-          }
-        />
-      ) : (
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {/* Grid */}
+      {filteredAchievements.length > 0 ? (
+        <section className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredAchievements.map((achievement) => {
             const meta = CATEGORY_META[achievement.category] || CATEGORY_META.Programming;
-            const Icon = meta.icon;
+            const CategoryIcon = meta.icon;
 
             return (
-              <article
+              <div
                 key={achievement.id}
-                className="group relative overflow-hidden rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-[#D8CCAE] hover:shadow-md"
+                className="flex flex-col justify-between rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-[#7C5CFA] hover:shadow-md"
               >
-                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${meta.bar}`} />
-                <div className="flex items-start justify-between gap-2 pt-1">
-                  <span
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl border ${meta.tile}`}
-                  >
-                    <Icon size={19} aria-hidden="true" />
-                  </span>
-                  <Badge variant={proficiencyVariant(achievement.proficiency)} size="sm">
-                    {achievement.proficiency}
-                  </Badge>
-                </div>
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl border ${meta.tile}`}
+                    >
+                      <CategoryIcon size={18} />
+                    </span>
+                    <Badge variant={proficiencyVariant(achievement.proficiency)} size="sm">
+                      {achievement.proficiency}
+                    </Badge>
+                  </div>
 
-                <h3 className="mt-3 text-sm font-extrabold leading-snug text-[#2F2A3E]">
-                  {achievement.skill}
-                </h3>
-                <p className="mt-0.5 text-[11px] font-semibold text-[#6E6880]">
-                  {achievement.studentName}
-                </p>
-
-                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-full border border-[#E8E0CC] bg-[#F7F3E8] px-2 py-0.5 text-[9px] font-bold text-[#6E6880]">
+                  <h3 className="mt-3 text-sm font-extrabold text-[#2F2A3E]">
+                    {achievement.skill}
+                  </h3>
+                  <p className="mt-0.5 text-[11px] font-semibold text-[#8D8471]">
                     {achievement.category}
-                  </span>
-                  <span className="rounded-full border border-[#E8E0CC] bg-white px-2 py-0.5 text-[9px] font-semibold text-[#8D8471]">
-                    {achievement.dateLabel}
-                  </span>
+                  </p>
+
+                  <div className="mt-3.5 flex items-center gap-2 rounded-2xl border border-[#F0E9DA] bg-[#FDF9EE] p-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[11px] font-bold text-[#2F2A3E]">
+                        {achievement.studentName}
+                      </p>
+                      <p className="text-[10px] text-[#8D8471]">
+                        {achievement.date ? new Date(achievement.date).toLocaleDateString() : 'Verified'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-3">
-                  <div className="mb-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-[#8D8471]">
-                    <span>Mastery</span>
-                    <span>{achievement.progress}%</span>
+                <div className="mt-4 border-t border-[#F0E9DA] pt-3">
+                  <div className="mb-1 flex items-center justify-between text-[10px]">
+                    <span className="font-bold text-[#6E6880]">Skill Mastery</span>
+                    <span className="font-extrabold tabular-nums text-[#2F2A3E]">
+                      {achievement.progress}%
+                    </span>
                   </div>
                   <ProgressBar
                     value={achievement.progress}
@@ -304,16 +334,28 @@ export default function AchievedSkills() {
                     label={`${achievement.skill} mastery`}
                   />
                 </div>
-              </article>
+              </div>
             );
           })}
         </section>
+      ) : (
+        <MentorEmptyState
+          icon={SearchX}
+          title={achievements.length === 0 ? "No verified skill milestones yet" : "No achievements match your filters"}
+          description={achievements.length === 0 ? "When students in your cohort complete assessments, verified skills will appear here." : "Try clearing your filters or changing the proficiency level."}
+          action={
+            hasFilters ? (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="rounded-2xl border border-[#E8E0CC] bg-white px-3 py-1.5 text-xs font-bold text-[#2F2A3E] shadow-2xs hover:bg-[#F7F3E8]"
+              >
+                Clear filters
+              </button>
+            ) : null
+          }
+        />
       )}
-
-      <p className="rounded-2xl border border-dashed border-[#D8CCAE] bg-[#FDF9EE] px-4 py-3 text-[10px] leading-relaxed text-[#8D8471]">
-        All skill achievements on this screen are illustrative demo content for the mentor
-        experience. They are not generated from real assessment records.
-      </p>
     </div>
   );
 }

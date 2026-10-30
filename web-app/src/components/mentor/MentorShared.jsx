@@ -1,18 +1,6 @@
 import { useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, X } from 'lucide-react';
-
-/* ───────────────────────────── Demo marker ───────────────────────────── */
-export function DemoPill({ children = 'Frontend demo data', className = '' }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border border-[#E4D7FF] bg-[#EFEAFC] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#6244E8] ${className}`}
-    >
-      <Sparkles size={12} aria-hidden="true" />
-      {children}
-    </span>
-  );
-}
+import { X } from 'lucide-react';
 
 /* ─────────────────────────── Page header bar ─────────────────────────── */
 export function MentorPageHeader({ eyebrow, title, description, icon: Icon, actions }) {
@@ -30,7 +18,6 @@ export function MentorPageHeader({ eyebrow, title, description, icon: Icon, acti
               {eyebrow}
             </p>
           )}
-          <DemoPill />
         </div>
         <h1 className="text-xl font-extrabold tracking-tight text-[#2F2A3E] sm:text-2xl">
           {title}

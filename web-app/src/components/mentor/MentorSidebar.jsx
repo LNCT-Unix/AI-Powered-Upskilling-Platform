@@ -85,7 +85,7 @@ export default function MentorSidebar({ mentor, onClose, onLogout }) {
             <p className="truncate text-xs font-extrabold text-[#2F2A3E]">{mentor.fullName}</p>
             <p className="truncate text-[10px] font-semibold text-[#8D8471]">@{mentor.username}</p>
             <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#EFEAFC] px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#7C5CFA]">
-              <ShieldCheck size={10} aria-hidden="true" /> Demo Mentor
+              <ShieldCheck size={10} aria-hidden="true" /> Mentor
             </span>
           </div>
         </div>
@@ -112,9 +112,6 @@ export default function MentorSidebar({ mentor, onClose, onLogout }) {
       </div>
 
       <div className="border-t border-[#E8E0CC] p-3">
-        <div className="mb-2 rounded-xl bg-[#FDF9EE] px-3 py-2 text-[10px] leading-relaxed text-[#8D8471]">
-          Mentor demo mode. No backend session or role change is applied.
-        </div>
         <button
           type="button"
           onClick={onLogout}
