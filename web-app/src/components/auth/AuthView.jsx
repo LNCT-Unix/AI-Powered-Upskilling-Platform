@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import OctoMascot from '../common/OctoMascot';
+import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Eye,
@@ -36,6 +38,8 @@ export default function AuthView({ initialMode = 'login' }) {
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showSignupPass, setShowSignupPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const mascotRef = useRef(null);
+  const { startPostLoginTransition, isTransitioning } = usePostLoginTransition();
 
   // Form states
   const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('skillpath_remember_email') || '');
@@ -56,17 +60,16 @@ export default function AuthView({ initialMode = 'login' }) {
   const [resendStatus, setResendStatus] = useState('');
   const [resendSeconds, setResendSeconds] = useState(0);
 
-  const hasCompletedOnboarding = Boolean(localStorage.getItem('skillpath_onboarding_profile'));
-  const defaultDestination = hasCompletedOnboarding ? '/dashboard' : '/onboarding';
+  const defaultDestination = '/dashboard';
   const destination = location.state?.from?.pathname || defaultDestination;
 
-  // If already logged in, redirect
+  // If already logged in, redirect (skip if post-login transition is currently handling it)
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isTransitioning) {
       const dest = user?.role === 'MENTOR' ? '/mentor' : destination;
       navigate(dest, { replace: true });
     }
-  }, [isAuthenticated, user, navigate, destination]);
+  }, [isAuthenticated, user, navigate, destination, isTransitioning]);
 
   useEffect(() => {
     if (resendSeconds <= 0) return undefined;
@@ -133,11 +136,19 @@ export default function AuthView({ initialMode = 'login' }) {
         localStorage.removeItem('skillpath_remember_email');
       }
 
+      // Measure initial mascot rect right before login completes
+      const mascotEl = mascotRef.current || document.querySelector('.octo-wrap .octo-mascot-svg') || document.querySelector('.octo-wrap .octo');
+      const mascotRect = mascotEl ? mascotEl.getBoundingClientRect() : null;
+
       const res = await login(email, loginPassword);
       if (res?.success) {
-        showToast('Welcome back! Redirecting…');
+        showToast('Welcome back! Entering studio…');
         const isMentor = res?.user?.role === 'MENTOR';
-        navigate(isMentor ? '/mentor' : destination, { replace: true });
+        const targetUrl = isMentor ? '/mentor' : destination;
+        startPostLoginTransition({
+          initialRect: mascotRect,
+          targetUrl,
+        });
       } else {
         setError(res?.error || 'Invalid email or password. Please try again.');
       }
@@ -230,8 +241,8 @@ export default function AuthView({ initialMode = 'login' }) {
         showToast('Email verified! Redirecting to mentor studio…');
         navigate('/mentor', { replace: true });
       } else {
-        showToast(hasCompletedOnboarding ? 'Email verified! Redirecting to dashboard…' : 'Email verified! Redirecting to onboarding…');
-        const postVerifyDestination = location.state?.from?.pathname || (hasCompletedOnboarding ? '/dashboard' : '/onboarding');
+        showToast('Email verified! Redirecting to dashboard…');
+        const postVerifyDestination = location.state?.from?.pathname || '/dashboard';
         navigate(postVerifyDestination, { replace: true });
       }
     } catch (err) {
@@ -278,81 +289,15 @@ export default function AuthView({ initialMode = 'login' }) {
 
         <div className="art-inner">
           <div className="octo-wrap rise" style={{ '--i': 1 }}>
-            <svg className="octo" viewBox="0 0 320 320" aria-label="Octobyte octopus mascot">
-              <defs>
-                <linearGradient id="bodyGrad" x1="90" y1="48" x2="232" y2="192" gradientUnits="userSpaceOnUse">
-                  <stop offset="0" stopColor="#C7B6FF" />
-                  <stop offset="1" stopColor="#8F74F2" />
-                </linearGradient>
-                <linearGradient id="tentGrad" x1="0" y1="160" x2="0" y2="292" gradientUnits="userSpaceOnUse">
-                  <stop offset="0" stopColor="#9F85FF" />
-                  <stop offset="1" stopColor="#6A4DF0" />
-                </linearGradient>
-              </defs>
-
-              <g className="octo-float">
-                {/* tentacles */}
-                <g className="tent" style={{ '--amp': 5, '--d': '0s', transformOrigin: '98px 168px' }}>
-                  <path d="M98 162 C 70 200, 108 224, 84 262" stroke="url(#tentGrad)" strokeWidth="18" fill="none" strokeLinecap="round" />
-                </g>
-                <g className="tent" style={{ '--amp': 7, '--d': '-1.2s', transformOrigin: '128px 178px' }}>
-                  <path d="M128 172 C 122 214, 92 228, 110 272" stroke="url(#tentGrad)" strokeWidth="20" fill="none" strokeLinecap="round" />
-                </g>
-                <g className="tent" style={{ '--amp': 6, '--d': '-2s', transformOrigin: '152px 184px' }}>
-                  <path d="M152 178 C 158 220, 130 238, 148 282" stroke="url(#tentGrad)" strokeWidth="22" fill="none" strokeLinecap="round" />
-                </g>
-                <g className="tent" style={{ '--amp': 6, '--d': '-.7s', transformOrigin: '178px 184px' }}>
-                  <path d="M178 178 C 172 220, 202 236, 184 278" stroke="url(#tentGrad)" strokeWidth="22" fill="none" strokeLinecap="round" />
-                </g>
-                <g className="tent" style={{ '--amp': 7, '--d': '-1.7s', transformOrigin: '204px 178px' }}>
-                  <path d="M204 172 C 212 214, 242 226, 222 266" stroke="url(#tentGrad)" strokeWidth="20" fill="none" strokeLinecap="round" />
-                </g>
-                <g className="tent" style={{ '--amp': 5, '--d': '-2.5s', transformOrigin: '230px 166px' }}>
-                  <path d="M230 160 C 260 198, 222 224, 248 258" stroke="url(#tentGrad)" strokeWidth="18" fill="none" strokeLinecap="round" />
-                </g>
-
-                {/* head */}
-                <ellipse cx="160" cy="118" rx="76" ry="68" fill="url(#bodyGrad)" />
-                <ellipse cx="128" cy="80" rx="27" ry="15" fill="#fff" opacity="0.22" transform="rotate(-18 128 80)" />
-
-                {/* face */}
-                <g className="eyes">
-                  <circle cx="134" cy="116" r="11" fill="#2F2A3E" />
-                  <circle cx="186" cy="116" r="11" fill="#2F2A3E" />
-                  <circle cx="138" cy="112" r="3.6" fill="#fff" />
-                  <circle cx="190" cy="112" r="3.6" fill="#fff" />
-                </g>
-                <circle cx="112" cy="138" r="8" fill="#FFB27A" opacity="0.5" />
-                <circle cx="208" cy="138" r="8" fill="#FFB27A" opacity="0.5" />
-                <path d="M146 140 Q160 152 174 140" stroke="#2F2A3E" strokeWidth="4" fill="none" strokeLinecap="round" />
-
-                {/* open book */}
-                <g className="book">
-                  <path d="M160 214 C 138 200, 112 202, 96 210 L96 240 C 114 232, 140 232, 160 244 Z" fill="#FFC93C" />
-                  <path d="M160 214 C 182 200, 208 202, 224 210 L224 240 C 206 232, 180 232, 160 244 Z" fill="#FFD966" />
-                  <path d="M160 214 L160 244" stroke="#E8A821" strokeWidth="3" strokeLinecap="round" />
-                  <path
-                    d="M108 216 C 122 211, 140 212, 150 218 M108 226 C 122 221, 140 222, 150 228"
-                    stroke="#E8A821"
-                    strokeWidth="2.4"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M212 216 C 198 211, 180 212, 170 218 M212 226 C 198 221, 180 222, 170 228"
-                    stroke="#E8A821"
-                    strokeWidth="2.4"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                </g>
-              </g>
-
-              {/* sparkles */}
-              <path className="spark" style={{ '--sd': '0s' }} d="M52 62 l3.4 8.6 8.6 3.4 -8.6 3.4 -3.4 8.6 -3.4 -8.6 -8.6 -3.4 8.6 -3.4 Z" fill="#FFC93C" />
-              <path className="spark" style={{ '--sd': '1.6s' }} d="M270 88 l2.7 6.8 6.8 2.7 -6.8 2.7 -2.7 6.8 -2.7 -6.8 -6.8 -2.7 6.8 -2.7 Z" fill="#fff" opacity="0.85" />
-              <path className="spark" style={{ '--sd': '2.8s' }} d="M282 196 l2.2 5.6 5.6 2.2 -5.6 2.2 -2.2 5.6 -2.2 -5.6 -5.6 -2.2 5.6 -2.2 Z" fill="#FF9838" />
-            </svg>
+            <div ref={mascotRef}>
+              <OctoMascot
+                size="100%"
+                className="octo"
+                idPrefix="auth-view-octo"
+                animated={true}
+                withBook={true}
+              />
+            </div>
             <div className="octo-shadow"></div>
           </div>
 

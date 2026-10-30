@@ -942,7 +942,7 @@ export default function AssessmentPage() {
               Pre-Assessment Calibration Questions
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-              Before your adaptive diagnostic test begins, select your target track and identify the concepts you already feel comfortable with. This calibrates your initial ability baseline and maps your learning nodes.
+              Before your adaptive diagnostic test begins, select your target track and identify the concepts you already feel comfortable with.
             </p>
           </div>
 
@@ -954,11 +954,8 @@ export default function AssessmentPage() {
               </span>
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-900">
-                  Select Your Engineering Track
+                  Select Your Study Track
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Which career specialization are you currently targeting?
-                </p>
               </div>
             </div>
 
@@ -996,14 +993,8 @@ export default function AssessmentPage() {
                     <h4 className="text-xs sm:text-sm font-bold text-slate-900">
                       {selectedTrack?.name || 'Backend Engineering'}
                     </h4>
-                    <p className="text-[11px] text-slate-500">
-                      REST APIs • Relational DBs • Concurrency • Microservices
-                    </p>
                   </div>
                 </div>
-                <Badge variant="indigo" size="sm">
-                  Active Track
-                </Badge>
               </div>
             </div>
           </Card>
@@ -1019,9 +1010,6 @@ export default function AssessmentPage() {
                   <h3 className="text-sm sm:text-base font-bold text-slate-900">
                     Which skills are you already comfortable in?
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    Select familiar skills to skip introductory questions and unlock advanced dependencies.
-                  </p>
                 </div>
               </div>
 
@@ -1150,28 +1138,10 @@ export default function AssessmentPage() {
                 style={{ width: `${Math.max(8, (answered / maxQuestions) * 100)}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-400">
-              <span>Calibration threshold: 8 questions</span>
-              <span>θ Convergence auto-stop</span>
-            </div>
           </Card>
 
           {/* Active Dynamic Question Card */}
           <Card className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Badge variant="indigo" icon={Layers}>
-                  Adaptive Item (IRT)
-                </Badge>
-                <Badge variant="neutral" icon={Zap}>
-                  Live Difficulty
-                </Badge>
-              </div>
-              <span className="text-xs font-mono text-slate-400">
-                Item: {currentQ.itemId ? currentQ.itemId.slice(0, 8) : 'CAT'}
-              </span>
-            </div>
-
             <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
               {currentQ.stem}
             </h2>

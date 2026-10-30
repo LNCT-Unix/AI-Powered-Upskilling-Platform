@@ -77,7 +77,7 @@ export default function SkillGraphPage() {
 
           {/* CTA actions */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button variant="primary" size="lg" onClick={() => navigate('/onboarding')}>
+            <Button variant="primary" size="lg" onClick={() => navigate('/assessment')}>
               Start Initial Screening Test <ArrowRight size={16} />
             </Button>
             <Button variant="outline" size="lg" onClick={() => navigate('/dashboard')}>
@@ -111,7 +111,7 @@ export default function SkillGraphPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/onboarding')}
+            onClick={() => navigate('/assessment')}
             className="text-xs"
           >
             Retest / Switch Track

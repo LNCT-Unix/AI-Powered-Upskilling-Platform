@@ -28,11 +28,11 @@ public class SmtpEmailSender implements EmailSender {
 
     @Override
     public void sendVerificationEmail(String toEmail, String fullName, String otp) {
+        log.info("[OTP VERIFICATION] Verification code for {}: {}", toEmail, otp);
+
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.error("SMTP is not configured — verification email was NOT sent to: {}. " +
-                    "Set SPRING_MAIL_USERNAME and SPRING_MAIL_PASSWORD environment variables " +
-                    "(and SPRING_MAIL_HOST / SPRING_MAIL_PORT if needed).", toEmail);
+            log.warn("SMTP is not configured — verification email was NOT sent to: {}. Code: {}", toEmail, otp);
             return;
         }
 
@@ -56,19 +56,19 @@ public class SmtpEmailSender implements EmailSender {
             helper.setText(body, false);
             mailSender.send(message);
 
-            log.info("Verification email sent successfully.");
+            log.info("Verification email sent successfully to {}.", toEmail);
         } catch (Exception e) {
-            log.error("Failed to send verification email: {}", e.getMessage());
+            log.error("Failed to send verification email to {}: {}. [FALLBACK OTP: {}]", toEmail, e.getMessage(), otp);
         }
     }
 
     @Override
     public void sendPasswordResetOtpEmail(String toEmail, String fullName, String otp) {
+        log.info("[OTP PASSWORD RESET] Reset code for {}: {}", toEmail, otp);
+
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.error("SMTP is not configured — password reset OTP email was NOT sent to: {}. " +
-                    "Set SPRING_MAIL_USERNAME and SPRING_MAIL_PASSWORD environment variables " +
-                    "(and SPRING_MAIL_HOST / SPRING_MAIL_PORT if needed).", toEmail);
+            log.warn("SMTP is not configured — password reset OTP email was NOT sent to: {}. Code: {}", toEmail, otp);
             return;
         }
 
@@ -92,9 +92,9 @@ public class SmtpEmailSender implements EmailSender {
             helper.setText(body, false);
             mailSender.send(message);
 
-            log.info("Password reset OTP email sent successfully.");
+            log.info("Password reset OTP email sent successfully to {}.", toEmail);
         } catch (Exception e) {
-            log.error("Failed to send password reset OTP email: {}", e.getMessage());
+            log.error("Failed to send password reset OTP email to {}: {}. [FALLBACK OTP: {}]", toEmail, e.getMessage(), otp);
         }
     }
 }

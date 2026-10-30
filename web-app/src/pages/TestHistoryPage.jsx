@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  History,
   RotateCcw,
   CheckCircle2,
   Clock,
@@ -105,12 +104,8 @@ export default function TestHistoryPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#ece5d6] pb-6">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ece8ff] text-[#5b3df5] text-xs font-bold uppercase tracking-wider mb-2">
-            <History size={13} />
-            Diagnostic Test History
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0f172a] tracking-tight">
-            Assessment History & Ability Progression
+            Assessment History
           </h1>
           <p className="text-sm text-[#64748b] mt-1 max-w-2xl leading-relaxed">
             Every adaptive diagnostic test you take is stored in your record. Review past accuracy, ability parameter (θ) calibrations, and detailed skill gap reports.

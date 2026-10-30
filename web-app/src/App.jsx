@@ -7,6 +7,7 @@ import { useAuth } from './hooks/useAuth';
 import { isNativeMobile } from './services/mobileStorage';
 import { initializeMobileDeepLinks } from './services/mobileAuth';
 import SplashScreenOverlay from './components/mobile/SplashScreenOverlay';
+import { PostLoginTransitionProvider } from './context/PostLoginTransitionContext';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
@@ -65,9 +66,7 @@ function MobileBridge() {
     if (user) {
       // Authenticated user on mobile: bypass landing page & login screens
       if (currentPath === '/' || currentPath === '/login' || currentPath === '/signup') {
-        const hasCompletedOnboarding = Boolean(localStorage.getItem('skillpath_onboarding_profile'));
-        const target = hasCompletedOnboarding ? '/dashboard' : '/onboarding';
-        router.navigate(target, { replace: true });
+        router.navigate('/dashboard', { replace: true });
       }
     } else {
       // Unauthenticated user on mobile: direct to login screen rather than promotional landing page
@@ -95,8 +94,10 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <MobileBridge />
-        <RouterProvider router={router} />
+        <PostLoginTransitionProvider>
+          <MobileBridge />
+          <RouterProvider router={router} />
+        </PostLoginTransitionProvider>
       </AuthProvider>
     </LanguageProvider>
   );

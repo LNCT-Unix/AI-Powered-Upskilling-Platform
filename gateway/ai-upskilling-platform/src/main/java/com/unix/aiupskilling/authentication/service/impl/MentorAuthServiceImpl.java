@@ -5,6 +5,7 @@ import com.unix.aiupskilling.authentication.dto.response.RegistrationAcceptedRes
 import com.unix.aiupskilling.authentication.event.EmailVerificationEvent;
 import com.unix.aiupskilling.authentication.exception.EmailAlreadyRegisteredException;
 import com.unix.aiupskilling.authentication.exception.UsernameAlreadyTakenException;
+import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
 import com.unix.aiupskilling.authentication.service.EmailVerificationService;
 import com.unix.aiupskilling.authentication.service.MentorAuthService;
 import com.unix.aiupskilling.authentication.service.RateLimiterService;
@@ -18,6 +19,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,12 +45,25 @@ public class MentorAuthServiceImpl implements MentorAuthService {
         String normalizedEmail = EmailNormalizer.normalize(request.getEmail());
         String normalizedUsername = request.getUsername().trim().toLowerCase();
 
-        if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
-            throw new UsernameAlreadyTakenException("That username is already taken.");
+        Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
+
+        if (existingUserOpt.isPresent()) {
+            User existing = existingUserOpt.get();
+            // If unverified password user and eligible for resend, send replacement OTP silently
+            if (existing.getPasswordHash() != null
+                    && !existing.isEmailVerified()
+                    && existing.getStatus() != AccountStatus.DISABLED) {
+                if (emailVerificationService.canResend(existing)) {
+                    String otp = emailVerificationService.issueOtp(existing);
+                    eventPublisher.publishEvent(new EmailVerificationEvent(existing.getEmail(), existing.getFullName(), otp));
+                }
+                return new RegistrationAcceptedResponse(normalizedEmail, true);
+            }
+            throw new EmailAlreadyRegisteredException("If the email is eligible, a 6-digit verification code has been sent.");
         }
 
-        if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new EmailAlreadyRegisteredException("If the email is eligible, a 6-digit verification code has been sent.");
+        if (userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
+            throw new UsernameAlreadyTakenException("That username is already taken.");
         }
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -66,4 +82,3 @@ public class MentorAuthServiceImpl implements MentorAuthService {
         return new RegistrationAcceptedResponse(normalizedEmail, true);
     }
 }
-

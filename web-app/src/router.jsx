@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import DashboardShell from './components/layout/DashboardShell';
 import MentorDashboard from './components/mentor/MentorDashboard';
 import RouteErrorBoundary from './components/common/RouteErrorBoundary';
@@ -57,7 +57,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/onboarding',
-    element: lazyPage(() => import('./pages/OnboardingPage')),
+    element: <Navigate to="/dashboard" replace />,
     errorElement: <RouteErrorBoundary />,
   },
   {

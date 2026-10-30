@@ -67,6 +67,7 @@ export default function MentorRegistrationForm({ onBack, onSuccess }) {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -284,7 +285,7 @@ export default function MentorRegistrationForm({ onBack, onSuccess }) {
             />
             <button
               type="button"
-              className="pass-toggle"
+              className="eye"
               onClick={() => setShowPassword((previous) => !previous)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
@@ -303,7 +304,7 @@ export default function MentorRegistrationForm({ onBack, onSuccess }) {
             <input
               id="mentor-confirmPassword"
               name="confirmPassword"
-              type={showPassword ? 'text' : 'password'}
+              type={showConfirmPassword ? 'text' : 'password'}
               value={values.confirmPassword}
               onChange={handleChange}
               onBlur={handleBlur}
@@ -312,6 +313,14 @@ export default function MentorRegistrationForm({ onBack, onSuccess }) {
               disabled={loading}
               aria-invalid={Boolean(touched.confirmPassword && errors.confirmPassword)}
             />
+            <button
+              type="button"
+              className="eye"
+              onClick={() => setShowConfirmPassword((previous) => !previous)}
+              aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+            >
+              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
           {touched.confirmPassword && errors.confirmPassword && (
             <p className="field-error">{errors.confirmPassword}</p>

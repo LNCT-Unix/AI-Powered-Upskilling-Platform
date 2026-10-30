@@ -7,7 +7,6 @@ import {
   KeyRound,
   UserCircle2,
   LogOut,
-  ArrowUpRight,
   ShieldCheck,
 } from 'lucide-react';
 import UserAvatar from '../ui/UserAvatar';
@@ -100,15 +99,6 @@ export default function MentorSidebar({ mentor, onClose, onLogout }) {
             <NavItem key={item.path} {...item} end={item.path === '/mentor'} onClose={onClose} />
           ))}
         </nav>
-
-        <Link
-          to="/dashboard"
-          onClick={onClose}
-          className="mt-5 flex items-center gap-2 rounded-2xl border border-dashed border-[#D8CCAE] bg-[#FFFDF7] px-3.5 py-2.5 text-[11px] font-bold text-[#6E6880] transition hover:border-[#7C5CFA]/40 hover:bg-[#EFEAFC] hover:text-[#7C5CFA]"
-        >
-          <ArrowUpRight size={14} aria-hidden="true" />
-          Preview Student Dashboard
-        </Link>
       </div>
 
       <div className="border-t border-[#E8E0CC] p-3">

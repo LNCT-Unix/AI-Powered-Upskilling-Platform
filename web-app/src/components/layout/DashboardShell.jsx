@@ -6,12 +6,15 @@ import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
 import ProfileDropdown from '../profile/ProfileDropdown';
 import UpdateProfileModal from '../profile/UpdateProfileModal';
+import OctoMascot from '../common/OctoMascot';
+import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
 
 export default function DashboardShell() {
   const [mobileOpen, setMobileOpen]               = useState(false);
   const [notificationsOpen, setNotifOpen]         = useState(false);
   const [updateProfileOpen, setUpdateProfileOpen] = useState(false);
   const { user } = useAuth();
+  const { isTransitioning, hasLanded } = usePostLoginTransition();
 
   return (
     <div className="min-h-screen lg:flex text-slate-900" style={{ background: '#F7F3E8' }}>
@@ -47,7 +50,7 @@ export default function DashboardShell() {
       <div className="min-w-0 flex-1 flex flex-col">
         {/* ── Top bar ── matching Landing Page aesthetic ─────── */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E8E0CC] px-4 py-2.5 sm:py-3 sm:px-8 gap-4 bg-[#F7F3E8]/95 backdrop-blur-md pt-[max(env(safe-area-inset-top),0.625rem)]">
-          {/* Left: mobile hamburger + search */}
+          {/* Left: mobile hamburger + Octobyte Logo & Mascot */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
               type="button"
@@ -58,14 +61,17 @@ export default function DashboardShell() {
               <Menu size={20} />
             </button>
 
-            {/* Mobile logo when sidebar hidden */}
-            <Link to="/" className="flex items-center gap-2 lg:hidden">
-              <img
-                src="/octobyte-logo.png"
-                alt="octoByte Logo"
-                className="h-7 w-auto max-w-[42px] object-contain"
-              />
-              <span className="text-sm font-black text-slate-900">
+            {/* Octobyte Logo with Mascot in Top Navbar */}
+            <Link to="/dashboard" className="flex items-center gap-2.5 group select-none">
+              <div
+                id="navbar-octobyte-mascot-target"
+                className={`navbar-octo-target relative flex items-center justify-center shrink-0 w-8 h-8 sm:w-9 sm:h-9 transition-all duration-300 ${
+                  isTransitioning && !hasLanded ? 'opacity-0 scale-75' : 'opacity-100 scale-100 navbar-mascot-settled'
+                }`}
+              >
+                <OctoMascot size={32} idPrefix="shell-nav-octo" animated={true} withBook={true} />
+              </div>
+              <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none">
                 <span className="text-[#2F2A3E]">octo</span>
                 <span className="text-[#7C5CFA]">Byte</span>
               </span>
