@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
       if (result?.data) {
         setTokenState(result.data.accessToken);
         setUser(result.data.user);
-        return { success: true };
+        return { success: true, user: result.data.user };
       }
       return { success: false, error: 'Empty token response' };
     } catch (err) {
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
       if (result?.data) {
         setTokenState(result.data.accessToken);
         setUser(result.data.user);
-        return { success: true };
+        return { success: true, user: result.data.user };
       }
       return { success: false, error: 'Invalid response from server' };
     } catch (err) {
@@ -92,7 +92,7 @@ export function AuthProvider({ children }) {
       if (result?.data?.accessToken && result?.data?.user) {
         setTokenState(result.data.accessToken);
         setUser(result.data.user);
-        return { success: true, data: result.data };
+        return { success: true, data: result.data, user: result.data.user };
       }
       return { success: false, error: 'Invalid verification response' };
     } catch (err) {

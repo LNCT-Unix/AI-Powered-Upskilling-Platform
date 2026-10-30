@@ -19,6 +19,7 @@ export default function AuthView({ initialMode = 'login' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const {
+    user,
     login,
     register,
     loginWithGoogle,
@@ -62,9 +63,10 @@ export default function AuthView({ initialMode = 'login' }) {
   // If already logged in, redirect
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(destination, { replace: true });
+      const dest = user?.role === 'MENTOR' ? '/mentor' : destination;
+      navigate(dest, { replace: true });
     }
-  }, [isAuthenticated, navigate, destination]);
+  }, [isAuthenticated, user, navigate, destination]);
 
   useEffect(() => {
     if (resendSeconds <= 0) return undefined;
@@ -134,7 +136,8 @@ export default function AuthView({ initialMode = 'login' }) {
       const res = await login(email, loginPassword);
       if (res?.success) {
         showToast('Welcome back! Redirecting…');
-        navigate(destination, { replace: true });
+        const isMentor = res?.user?.role === 'MENTOR';
+        navigate(isMentor ? '/mentor' : destination, { replace: true });
       } else {
         setError(res?.error || 'Invalid email or password. Please try again.');
       }
@@ -222,9 +225,15 @@ export default function AuthView({ initialMode = 'login' }) {
       }
       setVerificationPending(null);
       setVerificationOtp('');
-      showToast(hasCompletedOnboarding ? 'Email verified! Redirecting to dashboard…' : 'Email verified! Redirecting to onboarding…');
-      const postVerifyDestination = location.state?.from?.pathname || (hasCompletedOnboarding ? '/dashboard' : '/onboarding');
-      navigate(postVerifyDestination, { replace: true });
+      const isMentor = result?.user?.role === 'MENTOR';
+      if (isMentor) {
+        showToast('Email verified! Redirecting to mentor studio…');
+        navigate('/mentor', { replace: true });
+      } else {
+        showToast(hasCompletedOnboarding ? 'Email verified! Redirecting to dashboard…' : 'Email verified! Redirecting to onboarding…');
+        const postVerifyDestination = location.state?.from?.pathname || (hasCompletedOnboarding ? '/dashboard' : '/onboarding');
+        navigate(postVerifyDestination, { replace: true });
+      }
     } catch (err) {
       setError(err.message || 'That verification code is invalid or expired.');
     } finally {
@@ -457,6 +466,10 @@ export default function AuthView({ initialMode = 'login' }) {
             <MentorRegistrationForm
               onBack={closeMentorForm}
               onPreviewDashboard={previewMentorDashboard}
+              onSuccess={(registeredEmail) => {
+                setVerificationPending(registeredEmail);
+                showToast('Verification code sent! Please check your email.');
+              }}
             />
           ) : (
             <>

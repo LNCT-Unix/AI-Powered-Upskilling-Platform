@@ -14,6 +14,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/userService';
 import UserAvatar from '../ui/UserAvatar';
 import Button from '../ui/Button';
+import StudentMentorConnector from '../mentor/StudentMentorConnector';
 import { AVATAR_PRESETS, MONOGRAM_COLORS } from './avatarPresets';
 
 const TABS = [
@@ -430,6 +431,11 @@ export default function UpdateProfileModal({ isOpen, onClose }) {
               </div>
             </div>
           </form>
+
+          {/* Mentor Cohort Connection */}
+          <div className="pt-2 border-t border-slate-200">
+            <StudentMentorConnector variant="compact" />
+          </div>
         </div>
 
         {/* Footer Actions */}

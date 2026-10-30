@@ -19,6 +19,7 @@ import Button from '../components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
 import InteractiveSkillGraph from '../components/graph/InteractiveSkillGraph';
 import UserAvatar from '../components/ui/UserAvatar';
+import StudentMentorConnector from '../components/mentor/StudentMentorConnector';
 
 /* ── Pretty Stat Card matching Landing Page ───────────────── */
 function StatCard({ label, value, sub, icon: Icon, badgeBg, iconColor, onClick }) {
@@ -284,6 +285,9 @@ export default function DashboardPage() {
 
       {/* ── Right Panel: Learning Path & AI Coach ── */}
       <div className="lg:w-80 xl:w-88 shrink-0 border-t lg:border-t-0 lg:border-l border-[#E8E0CC] p-4 sm:p-6 space-y-6">
+
+        {/* ── Cohort & Mentor Connection ── */}
+        <StudentMentorConnector variant="card" />
 
         {/* Learning Path Card */}
         <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 shadow-xs">

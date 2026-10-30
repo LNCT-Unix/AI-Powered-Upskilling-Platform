@@ -14,6 +14,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { assessmentService, BACKEND_TRACK_ID } from '../services/assessmentService';
+import StudentMentorConnector from '../components/mentor/StudentMentorConnector';
 
 const STEPS = ['Language', 'Track', 'Skills', 'Budget'];
 
@@ -518,6 +519,9 @@ export default function OnboardingPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Optional Mentor Key Connection */}
+              <StudentMentorConnector variant="inline" />
 
               {/* Assessment launch notice */}
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 flex items-start gap-3">

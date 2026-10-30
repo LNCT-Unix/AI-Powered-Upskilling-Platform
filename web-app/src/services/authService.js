@@ -99,6 +99,13 @@ export const authService = {
     });
   },
 
+  // 7b. Mentor Registration
+  async registerMentor({ fullName, username, email, password, confirmPassword }) {
+    return apiClient('/api/auth/mentor/register', {
+      body: { fullName, username, email, password, confirmPassword },
+    });
+  },
+
   // 8. Confirm the six-digit email verification OTP
   async confirmEmailVerification(email, otp) {
     const response = await apiClient('/api/auth/email-verification/confirm', {

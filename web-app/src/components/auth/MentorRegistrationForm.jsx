@@ -13,6 +13,7 @@ import {
   Sparkles,
   UserCircle2,
 } from 'lucide-react';
+import { authService } from '../../services/authService';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const USERNAME_REGEX = /^[a-zA-Z0-9._]{3,24}$/;
@@ -61,13 +62,14 @@ function validate(values) {
   return errors;
 }
 
-export default function MentorRegistrationForm({ onBack, onPreviewDashboard }) {
+export default function MentorRegistrationForm({ onBack, onSuccess }) {
   const [values, setValues] = useState(INITIAL_VALUES);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -108,12 +110,34 @@ export default function MentorRegistrationForm({ onBack, onPreviewDashboard }) {
     }
 
     setLoading(true);
-    // Frontend demo only: simulate a short UI step. No API request is made.
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 700);
-    });
-    setLoading(false);
-    setSubmitted(true);
+    setApiError('');
+    try {
+      await authService.registerMentor({
+        fullName: values.fullName.trim(),
+        username: values.username.trim(),
+        email: values.email.trim(),
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+      });
+
+      if (onSuccess) {
+        onSuccess(values.email.trim());
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      const serverMessage = err?.data?.message || err?.message || 'Registration failed.';
+      setApiError(serverMessage);
+      if (err?.data?.data?.fieldErrors) {
+        const serverFieldErrors = {};
+        for (const fe of err.data.data.fieldErrors) {
+          serverFieldErrors[fe.field] = fe.message;
+        }
+        setErrors((prev) => ({ ...prev, ...serverFieldErrors }));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -121,6 +145,7 @@ export default function MentorRegistrationForm({ onBack, onPreviewDashboard }) {
     setErrors({});
     setTouched({});
     setSubmitted(false);
+    setApiError('');
   };
 
   if (submitted) {
@@ -135,37 +160,26 @@ export default function MentorRegistrationForm({ onBack, onPreviewDashboard }) {
             <CheckCircle2 size={30} />
           </div>
           <span className="mentor-kicker">
-            <Sparkles size={12} /> Mentor demo ready
+            <Sparkles size={12} /> Verification code sent
           </span>
-          <h1 className="title">Thanks, {values.fullName.split(' ')[0]}!</h1>
+          <h1 className="title">Check your inbox, {values.fullName.split(' ')[0]}!</h1>
           <p className="subtitle">
-            Your mentor registration details passed the frontend validation. You can now explore
-            the mentor studio with illustrative cohort data.
+            If your email is eligible, a 6-digit verification code has been sent. Please confirm your email to activate your mentor account.
           </p>
 
-          <div className="mentor-demo-notice">
-            <AlertCircle size={16} />
-            <span>
-              <strong>Demo only:</strong> no mentor account was created, no credentials were sent
-              anywhere, and no real role or access was granted.
-            </span>
+          <div className="mentor-actions">
+            <button className="btn" type="button" onClick={onBack}>
+              <span>Go to Sign In</span>
+              <ArrowRight size={16} />
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={resetForm}
+            >
+              Register another mentor
+            </button>
           </div>
-
-          <button type="button" className="btn" onClick={onPreviewDashboard}>
-            <span>Preview Mentor Dashboard</span>
-            <ArrowRight size={16} />
-          </button>
-          <button type="button" className="btn-ghost w-full" onClick={onBack}>
-            <ArrowLeft size={15} />
-            <span>Back to Login / Sign Up</span>
-          </button>
-          <button
-            type="button"
-            className="mentor-text-button"
-            onClick={resetForm}
-          >
-            Fill the demo form again
-          </button>
         </div>
       </div>
     );
@@ -174,19 +188,21 @@ export default function MentorRegistrationForm({ onBack, onPreviewDashboard }) {
   return (
     <div className="auth-form mentor-form">
       <button type="button" className="mentor-back" onClick={onBack}>
-        <ArrowLeft size={15} /> Back to Login / Sign Up
+        <ArrowLeft size={15} /> Back
       </button>
 
-      <div className="mentor-form-head">
-        <span className="mentor-kicker">
-          <GraduationCap size={13} /> Mentor registration
-        </span>
-        <h1 className="title">Become a mentor</h1>
-        <p className="subtitle">
-          Share your expertise, guide learners, and track their progress. This form is a
-          frontend-only demonstration.
-        </p>
-      </div>
+      <h1 className="title">Join as a Mentor</h1>
+      <p className="subtitle">
+        Guide early-career engineers, inspect cohort test analytics, track verified achievements,
+        and issue your unique connection key.
+      </p>
+
+      {apiError && (
+        <div className="auth-alert mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700" role="alert">
+          <AlertCircle size={15} className="shrink-0" />
+          <span>{apiError}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate>
         <div className={`field ${touched.fullName && errors.fullName ? 'has-error' : ''}`}>
@@ -261,18 +277,18 @@ export default function MentorRegistrationForm({ onBack, onPreviewDashboard }) {
               value={values.password}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="Create a strong password (min. 8 characters)"
+              placeholder="At least 8 characters"
               autoComplete="new-password"
               disabled={loading}
               aria-invalid={Boolean(touched.password && errors.password)}
             />
             <button
               type="button"
-              className="eye"
+              className="pass-toggle"
               onClick={() => setShowPassword((previous) => !previous)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
           {touched.password && errors.password && (
@@ -302,19 +318,11 @@ export default function MentorRegistrationForm({ onBack, onPreviewDashboard }) {
           )}
         </div>
 
-        <div className="mentor-demo-notice">
-          <AlertCircle size={16} />
-          <span>
-            <strong>Frontend demo:</strong> submitting this form does not create an account or
-            authenticate you. Use the preview to explore the mentor dashboard.
-          </span>
-        </div>
-
         <button className="btn" type="submit" disabled={loading}>
           {loading ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              <span>Preparing demo…</span>
+              <span>Registering mentor account…</span>
             </>
           ) : (
             <>
