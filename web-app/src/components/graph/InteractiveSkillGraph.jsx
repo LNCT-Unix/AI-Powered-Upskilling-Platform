@@ -217,16 +217,15 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
     return Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title));
   }, [graph.nodes]);
 
-  // Default checked blocks: select any 3 individual blocks
+  // Default checked blocks: select only 1 individual block by default
   const defaultSelectedClusters = useMemo(() => {
     if (clusterOptions.length === 0) return [];
     const activeNode = graph.nodes.find((n) => n.status === 'unlocked');
     const preferredCluster = initialCluster || activeNode?.cluster;
     if (preferredCluster && clusterOptions.some((c) => c.key === preferredCluster)) {
-      const remaining = clusterOptions.filter((c) => c.key !== preferredCluster).map((c) => c.key);
-      return [preferredCluster, ...remaining.slice(0, 2)];
+      return [preferredCluster];
     }
-    return clusterOptions.slice(0, 3).map((c) => c.key);
+    return [clusterOptions[0].key];
   }, [clusterOptions, initialCluster, graph.nodes]);
 
   const [selectedClusters, setSelectedClusters] = useState(() => defaultSelectedClusters);
