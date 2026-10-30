@@ -103,6 +103,89 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), ErrorData.of(ex.getCode())));
     }
 
+    @ExceptionHandler(UsernameAlreadyTakenException.class)
+    public ResponseEntity<ApiResponse<ErrorData>> handleUsernameAlreadyTaken(UsernameAlreadyTakenException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage(), ErrorData.of(ex.getCode())));
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ApiResponse<ErrorData>> handleValidationException(ValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), ErrorData.of(ex.getCode(), ex.getFieldErrors())));
+    }
+
+    @ExceptionHandler(com.unix.aiupskilling.mentor.exception.MentorKeyAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> handleMentorKeyAlreadyExists(com.unix.aiupskilling.mentor.exception.MentorKeyAlreadyExistsException ex) {
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("code", ex.getCode());
+        data.put("existingKey", ex.getExistingKey());
+        data.put("createdAt", ex.getCreatedAt());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.<java.util.Map<String, Object>>builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .data(data)
+                        .build());
+    }
+
+    @ExceptionHandler(com.unix.aiupskilling.mentor.exception.InvalidMentorKeyException.class)
+    public ResponseEntity<ApiResponse<ErrorData>> handleInvalidMentorKey(com.unix.aiupskilling.mentor.exception.InvalidMentorKeyException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage(), ErrorData.of(ex.getCode())));
+    }
+
+    @ExceptionHandler(com.unix.aiupskilling.mentor.exception.StudentAlreadyLinkedException.class)
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> handleStudentAlreadyLinked(com.unix.aiupskilling.mentor.exception.StudentAlreadyLinkedException ex) {
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("code", ex.getCode());
+        data.put("mentorName", ex.getMentorName());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.<java.util.Map<String, Object>>builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .data(data)
+                        .build());
+    }
+
+    @ExceptionHandler(com.unix.aiupskilling.mentor.exception.InvalidSortException.class)
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> handleInvalidSort(com.unix.aiupskilling.mentor.exception.InvalidSortException ex) {
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("code", ex.getCode());
+        data.put("allowed", ex.getAllowed());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.<java.util.Map<String, Object>>builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .data(data)
+                        .build());
+    }
+
+    @ExceptionHandler(com.unix.aiupskilling.mentor.exception.InvalidProgressBandException.class)
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> handleInvalidProgressBand(com.unix.aiupskilling.mentor.exception.InvalidProgressBandException ex) {
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("code", ex.getCode());
+        data.put("allowed", ex.getAllowed());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.<java.util.Map<String, Object>>builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .data(data)
+                        .build());
+    }
+
+    @ExceptionHandler(com.unix.aiupskilling.mentor.exception.InvalidDateRangeException.class)
+    public ResponseEntity<ApiResponse<ErrorData>> handleInvalidDateRange(com.unix.aiupskilling.mentor.exception.InvalidDateRangeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), ErrorData.of(ex.getCode())));
+    }
+
+    @ExceptionHandler(com.unix.aiupskilling.mentor.exception.StudentNotFoundException.class)
+    public ResponseEntity<ApiResponse<ErrorData>> handleStudentNotFound(com.unix.aiupskilling.mentor.exception.StudentNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage(), ErrorData.of(ex.getCode())));
+    }
+
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     public ResponseEntity<ApiResponse<ErrorData>> handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
