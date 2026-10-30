@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import DashboardShell from './components/layout/DashboardShell';
+import MentorDashboard from './components/mentor/MentorDashboard';
 import RouteErrorBoundary from './components/common/RouteErrorBoundary';
 
 const pageFallback = (
@@ -73,6 +74,20 @@ export const router = createBrowserRouter([
       { path: '/analytics',  element: lazyPage(() => import('./pages/AnalyticsPage')) },
       { path: '/projects',   element: lazyPage(() => import('./pages/ProjectVerifyPage')) },
       { path: '/career',     element: lazyPage(() => import('./pages/CareerHubPage')) },
+    ],
+  },
+  {
+    // Mentor demo shell — frontend preview and mentor workflow
+    path: '/mentor',
+    element: <MentorDashboard />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      { index: true, element: lazyPage(() => import('./components/mentor/MentorOverview')) },
+      { path: 'students', element: lazyPage(() => import('./components/mentor/MyStudents')) },
+      { path: 'skills', element: lazyPage(() => import('./components/mentor/AchievedSkills')) },
+      { path: 'analytics', element: lazyPage(() => import('./components/mentor/TestAnalytics')) },
+      { path: 'key', element: lazyPage(() => import('./components/mentor/MentorUniqueKey')) },
+      { path: 'profile', element: lazyPage(() => import('./components/mentor/MentorProfile')) },
     ],
   },
   {
