@@ -11,8 +11,6 @@ import MentorSidebar from './MentorSidebar';
 import UserAvatar from '../ui/UserAvatar';
 import { useAuth } from '../../hooks/useAuth';
 import { mentorService } from '../../services/mentorService';
-import OctoMascot from '../common/OctoMascot';
-import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
 
 const SECTION_LABELS = {
   '/mentor': 'Overview',
@@ -27,7 +25,6 @@ export default function MentorDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { isTransitioning, hasLanded } = usePostLoginTransition();
 
   const [mentor, setMentor] = useState({
     fullName: user?.fullName || user?.username || 'Mentor',
@@ -190,22 +187,6 @@ export default function MentorDashboard() {
             >
               <Menu size={18} />
             </button>
-
-            {/* Mentor Top Navbar Logo with Mascot */}
-            <Link to="/mentor" className="flex items-center gap-2 group select-none mr-1 sm:mr-2">
-              <div
-                id="mentor-navbar-mascot-target"
-                className={`navbar-octo-target relative flex items-center justify-center shrink-0 w-8 h-8 transition-all duration-300 ${
-                  isTransitioning && !hasLanded ? 'opacity-0 scale-75' : 'opacity-100 scale-100 navbar-mascot-settled'
-                }`}
-              >
-                <OctoMascot size={28} idPrefix="mentor-nav-octo" animated={true} withBook={true} />
-              </div>
-              <span className="text-sm sm:text-base font-black tracking-tight text-slate-900 leading-none hidden xs:inline">
-                <span className="text-[#2F2A3E]">octo</span>
-                <span className="text-[#7C5CFA]">Byte</span>
-              </span>
-            </Link>
 
             <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
               <Link

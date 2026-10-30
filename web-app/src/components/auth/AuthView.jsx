@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import OctoMascot from '../common/OctoMascot';
-import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Eye,
@@ -38,8 +37,6 @@ export default function AuthView({ initialMode = 'login' }) {
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showSignupPass, setShowSignupPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const mascotRef = useRef(null);
-  const { startPostLoginTransition, isTransitioning } = usePostLoginTransition();
 
   // Form states
   const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('skillpath_remember_email') || '');
@@ -63,13 +60,13 @@ export default function AuthView({ initialMode = 'login' }) {
   const defaultDestination = '/dashboard';
   const destination = location.state?.from?.pathname || defaultDestination;
 
-  // If already logged in, redirect (skip if post-login transition is currently handling it)
+  // If already logged in, redirect
   useEffect(() => {
-    if (isAuthenticated && !isTransitioning) {
+    if (isAuthenticated) {
       const dest = user?.role === 'MENTOR' ? '/mentor' : destination;
       navigate(dest, { replace: true });
     }
-  }, [isAuthenticated, user, navigate, destination, isTransitioning]);
+  }, [isAuthenticated, user, navigate, destination]);
 
   useEffect(() => {
     if (resendSeconds <= 0) return undefined;
@@ -136,19 +133,11 @@ export default function AuthView({ initialMode = 'login' }) {
         localStorage.removeItem('skillpath_remember_email');
       }
 
-      // Measure initial mascot rect right before login completes
-      const mascotEl = mascotRef.current || document.querySelector('.octo-wrap .octo-mascot-svg') || document.querySelector('.octo-wrap .octo');
-      const mascotRect = mascotEl ? mascotEl.getBoundingClientRect() : null;
-
       const res = await login(email, loginPassword);
       if (res?.success) {
-        showToast('Welcome back! Entering studio…');
+        showToast('Welcome back! Redirecting…');
         const isMentor = res?.user?.role === 'MENTOR';
-        const targetUrl = isMentor ? '/mentor' : destination;
-        startPostLoginTransition({
-          initialRect: mascotRect,
-          targetUrl,
-        });
+        navigate(isMentor ? '/mentor' : destination, { replace: true });
       } else {
         setError(res?.error || 'Invalid email or password. Please try again.');
       }
@@ -289,15 +278,13 @@ export default function AuthView({ initialMode = 'login' }) {
 
         <div className="art-inner">
           <div className="octo-wrap rise" style={{ '--i': 1 }}>
-            <div ref={mascotRef}>
-              <OctoMascot
-                size="100%"
-                className="octo"
-                idPrefix="auth-view-octo"
-                animated={true}
-                withBook={true}
-              />
-            </div>
+            <OctoMascot
+              size="100%"
+              className="octo"
+              idPrefix="auth-view-octo"
+              animated={true}
+              withBook={true}
+            />
             <div className="octo-shadow"></div>
           </div>
 
