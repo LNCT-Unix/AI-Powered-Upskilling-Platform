@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, AlertCircle, Mail, CheckCircle2, RotateCcw } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertCircle,
+  Mail,
+  CheckCircle2,
+  RotateCcw,
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import MentorRegistrationForm from './MentorRegistrationForm';
 import './AuthPage.css';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -20,6 +29,9 @@ export default function AuthView({ initialMode = 'login' }) {
   } = useAuth();
 
   const [mode, setMode] = useState(initialMode);
+  const [mentorReturnMode, setMentorReturnMode] = useState(
+    initialMode === 'login' ? 'login' : 'signup',
+  );
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showSignupPass, setShowSignupPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -74,6 +86,23 @@ export default function AuthView({ initialMode = 'login' }) {
     setMode(newMode);
     setError('');
     navigate(newMode === 'login' ? '/login' : '/signup', { replace: true });
+  };
+
+  const openMentorForm = () => {
+    setMentorReturnMode(mode === 'login' ? 'login' : 'signup');
+    setMode('mentor');
+    setError('');
+  };
+
+  const closeMentorForm = () => {
+    setMode(mentorReturnMode);
+    setError('');
+    navigate(mentorReturnMode === 'login' ? '/login' : '/signup', { replace: true });
+  };
+
+  const previewMentorDashboard = () => {
+    showToast('Opening mentor demo…');
+    navigate('/mentor');
   };
 
   const handleLoginSubmit = async (e) => {
@@ -424,6 +453,11 @@ export default function AuthView({ initialMode = 'login' }) {
                 </a>
               </p>
             </div>
+          ) : mode === 'mentor' ? (
+            <MentorRegistrationForm
+              onBack={closeMentorForm}
+              onPreviewDashboard={previewMentorDashboard}
+            />
           ) : (
             <>
               {/* Mode Tabs */}
@@ -693,6 +727,28 @@ export default function AuthView({ initialMode = 'login' }) {
                     </button>
                   </>
                 )}
+              </p>
+
+              {/* Mentor registration link — kept as a simple one-line prompt */}
+              <p className="switchline mentor-switchline rise" style={{ '--i': 8 }}>
+                Are you a mentor?{' '}
+                <button
+                  type="button"
+                  className="auth-link bg-transparent border-none p-0 cursor-pointer font-semibold"
+                  onClick={openMentorForm}
+                >
+                  Create a mentor account
+                </button>
+                <span className="mentor-switchline-sep" aria-hidden="true">
+                  ·
+                </span>
+                <button
+                  type="button"
+                  className="auth-link mentor-switchline-demo"
+                  onClick={previewMentorDashboard}
+                >
+                  Preview demo
+                </button>
               </p>
             </>
           )}
