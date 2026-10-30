@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouteError, isRouteErrorResponse, Link } from 'react-router-dom';
+import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, ChevronUp, WifiOff } from 'lucide-react';
 import Button from '../ui/Button';
 

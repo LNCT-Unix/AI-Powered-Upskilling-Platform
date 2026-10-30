@@ -67,11 +67,11 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
         response = await fetch(`${altUrl}${endpoint}`, config);
         activeMobileUrl = altUrl; // Remember working endpoint
         baseUrl = altUrl;
-      } catch {
-        throw new Error('Server unreachable. Please check your network or Wi-Fi connection.');
+      } catch (retryErr) {
+        throw new Error('Server unreachable. Please check your network or Wi-Fi connection.', { cause: retryErr });
       }
     } else {
-      throw new Error(isMobile ? 'Server unreachable. Please check your network or Wi-Fi connection.' : (netErr.message || 'Network request failed'));
+      throw new Error(isMobile ? 'Server unreachable. Please check your network or Wi-Fi connection.' : (netErr.message || 'Network request failed'), { cause: netErr });
     }
   }
 
