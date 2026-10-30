@@ -8,6 +8,7 @@ import com.unix.aiupskilling.authentication.model.enums.AccountStatus;
 import com.unix.aiupskilling.authentication.repository.EmailVerificationTokenRepository;
 import com.unix.aiupskilling.authentication.service.impl.EmailVerificationServiceImpl;
 import com.unix.aiupskilling.authentication.util.TokenHashUtil;
+import com.unix.aiupskilling.mentor.repository.MentorProfileRepository;
 import com.unix.aiupskilling.user.Role;
 import com.unix.aiupskilling.user.User;
 import com.unix.aiupskilling.user.UserRepository;
@@ -37,6 +38,9 @@ class EmailVerificationServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private MentorProfileRepository mentorProfileRepository;
+
     private AuthProperties authProperties;
     private EmailVerificationServiceImpl verificationService;
     private User testUser;
@@ -48,7 +52,7 @@ class EmailVerificationServiceTest {
         authProperties.getVerification().setCooldownSeconds(60);
         authProperties.getVerification().setMaxPerHour(5);
 
-        verificationService = new EmailVerificationServiceImpl(tokenRepository, userRepository, authProperties);
+        verificationService = new EmailVerificationServiceImpl(tokenRepository, userRepository, mentorProfileRepository, authProperties);
 
         testUser = User.builder()
                 .id(1L)

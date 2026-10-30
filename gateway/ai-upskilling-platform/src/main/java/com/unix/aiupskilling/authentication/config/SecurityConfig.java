@@ -94,6 +94,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(
                                 "/api/auth/register",
+                                "/api/auth/mentor/register",
                                 "/api/auth/login",
                                 "/api/auth/email-verification/**",
                                 "/api/auth/forgot-password",
@@ -110,6 +111,7 @@ public class SecurityConfig {
                         ).permitAll()
                         // Protected endpoints
                         .requestMatchers("/api/auth/me", "/api/auth/oauth-links/**").authenticated()
+                        .requestMatchers("/api/v1/mentor/**").hasRole("MENTOR")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll()
                 )

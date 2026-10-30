@@ -9,6 +9,9 @@ import com.unix.aiupskilling.authentication.repository.EmailVerificationTokenRep
 import com.unix.aiupskilling.authentication.service.EmailVerificationService;
 import com.unix.aiupskilling.authentication.util.EmailNormalizer;
 import com.unix.aiupskilling.authentication.util.TokenHashUtil;
+import com.unix.aiupskilling.mentor.model.entity.MentorProfile;
+import com.unix.aiupskilling.mentor.repository.MentorProfileRepository;
+import com.unix.aiupskilling.user.Role;
 import com.unix.aiupskilling.user.User;
 import com.unix.aiupskilling.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
+    private final MentorProfileRepository mentorProfileRepository;
     private final AuthProperties authProperties;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -139,6 +143,13 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         user.setEmailVerified(true);
         user.setEmailVerifiedAt(LocalDateTime.now());
         userRepository.save(user);
+
+        if (user.getRole() == Role.MENTOR && !mentorProfileRepository.existsByUserId(user.getId())) {
+            mentorProfileRepository.save(MentorProfile.builder()
+                    .userId(user.getId())
+                    .joinedAt(java.time.Instant.now())
+                    .build());
+        }
 
         log.info("Email verification successful for user id: {}", user.getId());
     }

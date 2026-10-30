@@ -135,6 +135,7 @@ public class AuthTokenController {
         UserResponse response = UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
+                .username(user.getUsername())
                 .fullName(user.getFullName())
                 .role(user.getRole())
                 .avatarUrl(user.getAvatarUrl())

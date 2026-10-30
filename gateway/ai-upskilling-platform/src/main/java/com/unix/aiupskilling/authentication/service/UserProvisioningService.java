@@ -11,4 +11,6 @@ public interface UserProvisioningService {
     User createEmailUser(String rawEmail, String fullName, String passwordHash);
 
     User createOAuthUser(String verifiedEmail, String fullName);
+
+    User createMentorUser(String rawEmail, String username, String fullName, String passwordHash);
 }

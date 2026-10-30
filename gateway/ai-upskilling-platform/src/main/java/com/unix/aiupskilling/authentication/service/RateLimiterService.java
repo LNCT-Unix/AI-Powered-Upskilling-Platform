@@ -23,7 +23,14 @@ public class RateLimiterService {
     // IP+Email -> deque of failed login timestamps
     private final Map<String, Deque<Instant>> failedLoginTimestamps = new ConcurrentHashMap<>();
 
+    private final Map<Long, Deque<Instant>> mentorKeyRotationTimestamps = new ConcurrentHashMap<>();
+    private final Map<Long, Deque<Instant>> studentKeyRedemptionTimestamps = new ConcurrentHashMap<>();
+    private final Map<String, Deque<Instant>> ipKeyRedemptionTimestamps = new ConcurrentHashMap<>();
+
     private static final int MAX_FAILED_LOGINS = 10;
+    private static final int MAX_KEY_ROTATIONS_PER_HOUR = 5;
+    private static final int MAX_KEY_REDEMPTIONS_PER_HOUR_STUDENT = 10;
+    private static final int MAX_KEY_REDEMPTIONS_PER_HOUR_IP = 30;
     private static final long FAILED_LOGIN_WINDOW_SECONDS = 900; // 15 minutes
     private static final long IP_WINDOW_SECONDS = 3600; // 1 hour
 
@@ -77,6 +84,47 @@ public class RateLimiterService {
     public void resetFailedLogin(String clientIp, String email) {
         String key = buildLoginKey(clientIp, email);
         failedLoginTimestamps.remove(key);
+    }
+
+    public void checkKeyRotationLimit(Long mentorUserId) {
+        if (mentorUserId == null) return;
+        Instant now = Instant.now();
+        Instant cutoff = now.minusSeconds(IP_WINDOW_SECONDS);
+        Deque<Instant> timestamps = mentorKeyRotationTimestamps.computeIfAbsent(mentorUserId, k -> new ArrayDeque<>());
+        synchronized (timestamps) {
+            cleanOldTimestamps(timestamps, cutoff);
+            if (timestamps.size() >= MAX_KEY_ROTATIONS_PER_HOUR) {
+                throw new RateLimitExceededException("Too many key rotation requests. Try again later.", "RATE_LIMITED");
+            }
+            timestamps.addLast(now);
+        }
+    }
+
+    public void checkKeyRedemptionLimit(Long studentUserId, String clientIp) {
+        Instant now = Instant.now();
+        Instant cutoff = now.minusSeconds(IP_WINDOW_SECONDS);
+
+        if (studentUserId != null) {
+            Deque<Instant> studentTimestamps = studentKeyRedemptionTimestamps.computeIfAbsent(studentUserId, k -> new ArrayDeque<>());
+            synchronized (studentTimestamps) {
+                cleanOldTimestamps(studentTimestamps, cutoff);
+                if (studentTimestamps.size() >= MAX_KEY_REDEMPTIONS_PER_HOUR_STUDENT) {
+                    throw new RateLimitExceededException("Too many mentor link attempts. Try again later.", "RATE_LIMITED");
+                }
+                studentTimestamps.addLast(now);
+            }
+        }
+
+        if (clientIp != null && !clientIp.isBlank()) {
+            Deque<Instant> ipTimestamps = ipKeyRedemptionTimestamps.computeIfAbsent(clientIp, k -> new ArrayDeque<>());
+            synchronized (ipTimestamps) {
+                cleanOldTimestamps(ipTimestamps, cutoff);
+                if (ipTimestamps.size() >= MAX_KEY_REDEMPTIONS_PER_HOUR_IP) {
+                    throw new RateLimitExceededException("Too many mentor link attempts from this IP. Try again later.", "RATE_LIMITED");
+                }
+                ipTimestamps.addLast(now);
+            }
+        }
     }
 
     private void cleanOldTimestamps(Deque<Instant> timestamps, Instant cutoff) {
