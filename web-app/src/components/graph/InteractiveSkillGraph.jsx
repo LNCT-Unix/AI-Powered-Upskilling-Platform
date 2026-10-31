@@ -714,10 +714,6 @@ export default function InteractiveSkillGraph({ skills = [], height = 480, showH
                   {clusterTitle(island.cluster)}
                 </span>
                 <div className="sg-i-head-actions">
-                  <span className="sg-i-meta">
-                    {island.islandNodes.length} skills
-                    {island.localMax > 0 ? ` · ${island.localMax + 1} layers` : ''}
-                  </span>
                   <button
                     type="button"
                     className="sg-i-focus-btn"

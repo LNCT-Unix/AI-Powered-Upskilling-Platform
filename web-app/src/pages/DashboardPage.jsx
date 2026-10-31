@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
   Lock,
@@ -8,7 +8,6 @@ import {
   Target,
   BookOpen,
   ChevronRight,
-  ArrowUpRight,
   ArrowRight,
   Zap,
   TrendingUp,
@@ -200,9 +199,7 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <>
-            {/* ── Interactive Skill Graph ── */}
-            <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 sm:p-6 shadow-xs">
+          <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 sm:p-6 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -228,58 +225,6 @@ export default function DashboardPage() {
                 }}
               />
             </div>
-
-            {/* ── Verified Competencies Grid ── */}
-            <div className="rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 sm:p-6 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-base font-extrabold text-[#2F2A3E]">Verified Competencies</h2>
-                  <p className="text-xs text-[#6E6880] mt-0.5">Real-time status based on your diagnostic answers</p>
-                </div>
-                <Link
-                  to="/graph"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#7C5CFA] hover:text-[#6244E8] transition"
-                >
-                  Full Graph View <ArrowUpRight size={13} />
-                </Link>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                {skills.slice(0, 6).map((skill) => {
-                  const isReady = skill.state === 'MASTERED' || skill.status === 'unlocked' || skill.state === 'READY_TO_LEARN';
-                  return (
-                    <div
-                      key={skill.skillId || skill.name}
-                      className={`flex items-center gap-3.5 rounded-2xl border p-3.5 transition ${
-                        isReady
-                          ? 'border-[#BFE9D2] bg-[#E7F8EF]/60'
-                          : 'border-[#E8E0CC] bg-[#F7F3E8]/60'
-                      }`}
-                    >
-                      <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
-                          isReady
-                            ? 'bg-[#2FBF8F] text-white shadow-2xs'
-                            : 'bg-[#E8E0CC] text-[#8D8471]'
-                        }`}
-                      >
-                        {isReady ? '✓' : '🔒'}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="text-xs font-bold text-[#2F2A3E] truncate">{skill.name}</p>
-                          <span className="text-[10px] font-semibold text-[#8D8471] shrink-0">{skill.cluster || 'Core'}</span>
-                        </div>
-                        <p className="text-[11px] text-[#6E6880] mt-0.5">
-                          {isReady ? 'Ready to learn' : 'Prerequisites pending'}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
         )}
       </div>
 

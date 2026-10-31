@@ -398,7 +398,9 @@
   cursor: grab;
   touch-action: none;
   user-select: none;
-  background: linear-gradient(180deg, #fcfbf8, #f7f5ef);
+  background-color: #f7f6f2;
+  background-image: radial-gradient(rgba(120, 113, 108, 0.22) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
   border: 1px solid #e8e3d8;
   box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(28, 25, 23, 0.04), 0 14px 40px rgba(28, 25, 23, 0.06);
 }
@@ -422,9 +424,7 @@
   left: 0;
   top: 0;
   transform-origin: 0 0;
-  /* Dot grid painted on its own compositor layer — never re-painted during pan/zoom */
-  background-image: radial-gradient(rgba(87, 83, 78, 0.14) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background: transparent;
   will-change: transform;
   contain: layout style;
 }
@@ -433,7 +433,7 @@
 .sg-island {
   position: absolute;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.55);
+  background: #ffffff;
   border: 1px solid rgba(41, 37, 36, 0.08);
   box-shadow: 0 1px 2px rgba(28, 25, 23, 0.03), 0 12px 30px rgba(28, 25, 23, 0.05);
   z-index: 0;
@@ -1083,3 +1083,4 @@
     transition: none !important;
   }
 }
+
