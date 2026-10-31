@@ -368,11 +368,10 @@ export default function LandingChatbot({ initialOpen = false }) {
         {isOpen && (
           <section
             aria-label="octoByte AI Chat Dialog"
-            className={`flex flex-col bg-[#FFFDF7] border border-[#E8E0CC] rounded-3xl octo-chatbot-shadow overflow-hidden transition-all duration-300 ${
-              isExpanded
-                ? 'w-[94vw] max-w-[640px] h-[85vh] max-h-[760px]'
-                : 'w-[94vw] max-w-[430px] h-[82vh] max-h-[620px]'
-            } fixed bottom-4 right-3 sm:bottom-6 sm:right-6`}
+            className={`flex flex-col bg-[#FFFDF7] border border-[#E8E0CC] rounded-3xl octo-chatbot-shadow overflow-hidden transition-all duration-300 ${isExpanded
+              ? 'w-[94vw] max-w-[640px] h-[85vh] max-h-[760px]'
+              : 'w-[94vw] max-w-[430px] h-[82vh] max-h-[620px]'
+              } fixed bottom-4 right-3 sm:bottom-6 sm:right-6`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3.5 bg-gradient-to-r from-[#7C5CFA] via-[#6F4EE8] to-[#5D3CD6] text-white select-none shrink-0 shadow-sm">
@@ -396,7 +395,7 @@ export default function LandingChatbot({ initialOpen = false }) {
                   </div>
                   <p className="text-[11px] text-white/80 font-medium leading-tight mt-1 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 inline-block" />
-                    Online &middot; Answers with CAT &amp; DAG accuracy
+                    Online
                   </p>
                 </div>
               </div>
@@ -456,9 +455,8 @@ export default function LandingChatbot({ initialOpen = false }) {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`octo-msg-in flex flex-col ${
-                    msg.sender === 'user' ? 'items-end' : 'items-start'
-                  }`}
+                  className={`octo-msg-in flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'
+                    }`}
                 >
                   {/* Sender Tag & Timestamp */}
                   <div className="flex items-center gap-1.5 px-1 mb-1 text-[10px] text-[#8D8471] font-medium">
@@ -484,11 +482,10 @@ export default function LandingChatbot({ initialOpen = false }) {
 
                   {/* Message Bubble */}
                   <div
-                    className={`relative max-w-[88%] sm:max-w-[84%] rounded-2xl p-3.5 shadow-xs ${
-                      msg.sender === 'user'
-                        ? 'bg-gradient-to-r from-[#7C5CFA] to-[#6244E8] text-white rounded-tr-xs'
-                        : 'bg-[#F9F6EE] border border-[#E8E0CC] text-[#2F2A3E] rounded-tl-xs'
-                    }`}
+                    className={`relative max-w-[88%] sm:max-w-[84%] rounded-2xl p-3.5 shadow-xs ${msg.sender === 'user'
+                      ? 'bg-gradient-to-r from-[#7C5CFA] to-[#6244E8] text-white rounded-tr-xs'
+                      : 'bg-[#F9F6EE] border border-[#E8E0CC] text-[#2F2A3E] rounded-tl-xs'
+                      }`}
                   >
                     {msg.sender === 'user' ? (
                       <p className="text-xs sm:text-sm font-medium leading-relaxed">{msg.text}</p>
@@ -504,11 +501,10 @@ export default function LandingChatbot({ initialOpen = false }) {
                                 key={aIdx}
                                 type="button"
                                 onClick={() => handleActionClick(act)}
-                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer ${
-                                  act.primary
-                                    ? 'bg-[#7C5CFA] text-white hover:bg-[#6244E8]'
-                                    : 'bg-white border border-[#E8E0CC] text-[#2F2A3E] hover:bg-slate-50'
-                                }`}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer ${act.primary
+                                  ? 'bg-[#7C5CFA] text-white hover:bg-[#6244E8]'
+                                  : 'bg-white border border-[#E8E0CC] text-[#2F2A3E] hover:bg-slate-50'
+                                  }`}
                               >
                                 <span>{act.label}</span>
                                 <ArrowRight size={12} />
@@ -589,11 +585,10 @@ export default function LandingChatbot({ initialOpen = false }) {
                         <button
                           type="button"
                           onClick={() => handleFeedback(msg.id, 'up')}
-                          className={`p-1 rounded-md transition cursor-pointer ${
-                            msg.feedback === 'up'
-                              ? 'text-emerald-600 font-bold bg-emerald-50'
-                              : 'hover:text-[#2F2A3E]'
-                          }`}
+                          className={`p-1 rounded-md transition cursor-pointer ${msg.feedback === 'up'
+                            ? 'text-emerald-600 font-bold bg-emerald-50'
+                            : 'hover:text-[#2F2A3E]'
+                            }`}
                           title="Helpful"
                           aria-label="Thumbs up"
                         >
@@ -602,11 +597,10 @@ export default function LandingChatbot({ initialOpen = false }) {
                         <button
                           type="button"
                           onClick={() => handleFeedback(msg.id, 'down')}
-                          className={`p-1 rounded-md transition cursor-pointer ${
-                            msg.feedback === 'down'
-                              ? 'text-rose-600 font-bold bg-rose-50'
-                              : 'hover:text-[#2F2A3E]'
-                          }`}
+                          className={`p-1 rounded-md transition cursor-pointer ${msg.feedback === 'down'
+                            ? 'text-rose-600 font-bold bg-rose-50'
+                            : 'hover:text-[#2F2A3E]'
+                            }`}
                           title="Not helpful"
                           aria-label="Thumbs down"
                         >
@@ -673,11 +667,10 @@ export default function LandingChatbot({ initialOpen = false }) {
                   onClick={() => setShowQuestionsDrawer(!showQuestionsDrawer)}
                   title="View Assigned Questions"
                   aria-label="Toggle Assigned Questions drawer"
-                  className={`p-2 rounded-xl border transition cursor-pointer ${
-                    showQuestionsDrawer
-                      ? 'bg-[#EFEAFC] border-[#7C5CFA] text-[#6244E8]'
-                      : 'bg-[#FAF8F2] border-[#E8E0CC] text-[#6E6880] hover:text-[#2F2A3E]'
-                  }`}
+                  className={`p-2 rounded-xl border transition cursor-pointer ${showQuestionsDrawer
+                    ? 'bg-[#EFEAFC] border-[#7C5CFA] text-[#6244E8]'
+                    : 'bg-[#FAF8F2] border-[#E8E0CC] text-[#6E6880] hover:text-[#2F2A3E]'
+                    }`}
                 >
                   <HelpCircle size={17} />
                 </button>
@@ -703,7 +696,7 @@ export default function LandingChatbot({ initialOpen = false }) {
               </form>
               <div className="flex items-center justify-between mt-1.5 px-1 text-[10px] text-[#8D8471]">
                 <span>Click ? for 6 preset questions</span>
-                <span>Powered by octoByte IRT &amp; AI</span>
+                <span>Powered by octoByte</span>
               </div>
             </footer>
           </section>

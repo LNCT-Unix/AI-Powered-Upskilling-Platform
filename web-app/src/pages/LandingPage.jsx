@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ArrowRight, LogOut, Sparkles } from 'lucide-react';
+import { Menu, X, ArrowRight, CheckCircle2, LogOut, MessageSquare, Sparkles, BrainCircuit, Network, GraduationCap, GitPullRequest, Briefcase } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import OctoMascotAnimation from '../components/ui/OctoMascotAnimation';
+import { ASSIGNED_QUESTIONS } from '../data/chatbotQuestions';
 import { useAuth } from '../hooks/useAuth';
 import './LandingPage.css';
 
@@ -91,6 +92,10 @@ export default function LandingPage() {
             <a href="#graph" className="hover:text-slate-900 transition">Skill graph</a>
             <a href="#features" className="hover:text-slate-900 transition">Platform features</a>
             <a href="#projects" className="hover:text-slate-900 transition">Lab &amp; Career</a>
+            <a href="#faq" className="hover:text-slate-900 transition flex items-center gap-1">
+              <span>FAQ</span>
+              <span className="text-[10px] bg-[#EFEAFC] text-[#7C5CFA] font-bold px-1.5 py-0.5 rounded-full">AI</span>
+            </a>
           </nav>
 
           <div className="hidden sm:flex items-center gap-3">
@@ -151,6 +156,7 @@ export default function LandingPage() {
               <a href="#graph" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Skill graph</a>
               <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Platform features</a>
               <a href="#projects" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Project Lab &amp; Career</a>
+              <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">AI FAQ Bot</a>
             </nav>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
               {user ? (
@@ -204,7 +210,7 @@ export default function LandingPage() {
             build real skills with <span className="text-[#7C5CFA]">octoByte</span>.
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Stop guessing what to learn. octoByte calibrates where you actually stand using Item Response Theory (IRT), generates an AI roadmap mapped onto a topological DAG, and verifies project code for job readiness.
+            Stop guessing what to learn. Take a short quiz that adapts to your level, get a personalised step-by-step learning plan, and build real projects that show employers you’re job-ready.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
             <button
@@ -221,7 +227,7 @@ export default function LandingPage() {
             </a>
           </div>
           <div className="mt-4 text-xs text-slate-500 font-medium">
-            Free for learners &middot; Seeded with 56 Backend skills across 9 core clusters &middot; Takes ~4 minutes
+            Free for learners &middot; 56 Backend skills across 9 core clusters &middot; Takes ~4 minutes
           </div>
         </div>
 
@@ -280,8 +286,8 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3>Measure</h3>
-              <p>A short adaptive test finds your true level. The engine re-estimates your ability after every answer and stops the moment it is confident &mdash; 7.5 questions on average, never more than 9, and the same answers always produce the same result.</p>
-              <span className="step-tag">IRT engine &middot; reproducible</span>
+              <p>Take a short quiz that adjusts to you. Each answer helps us understand your level, so the questions get easier or harder as you go. It usually takes just 7 or 8 questions (never more than 9), and the same answers always give the same result.</p>
+              <span className="step-tag">Smart quiz · fair results</span>
             </article>
 
             <article className="step reveal" style={{ '--d': '.12s' }}>
@@ -294,8 +300,8 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3>Plan</h3>
-              <p>Your score is mapped onto the track&rsquo;s skill graph, marking every skill ready to learn or locked. The AI turns that snapshot into an ordered roadmap &mdash; what to learn first, what to skip, and roughly how long each step takes.</p>
-              <span className="step-tag">AI roadmap &middot; validated JSON</span>
+              <p>We compare your results with the skills for your track and show what you already know, what you can learn next, and what needs a foundation first. Then our AI builds a step-by-step plan: what to learn first, what you can skip, and roughly how long each step will take.</p>
+              <span className="step-tag">Personal AI plan · accuracy</span>
             </article>
 
             <article className="step reveal" style={{ '--d': '.24s' }}>
@@ -307,8 +313,8 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3>Track</h3>
-              <p>Follow the roadmap at your own pace. Tick steps off, watch your skill map light up, and re-test to see the needle move. Mentors and org admins see the same progress, scoped to their team.</p>
-              <span className="step-tag">Live skill states &middot; re-test anytime</span>
+              <p>Learn at your own pace. Tick off each step as you finish, watch your skill map fill up, and retake the quiz anytime to see how far you’ve come. Mentors and team admins can follow your progress, but only for learners in their own team.</p>
+              <span className="step-tag">Live progress · retake anytime</span>
             </article>
           </div>
         </div>
@@ -321,7 +327,7 @@ export default function LandingPage() {
             <div className="split-head">
               <span className="kicker reveal">The skill graph</span>
               <h2 className="reveal" style={{ '--d': '.08s' }}>See exactly where you stand &mdash; and what unlocks next.</h2>
-              <p className="lede reveal" style={{ '--d': '.16s' }}>Every track is a directed graph of skills and prerequisites, checked on every load for cycles and broken links. Your diagnostic result marks each node, so your roadmap always builds on solid ground.</p>
+              <p className="lede reveal" style={{ '--d': '.16s' }}>Every track is a clear map of skills, arranged so each one builds on the last. Your quiz result shows where you stand, so your plan always starts at the right place.</p>
               <div className="legend">
                 <div className="legend-item reveal" style={{ '--d': '.2s' }}>
                   <span className="dot g"></span>
@@ -404,7 +410,7 @@ export default function LandingPage() {
                   <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
                 </svg>
               </div>
-              <h3>Deterministic diagnostics</h3>
+              <h3>Fair Results</h3>
               <p>Our IRT engine is pure, seeded logic &mdash; no randomness anywhere. Replaying the same answers reproduces the same level, so every progress number is one you can trust.</p>
             </article>
 
@@ -417,8 +423,8 @@ export default function LandingPage() {
                   <circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none" />
                 </svg>
               </div>
-              <h3>Roadmaps with real structure</h3>
-              <p>Every AI roadmap arrives as schema-validated JSON: ordered steps, linked skills, curated resources and hour estimates &mdash; checked twice before you ever see it.</p>
+              <h3>Roadmaps </h3>
+              <p>Every AI-made plan comes as a clear list of steps in the right order, with the skills each step covers, handpicked learning resources and time estimates. We double-check every plan before you see it.</p>
             </article>
 
             <article className="feat reveal" style={{ '--d': '.16s' }}>
@@ -431,8 +437,8 @@ export default function LandingPage() {
                   <path d="M8.2 13.1l7.6 4.2" />
                 </svg>
               </div>
-              <h3>A map, not a checklist</h3>
-              <p>Skills form a dependency graph, not a flat list. Mark one step done and watch downstream skills flip from locked to ready in real time.</p>
+              <h3>A map</h3>
+              <p>Skills are connected, not just listed. Mark one step as done and watch the skills that depend on it unlock for you right away.</p>
             </article>
 
             <article className="feat reveal" style={{ '--d': '.24s' }}>
@@ -442,8 +448,8 @@ export default function LandingPage() {
                   <path d="M15 6.5h6v6" />
                 </svg>
               </div>
-              <h3>Re-test to prove growth</h3>
-              <p>Retake the diagnostic whenever you like. Your level history is stored with every answer, so &ldquo;I feel better&rdquo; becomes &ldquo;I am measurably better.&rdquo;</p>
+              <h3>Re-test </h3>
+              <p>Retake the quiz whenever you like. We save your level after every attempt, so “I feel better” turns into “I can see I’m improving.”</p>
             </article>
 
             <article className="feat reveal" id="projects" style={{ '--d': '.32s' }}>
@@ -453,7 +459,7 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3>Project Lab &amp; Verification</h3>
-              <p>Bridge theory and code. Submit GitHub repositories and practical implementations to automated rubrics that verify real competency retention.</p>
+              <p>Connect what you learn to real code. Submit your GitHub projects and get automatic feedback that checks whether you really understood the skills.</p>
             </article>
 
             <article className="feat reveal" style={{ '--d': '.4s' }}>
@@ -464,8 +470,85 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3>Career Match Scoring</h3>
-              <p>Your demonstrated ability score (&theta;) is automatically benchmarked against real software engineering specs across Indian product startups and tech leaders.</p>
+              <p>Your demonstrated ability score is automatically benchmarked against real software engineering specs across Indian product startups and tech leaders.</p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Interactive FAQ & AI Chatbot Showcase ─────── */}
+      <section className="section" id="faq">
+        <div className="landing-container">
+          <div className="sec-head">
+            <span className="kicker reveal">Interactive Assistant</span>
+            <h2 className="reveal" style={{ '--d': '.08s' }}>Common Questions? Ask Octo AI</h2>
+            <p className="sec-sub reveal" style={{ '--d': '.16s' }}>
+              Select any of the 6 core questions below for instant scientific explanations, or chat with Octo directly.
+            </p>
+          </div>
+
+          <div className="stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginTop: '36px' }}>
+            {ASSIGNED_QUESTIONS.map((q, idx) => {
+              const IconComp = {
+                BrainCircuit,
+                Network,
+                GraduationCap,
+                GitPullRequest,
+                Briefcase,
+                CheckCircle2,
+              }[q.icon] || Sparkles;
+
+              return (
+                <div
+                  key={q.id}
+                  className="stat reveal flex flex-col justify-between text-left cursor-pointer group"
+                  style={{ '--d': `${idx * 0.08}s` }}
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent('octobyte:open-chat', {
+                        detail: { questionId: q.id },
+                      })
+                    )
+                  }
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EFEAFC] text-[#6244E8] px-3 py-1 text-xs font-bold">
+                        <IconComp size={13} />
+                        {q.badge}
+                      </span>
+                      <span className="text-xs font-extrabold text-[#FF9838]">Q{idx + 1}</span>
+                    </div>
+                    <h3 className="text-base font-bold text-[#2F2A3E] group-hover:text-[#7C5CFA] transition-colors leading-snug mb-2">
+                      {q.question}
+                    </h3>
+                    <p className="text-xs text-[#6E6880] leading-relaxed line-clamp-3">
+                      {q.answer.replace(/[*#•-]/g, '').trim()}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-[#E8E0CC]/80 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#7C5CFA] group-hover:text-[#6244E8]">
+                      <span>Ask Octo in Chat</span>
+                      <ArrowRight size={13} />
+                    </span>
+                    <span className="text-[11px] text-[#8D8471] font-semibold">{q.tag}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-9 text-center">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('octobyte:open-chat'))}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#7C5CFA] to-[#6244E8] px-7 py-3.5 text-sm font-bold text-white hover:opacity-95 transition shadow-lg shadow-[#7C5CFA]/25 cursor-pointer"
+            >
+              <MessageSquare size={16} />
+              <span>Open AI Chatbot with 6 Assigned Questions</span>
+              <span className="text-base">💬</span>
+            </button>
           </div>
         </div>
       </section>
@@ -475,7 +558,7 @@ export default function LandingPage() {
         <div className="landing-container">
           <div className="cta reveal in">
             <h2>Ready to meet your real level?</h2>
-            <p>Take the diagnostic &mdash; it&rsquo;s shorter than making coffee. Your personalised roadmap is waiting on the other side.</p>
+            <p>Take the skill check &mdash; it&rsquo;s shorter than making coffee. Your personalised roadmap is waiting on the other side.</p>
             <Link className="btn btn-white" to={user ? '/assessment' : '/signup'}>
               {user ? 'Launch Diagnostic CAT' : 'Start for free'} <span className="arr">&rarr;</span>
             </Link>
