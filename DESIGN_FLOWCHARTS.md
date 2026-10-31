@@ -1,10 +1,9 @@
-# AI-Powered Upskilling Platform — System Design & Flowchart Specifications
+# AI-Powered Upskilling Platform — System Design & Flowchart Specifications (Implemented System)
 
-> **Document Version:** 1.0.0  
-> **Target Audience:** Solutions Architects, Full-Stack Engineers, AI Specialists, and EPAM CoE Evaluators  
+> **Document Scope:** Production-Ready & Implemented Subsystems Only  
 > **Repository:** `LNCT-Unix/AI-Powered-Upskilling-Platform`  
 > **Authors:** Team Unix (Lakshmi Narain College of Technology, Bhopal)  
-> **Maintainer / Lead:** Dev Sharma  
+> **Lead Maintainer:** Dev Sharma  
 > **Last Updated:** October 2026  
 
 ---
@@ -12,116 +11,92 @@
 ## 📑 Table of Contents
 
 1. [High-Level Design (HLD)](#1-high-level-design-hld)
-   - [1.1 End-to-End Architecture & Topology](#11-end-to-end-architecture--topology)
+   - [1.1 Current System Architecture & Runtime Topology](#11-current-system-architecture--runtime-topology)
    - [1.2 Dual-Persona Platform Lifecycle (Learner & Mentor)](#12-dual-persona-platform-lifecycle-learner--mentor)
 2. [System Design](#2-system-design)
-   - [2.1 Network Ingress, Security Boundaries & Protocols](#21-network-ingress-security-boundaries--protocols)
-   - [2.2 Authentication, JWT & Refresh Token Anti-Theft State Machine](#22-authentication-jwt--refresh-token-anti-theft-state-machine)
+   - [2.1 Network Ingress, Security Filters & Communication Protocols](#21-network-ingress-security-filters--communication-protocols)
+   - [2.2 In-Memory JWT & Refresh Token Anti-Theft Rotation State Machine](#22-in-memory-jwt--refresh-token-anti-theft-rotation-state-machine)
    - [2.3 Relational Persistence Model (PostgreSQL ER Diagram)](#23-relational-persistence-model-postgresql-er-diagram)
-   - [2.4 Asynchronous Worker Subsystem & Schema Contract Validation](#24-asynchronous-worker-subsystem--schema-contract-validation)
-   - [2.5 Database Query Performance & Direct Anti-Join Mechanics](#25-database-query-performance--direct-anti-join-mechanics)
-3. [Low-Level Design (LLD) — All Platform Features](#3-low-level-design-lld--all-platform-features)
+   - [2.4 Database Query Performance: Indexed Anti-Join Item Selection](#24-database-query-performance-indexed-anti-join-item-selection)
+3. [Low-Level Design (LLD) — Implemented Features](#3-low-level-design-lld--implemented-features)
    - [3.1 Feature 1: Authentication & Identity Management](#31-feature-1-authentication--identity-management)
    - [3.2 Feature 2: IRT 1-PL Rasch Computerized Adaptive Testing (CAT) Engine](#32-feature-2-irt-1-pl-rasch-computerized-adaptive-testing-cat-engine)
    - [3.3 Feature 3: Topological Skill Graph (DAG) & Dynamic State Transitions](#33-feature-3-topological-skill-graph-dag--dynamic-state-transitions)
-   - [3.4 Feature 4: AI Learning Roadmap Generation & Milestone Progression](#34-feature-4-ai-learning-roadmap-generation--milestone-progression)
-   - [3.5 Feature 5: Capstone Project Verification Lab (GitHub Audit)](#35-feature-5-capstone-project-verification-lab-github-audit)
-   - [3.6 Feature 6: Test History & Deep Psychometric Analytics Engine](#36-feature-6-test-history--deep-psychometric-analytics-engine)
-   - [3.7 Feature 7: Mentor Management, Cohort Analytics & Invite Key Linking](#37-feature-7-mentor-management-cohort-analytics--invite-key-linking)
-   - [3.8 Feature 8: Career Hub, ATS Optimization & AI Mock Interview Suite](#38-feature-8-career-hub-ats-optimization--ai-mock-interview-suite)
-4. [Cross-Cutting Architectural Invariants & Data Flow Matrix](#4-cross-cutting-architectural-invariants--data-flow-matrix)
+   - [3.4 Feature 4: Test History & Psychometric Evaluation Tracking](#34-feature-4-test-history--psychometric-evaluation-tracking)
+   - [3.5 Feature 5: Mentor Workspace, Cohort Analytics & Invite Key Linking](#35-feature-5-mentor-workspace-cohort-analytics--invite-key-linking)
+4. [Active Engineering Invariants & Data Flow Matrix](#4-active-engineering-invariants--data-flow-matrix)
 
 ---
 
 # 1. High-Level Design (HLD)
 
-The High-Level Design establishes the global boundaries, runtime tiers, and communication channels separating client applications, transactional microservices, asynchronous worker nodes, and external AI orchestrators.
+The High-Level Design illustrates the actual running architecture: the React 19 Single Page Application, the Ingress/Tunnel layer, the Spring Boot Gateway containing all business logic, the PostgreSQL persistence store, and external Identity/SMTP integrations.
 
-### 1.1 End-to-End Architecture & Topology
+### 1.1 Current System Architecture & Runtime Topology
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph ClientTier ["1. Client Tier (Presentation Layer)"]
         direction LR
-        WEB["🌐 Web Application<br/>(React 19 / Vite / TailwindCSS)<br/>Port: 5173"]
-        MOB["📱 Mobile Client<br/>(Capacitor / Android & iOS)<br/>Scheme: myapp://"]
-        MENTOR_UI["👨‍🏫 Mentor Portal UI<br/>(Cohort Analytics & Roster)<br/>Route: /mentor/*"]
+        WEB["🌐 Learner Web App<br/>(React 19 / Vite / TailwindCSS)<br/>Dashboard • Quiz • Graph • History"]
+        MENTOR_UI["👨‍🏫 Mentor Portal UI<br/>(React 19 Sub-Routes)<br/>Roster • Key Management • Cohort Analytics"]
     end
 
-    subgraph IngressTier ["2. Ingress & Edge Gateway Tier"]
+    subgraph IngressTier ["2. Ingress & Edge Proxy"]
         direction TB
-        CF["🛡️ Cloudflare Edge / Reverse Proxy<br/>SSL/TLS Termination • DDoS Shield"]
-        TUNNEL["🚇 Cloudflare Tunnel / Ingress<br/>merit-symbols-tenant-pub.trycloudflare.com"]
+        CF["🛡️ Cloudflare Edge<br/>SSL/TLS Termination • Security Shield"]
+        TUNNEL["🚇 Cloudflare Tunnel Connector<br/>merit-symbols-tenant-pub.trycloudflare.com"]
         CF --> TUNNEL
     end
 
-    subgraph CoreBackendTier ["3. Backend Core Gateway Tier (Spring Boot 3.2+ / Java 21)"]
+    subgraph CoreBackendTier ["3. Backend Core Gateway (Spring Boot 3.2+ / Java 21 / Port 8080)"]
         direction TB
-        SEC_FILTER["🔒 Spring Security Filter Chain<br/>CORS • CSRF • JWT AuthFilter • RateLimiter"]
+        SEC_FILTER["🔒 Security Filter Chain<br/>CORS • RateLimiter • JWT OncePerRequestFilter"]
         
-        subgraph GatewayModules ["Domain Subsystems"]
-            AUTH_MOD["🔑 Identity & Auth Module<br/>OAuth2 Client • BCrypt • SMTP OTP"]
-            CAT_MOD["🎯 Psychometric IRT CAT Engine<br/>1-PL Rasch Estimator • Item Selector"]
-            GRAPH_MOD["🕸️ Skill Graph DAG Traversal<br/>Topological Sorter • Cycle Verifier"]
-            ROADMAP_MOD["🗺️ Roadmap Orchestrator<br/>Milestone State Tracker"]
-            MENTOR_MOD["👥 Mentor & Cohort Module<br/>Invite Key Generator • Student Linking"]
-            ANALYTICS_MOD["📊 Analytics & History Engine<br/>Ability Trajectory Aggregator"]
-            TASK_MOD["⚡ Async Task Lifecycle Manager<br/>Task Dispatcher & Callback Receiver"]
+        subgraph ImplementedModules ["Active Domain Services"]
+            AUTH_MOD["🔑 Authentication & Identity<br/>EmailAuthController • MentorAuthController • OAuth2"]
+            CAT_MOD["🎯 Psychometric IRT CAT Engine<br/>AssessmentService • Rasch 1-PL Estimator"]
+            GRAPH_MOD["🕸️ Skill Graph DAG Subsystem<br/>AssessmentDataLoader • DFS Cycle Verifier"]
+            MENTOR_MOD["👥 Mentor & Cohort Subsystem<br/>MentorKeyService • StudentMentorLinkService"]
+            HIST_MOD["📊 Test History & Analytics<br/>AssessmentHistoryService"]
         end
-        SEC_FILTER --> GatewayModules
+        SEC_FILTER --> ImplementedModules
     end
 
-    subgraph DataTier ["4. Persistent Storage Tier"]
+    subgraph DataTier ["4. Persistent Storage (PostgreSQL 16)"]
         direction TB
-        POSTGRES[("🐘 PostgreSQL 16 (Neon Cloud / Local)<br/>citext • UUID • HikariCP Pool<br/>Tables: users, assessments, skills, roadmaps")]
+        POSTGRES[("🐘 PostgreSQL 16 (Neon Cloud / Local)<br/>citext • UUID • HikariCP Pool<br/>users, refresh_tokens, assessments, skills, mentor_keys")]
     end
 
-    subgraph AsyncTier ["5. Asynchronous AI Worker Tier (Node.js 20+)"]
-        direction TB
-        WORKER_SVC["⚙️ AI Worker Service (Port 3001)<br/>Internal Shared-Secret Auth (`X-Internal-API-Key`)"]
-        QUEUE["📥 Task Queue / BullMQ (Redis)<br/>Job Deduplication & Retry Manager"]
-        VALIDATOR["📋 Schema Contract Validator<br/>Draft 7 JSON Schemas (`contracts/`)"]
-        WORKER_SVC --> QUEUE --> VALIDATOR
-    end
-
-    subgraph ExternalServices ["6. External Service Providers"]
+    subgraph ExternalServices ["5. External Integrations"]
         direction LR
         GOOGLE_AUTH["🔑 Google Identity<br/>(OAuth 2.0 / OIDC)"]
         GITHUB_AUTH["🐙 GitHub Identity<br/>(OAuth 2.0)"]
         GMAIL_SMTP["✉️ Gmail SMTP<br/>(smtp.gmail.com:587)"]
-        OPENROUTER["🤖 LLM Providers<br/>(OpenRouter / Gemini / Claude)"]
     end
 
-    %% Ingress Connections
-    WEB & MOB & MENTOR_UI -->|HTTPS / REST / JSON| CF
-    TUNNEL -->|HTTP / Reverse Proxy| SEC_FILTER
+    %% Client Ingress
+    WEB & MENTOR_UI -->|HTTPS / REST / JSON| CF
+    TUNNEL -->|HTTP Forward| SEC_FILTER
 
     %% Gateway to Database
-    GatewayModules <-->|JDBC Transactions / HikariCP| POSTGRES
+    ImplementedModules <-->|JDBC Transactions / HikariCP| POSTGRES
 
     %% Gateway to External Auth / SMTP
     AUTH_MOD <-->|OAuth2 Authorization Code| GOOGLE_AUTH & GITHUB_AUTH
     AUTH_MOD -->|STARTTLS / SMTP| GMAIL_SMTP
 
-    %% Gateway to AI Worker
-    TASK_MOD -->|Private HTTP Dispatch / Secret Key| WORKER_SVC
-    VALIDATOR -->|Prompt Orchestration| OPENROUTER
-    OPENROUTER -->|Raw Generative Stream| VALIDATOR
-    VALIDATOR -.->|Validated Callback: POST /internal/tasks/{id}/result| TASK_MOD
-
     classDef client fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
     classDef edge fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#334155;
     classDef gateway fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#5b21b6;
     classDef storage fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
-    classDef worker fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
     classDef external fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
 
-    class WEB,MOB,MENTOR_UI client;
+    class WEB,MENTOR_UI client;
     class CF,TUNNEL edge;
-    class SEC_FILTER,AUTH_MOD,CAT_MOD,GRAPH_MOD,ROADMAP_MOD,MENTOR_MOD,ANALYTICS_MOD,TASK_MOD gateway;
+    class SEC_FILTER,AUTH_MOD,CAT_MOD,GRAPH_MOD,MENTOR_MOD,HIST_MOD gateway;
     class POSTGRES storage;
-    class WORKER_SVC,QUEUE,VALIDATOR worker;
-    class GOOGLE_AUTH,GITHUB_AUTH,GMAIL_SMTP,OPENROUTER external;
+    class GOOGLE_AUTH,GITHUB_AUTH,GMAIL_SMTP external;
 ```
 
 ---
@@ -130,123 +105,109 @@ graph TB
 
 ```mermaid
 flowchart TD
-    subgraph StudentJourney ["🎓 Learner Journey"]
+    subgraph StudentJourney ["🎓 Implemented Learner Journey"]
         direction TB
-        S1(["🔑 Authentication<br/>(OAuth2 / Email+OTP)"]) --> S2["📊 Learner Dashboard<br/>(/dashboard)"]
-        S2 --> S3["🎯 Start Adaptive Diagnostic Test<br/>(IRT Rasch Model • Max 9 MCQs)"]
-        S3 --> S4["📋 Diagnostic Results Reveal<br/>(Latent Ability θ, Level & Radar)"]
-        S4 --> S5["🕸️ Interactive Skill Graph<br/>(Explore 56 Skills in 9 Clusters)"]
-        S5 --> S6["🗺️ Personalized AI Roadmap<br/>(Step-by-step Milestones & Time Budget)"]
-        S6 --> S7["🛠️ Capstone Project Lab<br/>(Submit GitHub Repo for Automated Audit)"]
-        S7 --> S8["💼 Career Hub & AI Mock Interview<br/>(ATS Optimization & Placement Match)"]
-        S8 --> S9["🔄 Continuous Growth Checkpoints<br/>(Targeted Re-tests & Frontier Unlock)"]
-        S9 -.->|Loop back to update θ| S2
+        S1(["🔑 Register / Login<br/>(OAuth2 or Email + OTP)"]) --> S2["📊 Learner Dashboard<br/>(/dashboard)"]
+        S2 --> S3["🎯 Start Diagnostic Test<br/>(/assessment • Max 9 MCQs)"]
+        S3 --> S4["📋 Test Result Reveal<br/>(Scorecard • Ability θ • Baseline Level)"]
+        S4 --> S5["🕸️ Interactive Skill Graph<br/>(/graph • 56 Skills in 9 Clusters)"]
+        S5 --> S6["📜 Review Past Assessment Runs<br/>(/history • Latent Trajectory)"]
+        S6 --> S7["🔗 Enter Mentor Invite Key<br/>(Link account to institutional mentor)"]
     end
 
-    subgraph MentorJourney ["👨‍🏫 Mentor & Institutional Oversight"]
+    subgraph MentorJourney ["👨‍🏫 Implemented Mentor Journey"]
         direction TB
-        M1(["🔑 Mentor Portal Access<br/>(Registration & Approval)"]) --> M2["📊 Mentor Command Center<br/>(/mentor)"]
-        M2 --> M3["🔑 Generate Unique Student Invite Key<br/>(UUID Format • /mentor/key)"]
-        M3 -.->|Distribute key to cohort| S10["🔗 Student Enters Key<br/>(POST /api/v1/students/mentor-link)"]
-        S10 -.-> M4["👥 Student Roster & Live Progress<br/>(/mentor/students)"]
-        M4 --> M5["📈 Cohort Competency Analytics<br/>(/mentor/analytics)"]
-        M5 --> M6["🏆 Skill Achievement Tracking<br/>(/mentor/skills)"]
-        M6 --> M7["🎯 Intervene & Target Interventions<br/>(Weak Area Analysis & Remediation)"]
+        M1(["🔑 Register as Mentor<br/>(Full Name • Designation • Org)"]) --> M2["📊 Mentor Command Center<br/>(/mentor)"]
+        M2 --> M3["🔑 Generate Cohort Invite Key<br/>(/mentor/key • e.g., MENTOR-UNIX-XXXX)"]
+        M3 -.->|Key shared with students| S7
+        S7 -.-> M4["👥 Student Roster & Live Tracking<br/>(/mentor/students)"]
+        M4 --> M5["📈 Cohort Test Analytics<br/>(/mentor/analytics • Average θ & Weaknesses)"]
+        M5 --> M6["🏆 Student Skills Audit<br/>(/mentor/skills • Mastered vs Stuck Nodes)"]
     end
 
     classDef student fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af;
     classDef mentor fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#6b21a8;
-    classDef link fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#854d0e;
 
-    class S1,S2,S3,S4,S5,S6,S7,S8,S9 student;
-    class M1,M2,M3,M4,M5,M6,M7 mentor;
-    class S10 link;
+    class S1,S2,S3,S4,S5,S6,S7 student;
+    class M1,M2,M3,M4,M5,M6 mentor;
 ```
 
 ---
 
 # 2. System Design
 
-The System Design specifies technical communication protocols, security mechanics, relational database structure, asynchronous message lifecycles, and deterministic database queries.
-
-### 2.1 Network Ingress, Security Boundaries & Protocols
+### 2.1 Network Ingress, Security Filters & Communication Protocols
 
 ```mermaid
 flowchart LR
-    subgraph PublicInternet ["Public Internet"]
-        USER["Browser / Mobile Client"]
+    subgraph PublicClient ["Client Layer"]
+        SPA["Browser Client<br/>React 19 SPA"]
     end
 
-    subgraph IngressZone ["Ingress & Reverse Proxy"]
-        CF["Cloudflare Edge<br/>WAF, DDoS, TLS 1.3"]
-        TUNNEL["Cloudflare Tunnel Connector"]
+    subgraph EdgeLayer ["Ingress & Proxy"]
+        CF["Cloudflare Edge & Tunnel<br/>HTTPS :443 Termination"]
     end
 
-    subgraph DMZ ["Spring Boot Gateway (Port 8080)"]
-        CORS["CORS Handler<br/>Allowed Origins List"]
-        RATE["Rate Limiter<br/>IP / Route Sliding Window"]
-        JWT_FILTER["OncePerRequestFilter<br/>JWT Bearer Token Validator"]
-        CONTROLLERS["Spring MVC Controllers<br/>@RestController"]
+    subgraph GatewayCore ["Spring Boot Gateway (Port 8080)"]
+        CORS["CORS Filter<br/>Allowed Origins: localhost:5173, etc."]
+        RATE["Rate Limiter Filter<br/>Cooldown: 60s for OTP sends"]
+        JWT_FILTER["OncePerRequestFilter<br/>Bearer Token Authentication"]
+        CONTROLLER["REST Controllers<br/>@RestController"]
     end
 
-    subgraph PrivateVPC ["Isolated Private Network"]
-        DB[("PostgreSQL 16<br/>Port: 5432<br/>SSL Required")]
-        WORKER["Node.js AI Worker<br/>Port: 3001<br/>No Public IP"]
+    subgraph StorageLayer ["PostgreSQL 16"]
+        DB[("PostgreSQL Database<br/>HikariCP Connection Pool")]
     end
 
-    USER -->|HTTPS / Port 443| CF
-    CF --> TUNNEL
-    TUNNEL -->|HTTP / Local Forward| CORS
+    SPA -->|HTTPS / JSON| CF
+    CF -->|HTTP Forward| CORS
     CORS --> RATE
     RATE --> JWT_FILTER
-    JWT_FILTER --> CONTROLLERS
-    CONTROLLERS -->|HikariCP / Encrypted JDBC| DB
-    CONTROLLERS -->|HTTP POST with X-Internal-API-Key| WORKER
+    JWT_FILTER --> CONTROLLER
+    CONTROLLER -->|HikariCP JDBC| DB
 
-    classDef public fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef ingress fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
-    classDef dmz fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#581c87;
-    classDef privateNet fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d;
+    classDef pub fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
+    classDef ing fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef gwy fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#581c87;
+    classDef dbs fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f;
 
-    class USER public;
-    class CF,TUNNEL ingress;
-    class CORS,RATE,JWT_FILTER,CONTROLLERS dmz;
-    class DB,WORKER privateNet;
+    class SPA pub;
+    class CF ing;
+    class CORS,RATE,JWT_FILTER,CONTROLLER gwy;
+    class DB dbs;
 ```
 
 ---
 
-### 2.2 Authentication, JWT & Refresh Token Anti-Theft State Machine
-
-The platform adheres to an uncompromising security model: **Access Tokens are kept strictly in-memory** to neutralize XSS theft. **Refresh Tokens are stored in HttpOnly cookies**, and the backend detects token theft using cryptographic hash rotation.
+### 2.2 In-Memory JWT & Refresh Token Anti-Theft Rotation State Machine
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as Web SPA (React)
+    actor Client as Web Application (React)
     participant GW as Spring Boot Gateway
     participant DB as PostgreSQL (refresh_tokens)
 
-    Note over Client,GW: Standard Login / Token Issue
+    Note over Client,GW: Login Phase
     Client->>GW: POST /api/auth/login { email, password }
-    GW->>DB: Verify credentials & BCrypt hash
+    GW->>DB: Verify credentials via BCrypt
     GW->>GW: Mint Access Token (JWT, TTL 15m)<br/>Mint Refresh Token (Opaque string, TTL 30d)
-    GW->>DB: INSERT token_hash=SHA256(refresh_token), revoked=false
-    GW-->>Client: Set-Cookie: refresh_token (HttpOnly, SameSite=Lax)<br/>Body: { accessToken } (Stored in-memory)
+    GW->>DB: INSERT INTO refresh_tokens (token_hash=SHA256(token), revoked=false)
+    GW-->>Client: Set-Cookie: refresh_token (HttpOnly, SameSite=Lax)<br/>JSON Body: { accessToken } (Stored strictly in-memory)
 
-    Note over Client,GW: Access Token Expiry & Silent Rotation
+    Note over Client,GW: Silent Token Refresh
     Client->>GW: POST /api/auth/refresh (Cookie: refresh_token)
-    GW->>GW: incoming_hash = SHA256(cookie.refresh_token)
+    GW->>GW: Compute incoming_hash = SHA256(cookie.token)
     GW->>DB: SELECT * FROM refresh_tokens WHERE token_hash = incoming_hash
 
-    alt Token is valid and revoked == false
-        GW->>GW: Mint new Access Token<br/>Mint new Refresh Token
+    alt Valid Token & revoked == false
+        GW->>GW: Mint new Access Token & new Refresh Token
         GW->>DB: UPDATE current SET revoked=true, replaced_by=new_hash<br/>INSERT new refresh_token row
-        GW-->>Client: Set-Cookie: new_refresh_token (HttpOnly)<br/>Body: { accessToken: new_access_token }
+        GW-->>Client: Set-Cookie: new_refresh_token (HttpOnly)<br/>JSON Body: { accessToken: new_access_token }
     else Replay Attack Detected! (revoked == true)
-        Note over GW,DB: Security Violation: Previously rotated token reused!
+        Note over GW,DB: Security Violation: Rotated token presented again!
         GW->>DB: UPDATE refresh_tokens SET revoked=true WHERE user_id = token.user_id
-        GW-->>Client: HTTP 401 Unauthorized (Clear Cookies)<br/>Forced Logout on all sessions
+        GW-->>Client: HTTP 401 Unauthorized (Tokens Revoked)
     end
 ```
 
@@ -269,7 +230,7 @@ erDiagram
     tracks ||--o{ assessment_items : "provides"
     tracks ||--o{ assessments : "targets"
 
-    skills ||--o{ skill_prerequisites : "skill_target"
+    skills ||--o{ skill_prerequisites : "target_skill"
     skills ||--o{ skill_prerequisites : "prerequisite_source"
     skills ||--o{ assessment_skill_results : "evaluated_in"
 
@@ -302,7 +263,7 @@ erDiagram
     mentor_keys {
         bigint id PK
         bigint mentor_id FK
-        varchar key_code UK "e.g. MENTOR-XXXX-YYYY"
+        varchar key_code UK "e.g. MENTOR-UNIX-8492"
         varchar status "ACTIVE, REVOKED, EXPIRED"
         int max_students
         int current_students
@@ -327,10 +288,10 @@ erDiagram
     skills {
         uuid id PK
         uuid track_id FK
-        varchar slug UK "sql-basics"
+        varchar slug UK "sql-joins-aggregation"
         varchar name
         varchar cluster "Databases, Security, etc."
-        double_precision difficulty "Logit value"
+        double_precision difficulty "Logit value [-3.0, +3.0]"
         text description
     }
 
@@ -346,7 +307,7 @@ erDiagram
         double_precision difficulty "b_i logit"
         text stem "Question prompt"
         text options "JSON array of 4 options"
-        int correct_option "0-indexed; hidden from client"
+        int correct_option "0-indexed; hidden during test"
         varchar status "ACTIVE, RETIRED"
     }
 
@@ -376,427 +337,258 @@ erDiagram
 
 ---
 
-### 2.4 Asynchronous Worker Subsystem & Schema Contract Validation
-
-To safeguard against generative LLM hallucination and keep public HTTP requests under 200ms, all compute-heavy AI tasks run asynchronously via background jobs:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Client as Web Application
-    participant GW as Spring Boot Gateway
-    participant DB as PostgreSQL
-    participant WRK as Node.js AI Worker
-    participant LLM as External LLM API
-
-    Client->>GW: POST /api/v1/roadmaps/generate { trackId, targetRole }
-    GW->>DB: INSERT INTO tasks (id, status='PENDING', payload)
-    GW->>WRK: POST /internal/jobs/dispatch<br/>(Header: X-Internal-API-Key, Body: { taskId, context })
-    GW-->>Client: HTTP 202 Accepted { taskId: "...", status: "PENDING" }
-
-    Note over Client,GW: Client polls /api/v1/tasks/{taskId} every 2 seconds
-
-    WRK->>WRK: Enqueue in BullMQ Redis Queue
-    WRK->>LLM: Stream Prompt with System Context & Format Rules
-    LLM-->>WRK: Raw Generative JSON completion
-
-    Note over WRK: Schema Contract Enforcement
-    WRK->>WRK: Validate output against /contracts/roadmap.schema.json
-
-    alt Output violates JSON schema
-        WRK->>WRK: Auto-retry with corrective repair prompt (Max 3 attempts)
-    else Schema verification PASSED
-        WRK->>GW: POST /internal/tasks/{taskId}/result<br/>(Header: X-Internal-API-Key, Body: Validated Roadmap JSON)
-        GW->>DB: Save Roadmap & UPDATE tasks SET status='COMPLETED'
-        GW-->>WRK: HTTP 200 OK
-    end
-
-    Client->>GW: GET /api/v1/tasks/{taskId}
-    GW-->>Client: HTTP 200 OK { status: 'COMPLETED', result: { roadmap } }
-```
-
----
-
-### 2.5 Database Query Performance & Direct Anti-Join Mechanics
-
-The Computerized Adaptive Test evaluates millions of question combinations. Rather than loading items into memory or doing slow randomized pagination, the backend executes a **direct indexed anti-join**:
+### 2.4 Database Query Performance: Indexed Anti-Join Item Selection
 
 ```mermaid
 flowchart TD
-    START["Client requests next item:<br/>POST /api/v1/assessments/{id}/answers"] --> PERSIST["Save & Flush previous response<br/>UPDATE assessments SET theta = new_theta"]
-    PERSIST --> QUERY["Execute Anti-Join Query:<br/>SELECT i FROM AssessmentItem i<br/>LEFT JOIN AssessmentResponse r ON r.item = i AND r.assessment = :assessment<br/>WHERE r.id IS NULL AND i.track = :track AND i.status = 'ACTIVE'<br/>ORDER BY ABS(i.difficulty - :currentTheta) ASC"]
-    QUERY --> INDEX_SCAN["Database Engine uses composite index:<br/>idx_items_track_status_diff (track_id, status, difficulty)"]
-    INDEX_SCAN --> LIMIT["Fetch Top 1 Record (Limit.of(1))"]
-    LIMIT --> EVAL_EXISTS{Item Found?}
-    EVAL_EXISTS -- Yes --> SANITIZE["Strip 'correct_option' field<br/>Return DTO to client"]
-    EVAL_EXISTS -- No --> TERM["Mark Assessment: stop_reason = 'NO_QUESTIONS_LEFT'<br/>status = 'COMPLETED'"]
+    REQ["Learner submits answer:<br/>POST /api/v1/assessments/:id/answers"] --> PERSIST["Save AssessmentResponse<br/>UPDATE assessments SET theta = new_theta"]
+    PERSIST --> ANTI_JOIN["Execute Indexed SQL Anti-Join:<br/>SELECT i FROM AssessmentItem i<br/>LEFT JOIN AssessmentResponse r ON r.item = i AND r.assessment = :assessment<br/>WHERE r.id IS NULL AND i.track = :track AND i.status = 'ACTIVE'<br/>ORDER BY ABS(i.difficulty - :currentTheta) ASC"]
+    ANTI_JOIN --> INDEX["Scans index: idx_items_track_status_diff"]
+    INDEX --> FETCH["Fetch Top 1 Candidate (Limit.of(1))"]
+    FETCH --> CHECK_FOUND{Candidate Found?}
+    CHECK_FOUND -- Yes --> RETURN_DTO["Strip 'correct_option'<br/>Return next item payload to client"]
+    CHECK_FOUND -- No --> STOP_TEST["Mark assessment: stop_reason = 'NO_QUESTIONS_LEFT'<br/>status = 'COMPLETED'"]
+
+    classDef proc fill:#f0f9ff,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef check fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef done fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
+
+    class REQ,PERSIST,ANTI_JOIN,INDEX,FETCH proc;
+    class CHECK_FOUND check;
+    class RETURN_DTO,STOP_TEST done;
 ```
 
 ---
 
-# 3. Low-Level Design (LLD) — All Platform Features
-
-The Low-Level Design dissects every component and feature of the platform down to service calls, branch decisions, and state machine transitions.
+# 3. Low-Level Design (LLD) — Implemented Features
 
 ---
 
 ### 3.1 Feature 1: Authentication & Identity Management
 
-Handles User & Mentor signup, BCrypt hashing, Gmail SMTP 6-digit OTP verification, OAuth2 (Google & GitHub) with Account Linking protection, and secure session establishment.
+Implemented across `EmailAuthController`, `MentorAuthController`, `SecurityConfig`, and OAuth2 handlers.
 
 ```mermaid
 flowchart TD
-    AUTH_START([User Initiates Authentication]) --> AUTH_CHOICE{Auth Method?}
+    AUTH_ENTRY([User Accesses Login/Signup]) --> AUTH_TYPE{Auth Method}
 
-    %% Email + Password Flow
-    AUTH_CHOICE -- "Email / Password" --> EP_CHECK{Action?}
-    EP_CHECK -- "Register" --> REG_INPUT["Enter Full Name, Email, Password"]
-    REG_INPUT --> REG_BCRYPT["Hash Password with BCrypt (Cost: 12)"]
-    REG_BCRYPT --> REG_SAVE["Save User (email_verified = false)"]
-    REG_SAVE --> OTP_GEN["Generate Cryptographic 6-digit OTP<br/>TTL = 15 minutes"]
-    OTP_GEN --> OTP_MAIL["Dispatch Verification Email via Gmail SMTP"]
-    OTP_MAIL --> OTP_SCREEN["Display OTP Verification Dialog (/verify-email)"]
-    OTP_SCREEN --> OTP_SUBMIT["User submits 6-digit OTP"]
-    OTP_SUBMIT --> OTP_VAL{Valid & Unexpired?}
-    OTP_VAL -- No --> OTP_ERR["Return 400 Bad Request<br/>(Resend Cooldown: 60s)"]
-    OTP_VAL -- Yes --> OTP_VERIFIED["Set email_verified = true<br/>Issue In-Memory JWT & HttpOnly Refresh Token"]
+    %% Email/Password Branch
+    AUTH_TYPE -- "Email & Password" --> FLOW_TYPE{Action}
+    FLOW_TYPE -- "Student Signup" --> SIGNUP_STUDENT["Enter Name, Email, Password"]
+    FLOW_TYPE -- "Mentor Signup" --> SIGNUP_MENTOR["Enter Name, Designation, Org, Password"]
+    
+    SIGNUP_STUDENT & SIGNUP_MENTOR --> BCRYPT["Hash password with BCrypt (Cost: 12)"]
+    BCRYPT --> SAVE_PENDING["Save User (email_verified = false)"]
+    SAVE_PENDING --> SEND_OTP["Generate 6-digit OTP (TTL: 15m)<br/>Dispatch via Gmail SMTP"]
+    SEND_OTP --> VERIFY_OTP_SCREEN["Redirect to /verify-email"]
+    
+    VERIFY_OTP_SCREEN --> SUBMIT_OTP["User submits 6-digit OTP"]
+    SUBMIT_OTP --> CHECK_OTP{OTP Valid & Active?}
+    CHECK_OTP -- No --> OTP_ERROR["Show error (Cooldown: 60s)"]
+    CHECK_OTP -- Yes --> VERIFY_SUCCESS["Mark email_verified = true<br/>Issue In-Memory JWT & HttpOnly Cookie"]
 
-    EP_CHECK -- "Login" --> LOGIN_INPUT["Enter Email & Password"]
-    LOGIN_INPUT --> LOGIN_VERIFY{User Exists & Password Matches?}
-    LOGIN_VERIFY -- No --> LOGIN_FAIL["Return 401 Unauthorized"]
-    LOGIN_VERIFY -- Yes --> LOGIN_V_CHECK{Email Verified?}
-    LOGIN_V_CHECK -- No --> LOGIN_UNV["Return 403 Forbidden<br/>Prompt OTP Verification"]
-    LOGIN_V_CHECK -- Yes --> LOGIN_SUCCESS["Issue In-Memory JWT & HttpOnly Refresh Token<br/>Redirect to /dashboard"]
+    FLOW_TYPE -- "Standard Login" --> LOGIN_SUBMIT["Enter Email & Password"]
+    LOGIN_SUBMIT --> CHECK_CREDS{Credentials Valid?}
+    CHECK_CREDS -- No --> LOGIN_REJECT["HTTP 401 Unauthorized"]
+    CHECK_CREDS -- Yes --> CHECK_VERIFIED{email_verified == true?}
+    CHECK_VERIFIED -- No --> REDIRECT_VERIFY["HTTP 403: Prompt OTP Verification"]
+    CHECK_VERIFIED -- Yes --> LOGIN_OK["Issue In-Memory JWT & HttpOnly Cookie<br/>Navigate to /dashboard (or /mentor)"]
 
-    %% OAuth2 Flow
-    AUTH_CHOICE -- "OAuth 2.0 (Google / GitHub)" --> OA_START["Redirect user to Provider Login Screen"]
-    OA_START --> OA_CALLBACK["Provider redirects to /login/oauth2/code/{provider}"]
-    OA_CALLBACK --> OA_EXCHANGE["Spring Security exchanges Code for ID Token / UserInfo"]
-    OA_EXCHANGE --> OA_LINK_MATRIX{Account Linking Decision Matrix}
+    %% OAuth2 Branch
+    AUTH_TYPE -- "OAuth 2.0 (Google / GitHub)" --> OA_REDIRECT["Redirect to Provider Authentication"]
+    OA_REDIRECT --> OA_CALLBACK["Provider redirects to /login/oauth2/code/:provider"]
+    OA_CALLBACK --> OA_DECISION{Account Linking Decision Matrix}
+    
+    OA_DECISION -- "Provider ID already mapped" --> OA_LOGIN_OK["Authenticate User"]
+    OA_DECISION -- "New Email" --> OA_REGISTER["Provision New User (email_verified=true)<br/>Link OAuth Identity"]
+    OA_DECISION -- "Existing Unverified User" --> OA_RECLAIM["Verify Email, Clear Old Password,<br/>Link OAuth Identity"]
+    OA_DECISION -- "Existing Verified Password User" --> OA_BLOCK["Prevent Takeover! HTTP 409 OAUTH_ACCOUNT_EXISTS<br/>Require password login first"]
 
-    OA_LINK_MATRIX -- "Provider ID already mapped" --> OA_LOGIN_OK["Authenticate User"]
-    OA_LINK_MATRIX -- "New Email" --> OA_CREATE["Provision New User (email_verified=true)<br/>Link OAuth Account"]
-    OA_LINK_MATRIX -- "Unverified Existing User" --> OA_RECLAIM["Reclaim Account, Verify Email,<br/>Clear old password & Link OAuth"]
-    OA_LINK_MATRIX -- "Existing Verified Password Account" --> OA_BLOCK["Prevent Account Takeover!<br/>Reject with OAUTH_ACCOUNT_EXISTS<br/>Require Password Login first"]
+    OA_LOGIN_OK & OA_REGISTER & OA_RECLAIM --> MINT_CODE["Issue One-Time UUID Login Code (TTL: 60s)"]
+    MINT_CODE --> BROWSER_REDIRECT["Redirect to /auth/callback?code=:uuid"]
+    BROWSER_REDIRECT --> CODE_EXCHANGE["Client calls POST /api/auth/oauth2/exchange"]
+    CODE_EXCHANGE --> SESSION_READY(["Session Established<br/>Access Token in-memory, Refresh Token in cookie"])
 
-    OA_LOGIN_OK & OA_CREATE & OA_RECLAIM --> OA_CODE_GEN["Issue One-Time UUID Login Code (TTL: 60s)"]
-    OA_CODE_GEN --> OA_FRONTEND_REDIRECT["Redirect: /auth/callback?code=<uuid>"]
-    OA_FRONTEND_REDIRECT --> OA_EXCHANGE_API["Client calls: POST /api/auth/oauth2/exchange"]
-    OA_EXCHANGE_API --> OA_FINAL["Receive In-Memory JWT & HttpOnly Cookie<br/>Navigate to /dashboard"]
-
-    classDef proc fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef step fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
     classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
-    classDef terminal fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
-    classDef error fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
+    classDef success fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
+    classDef reject fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
 
-    class REG_INPUT,REG_BCRYPT,REG_SAVE,OTP_GEN,OTP_MAIL,OTP_SCREEN,OTP_SUBMIT,LOGIN_INPUT,OA_START,OA_CALLBACK,OA_EXCHANGE,OA_CREATE,OA_RECLAIM,OA_CODE_GEN,OA_FRONTEND_REDIRECT,OA_EXCHANGE_API proc;
-    class AUTH_CHOICE,EP_CHECK,OTP_VAL,LOGIN_VERIFY,LOGIN_V_CHECK,OA_LINK_MATRIX decision;
-    class OTP_VERIFIED,LOGIN_SUCCESS,OA_LOGIN_OK,OA_FINAL terminal;
-    class OTP_ERR,LOGIN_FAIL,LOGIN_UNV,OA_BLOCK error;
+    class SIGNUP_STUDENT,SIGNUP_MENTOR,BCRYPT,SAVE_PENDING,SEND_OTP,VERIFY_OTP_SCREEN,SUBMIT_OTP,LOGIN_SUBMIT,OA_REDIRECT,OA_CALLBACK,OA_REGISTER,OA_RECLAIM,MINT_CODE,BROWSER_REDIRECT,CODE_EXCHANGE step;
+    class AUTH_TYPE,FLOW_TYPE,CHECK_OTP,CHECK_CREDS,CHECK_VERIFIED,OA_DECISION decision;
+    class VERIFY_SUCCESS,LOGIN_OK,OA_LOGIN_OK,SESSION_READY success;
+    class OTP_ERROR,LOGIN_REJECT,REDIRECT_VERIFY,OA_BLOCK reject;
 ```
 
 ---
 
 ### 3.2 Feature 2: IRT 1-PL Rasch Computerized Adaptive Testing (CAT) Engine
 
-Implements the Item Response Theory engine with standard error calculation, ability adjustments, anti-join selection, and stopping criteria.
+Implemented in `AssessmentService.java` and `AssessmentController.java`.
 
 ```mermaid
 flowchart TD
-    START_ASSESSMENT([User clicks: Start Diagnostic Test]) --> INIT_CAT["Initialize Assessment Entity<br/>θ_0 = 0.0, SE = 1.0, QuestionsAnswered = 0<br/>Status = 'IN_PROGRESS'"]
-    INIT_CAT --> SELECT_ITEM["Call: AssessmentItemRepository.findNext(assessmentId, currentTheta)<br/>Direct SQL Anti-Join filtering already-answered items"]
-    SELECT_ITEM --> CHECK_EMPTY{Any Items Left?}
+    START([User clicks: Start Diagnostic Test]) --> INIT_CAT["Create Assessment Record<br/>θ_0 = 0.0, QuestionsAnswered = 0<br/>Status = 'IN_PROGRESS'"]
     
-    CHECK_EMPTY -- No --> FINISH_EXHAUST["Stop Reason: NO_QUESTIONS_LEFT<br/>Calculate Final θ"]
-    CHECK_EMPTY -- Yes --> DELIVER["Send Question Item to Frontend<br/>(Options randomized, correct_option stripped)"]
+    INIT_CAT --> GET_NEXT["Call: findNext(assessmentId, currentTheta)<br/>Direct SQL Anti-Join for closest item: min |b_i - θ|"]
+    GET_NEXT --> POOL_EMPTY{Pool Empty?}
     
-    DELIVER --> WAIT_ANSWER["Learner submits choice: POST /api/v1/assessments/{id}/answers"]
-    WAIT_ANSWER --> SCORE_EVAL{Is Selected Option Correct?}
+    POOL_EMPTY -- Yes --> STOP_NO_Q["stop_reason = 'NO_QUESTIONS_LEFT'"]
+    POOL_EMPTY -- No --> SEND_QUESTION["Send Item to Client<br/>(Options randomized, correct_option stripped)"]
     
-    SCORE_EVAL -- Correct (1) --> THETA_UP["Update Ability: θ_k+1 = θ_k + 0.35 logits<br/>Record direction = UP"]
-    SCORE_EVAL -- Incorrect (0) --> THETA_DOWN["Update Ability: θ_k+1 = θ_k - 0.35 logits<br/>Record direction = DOWN"]
+    SEND_QUESTION --> WAIT_ANS["User submits answer:<br/>POST /api/v1/assessments/:id/answers"]
+    WAIT_ANS --> EVAL_ANS{Is Option Correct?}
     
-    THETA_UP & THETA_DOWN --> UPDATE_STATS["Save AssessmentResponse Entity<br/>Increment QuestionsAnswered<br/>Calculate new Standard Error (SE)"]
+    EVAL_ANS -- Correct (1) --> ADJ_UP["θ_next = θ_curr + 0.35 logits<br/>Track direction = UP"]
+    EVAL_ANS -- Incorrect (0) --> ADJ_DOWN["θ_next = θ_curr - 0.35 logits<br/>Track direction = DOWN"]
     
-    UPDATE_STATS --> STOP_RULES{Evaluate Stopping Criteria}
+    ADJ_UP & ADJ_DOWN --> RECORD_RESP["INSERT INTO assessment_responses<br/>Increment QuestionsAnswered<br/>Compute Standard Error (SE)"]
     
-    STOP_RULES -- "QuestionsAnswered >= 9 (Hard Cap)" --> FINISH_MAX["Stop Reason: MAX_ITEMS"]
-    STOP_RULES -- "QuestionsAnswered >= 5 AND Direction Reversals >= 2" --> FINISH_CONV["Stop Reason: LEVEL_CONFIRMED<br/>(Oscillating around true baseline)"]
-    STOP_RULES -- "Standard Error SE <= 0.45" --> FINISH_SE["Stop Reason: PRECISION_REACHED"]
-    STOP_RULES -- "Criteria not met" --> SELECT_ITEM
+    RECORD_RESP --> CHECK_STOP{Evaluate Stopping Criteria}
+    
+    CHECK_STOP -- "QuestionsAnswered >= 9 (Hard Cap)" --> STOP_MAX["stop_reason = 'MAX_ITEMS'"]
+    CHECK_STOP -- "QuestionsAnswered >= 5 AND Direction Reversals >= 2" --> STOP_CONFIRMED["stop_reason = 'LEVEL_CONFIRMED'<br/>(Learner oscillating around true ability)"]
+    CHECK_STOP -- "Standard Error SE <= 0.45" --> STOP_SE["stop_reason = 'PRECISION_REACHED'"]
+    CHECK_STOP -- "Criteria not met" --> GET_NEXT
 
-    FINISH_EXHAUST & FINISH_MAX & FINISH_CONV & FINISH_SE --> CALC_LEVEL{Map Latent Ability θ to Competency}
-    CALC_LEVEL -- "θ < -0.5" --> LVL_BEG["Competency: BEGINNER"]
-    CALC_LEVEL -- "-0.5 <= θ <= 0.75" --> LVL_INT["Competency: INTERMEDIATE"]
-    CALC_LEVEL -- "θ > 0.75" --> LVL_ADV["Competency: ADVANCED"]
+    STOP_NO_Q & STOP_MAX & STOP_CONFIRMED & STOP_SE --> MAP_COMPETENCY{Map Final θ to Level}
+    MAP_COMPETENCY -- "θ < -0.5" --> LVL_BEG["Level: BEGINNER"]
+    MAP_COMPETENCY -- "-0.5 <= θ <= 0.75" --> LVL_INT["Level: INTERMEDIATE"]
+    MAP_COMPETENCY -- "θ > 0.75" --> LVL_ADV["Level: ADVANCED"]
 
-    LVL_BEG & LVL_INT & LVL_ADV --> PAINT_GRAPH["Trigger Skill Graph Classification<br/>Save Assessment Status = 'COMPLETED'"]
-    PAINT_GRAPH --> REVEAL_RESULTS(["Display Test Scorecard, Radar Breakdown & Action Plan"])
+    LVL_BEG & LVL_INT & LVL_ADV --> FINALIZE["Update assessment: status = 'COMPLETED'<br/>Trigger Skill Graph Classification"]
+    FINALIZE --> SHOW_SCORECARD(["Display Results (/assessment):<br/>Scorecard, Ability θ, Radar Breakdown & History"])
 
-    classDef action fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af;
-    classDef check fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
-    classDef done fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
+    classDef act fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af;
+    classDef dec fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef endNode fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
 
-    class INIT_CAT,SELECT_ITEM,DELIVER,WAIT_ANSWER,THETA_UP,THETA_DOWN,UPDATE_STATS,PAINT_GRAPH action;
-    class CHECK_EMPTY,SCORE_EVAL,STOP_RULES,CALC_LEVEL check;
-    class FINISH_EXHAUST,FINISH_MAX,FINISH_CONV,FINISH_SE,LVL_BEG,LVL_INT,LVL_ADV,REVEAL_RESULTS done;
+    class INIT_CAT,GET_NEXT,SEND_QUESTION,WAIT_ANS,ADJ_UP,ADJ_DOWN,RECORD_RESP,FINALIZE act;
+    class POOL_EMPTY,EVAL_ANS,CHECK_STOP,MAP_COMPETENCY dec;
+    class STOP_NO_Q,STOP_MAX,STOP_CONFIRMED,STOP_SE,LVL_BEG,LVL_INT,LVL_ADV,SHOW_SCORECARD endNode;
 ```
 
 ---
 
 ### 3.3 Feature 3: Topological Skill Graph (DAG) & Dynamic State Transitions
 
-Maintains 56 atomic skills, prerequisite hierarchies, cycle detection on startup, and dynamic tri-state (`MASTERED`, `FRONTIER`, `LOCKED`) visual classification.
+Implemented in `AssessmentDataLoader.java` (backend verification) and `InteractiveSkillGraph.jsx` (frontend visualization).
 
 ```mermaid
 flowchart TD
-    subgraph BootTime ["Application Startup Verification (AssessmentDataLoader)"]
-        LOAD_YAML["Read backend-skills.yaml (56 Skills, 72 Edges)"] --> CYCLE_DET["Execute DFS Cycle Detection Algorithm"]
-        CYCLE_DET --> CYCLE_CHECK{Cycles Detected?}
-        CYCLE_CHECK -- Yes --> THROW_BOOT_ERR["FATAL: Reject Startup! Print Circular Dependency Stack"]
-        CYCLE_CHECK -- No --> ORPHAN_CHECK["Verify Prerequisite Foreign Keys"]
-        ORPHAN_CHECK --> INVERSION_CHECK["Check Difficulty Inversions<br/>(Prerequisite diff <= Target diff)"]
-        INVERSION_CHECK --> SEED_DB["Persist / Sync Skills & Prerequisites in PostgreSQL"]
+    subgraph StartupVerification ["1. Boot-Time DAG Integrity Verification (AssessmentDataLoader)"]
+        LOAD_YAML["Read backend-skills.yaml<br/>(56 Atomic Skills, 72 Prerequisite Edges)"] --> DFS_CYCLE["Run DFS Cycle Detection Algorithm"]
+        DFS_CYCLE --> CYCLE_FOUND{Cycles Detected?}
+        CYCLE_FOUND -- Yes --> BOOT_FAIL["FATAL: Terminate Boot with CircularDependencyException"]
+        CYCLE_FOUND -- No --> ORPHAN_CHECK["Verify Prerequisite Foreign Keys"]
+        ORPHAN_CHECK --> INVERSION_CHECK["Check Difficulty Inversions<br/>(Prerequisite difficulty <= Target difficulty)"]
+        INVERSION_CHECK --> DB_SYNC["Seed / Update skills and skill_prerequisites in PostgreSQL"]
     end
 
-    subgraph RuntimeClassification ["Runtime Skill State Engine (User Ability θ*)"]
-        START_EVAL["Evaluate Skill S for User with Final Ability θ*"] --> CHECK_PRE_SELECTED{Was S declared in Onboarding<br/>OR S.difficulty <= θ* - 0.25?}
-        CHECK_PRE_SELECTED -- Yes --> MARK_MASTERED["State = MASTERED<br/>(Rendered in Vibrant Green / Solid Border)"]
+    subgraph RuntimeClassification ["2. Dynamic State Engine (Ability θ*)"]
+        EVAL_SKILL["Evaluate Skill S for User with Final Ability θ*"] --> CHECK_MASTERY{Was S pre-selected in onboarding<br/>OR S.difficulty <= θ* - 0.25?}
+        CHECK_MASTERY -- Yes --> STATE_MASTERED["State: MASTERED<br/>(Visual: Solid Green Border & Indicator)"]
         
-        CHECK_PRE_SELECTED -- No --> CHECK_PREREQS{Are ALL direct prerequisites<br/>of S currently MASTERED?}
-        CHECK_PREREQS -- Yes --> MARK_FRONTIER["State = FRONTIER (Ready to Learn!)<br/>(Rendered in Animated Purple / Pulse Effect)"]
-        CHECK_PREREQS -- No --> MARK_LOCKED["State = LOCKED (Missing Foundation)<br/>(Rendered in Muted Slate / Lock Icon)"]
+        CHECK_MASTERY -- No --> CHECK_EDGES{Are ALL direct prerequisites<br/>of S currently MASTERED?}
+        CHECK_EDGES -- Yes --> STATE_FRONTIER["State: FRONTIER (Ready to Learn!)<br/>(Visual: Pulsing Purple Accent)"]
+        CHECK_EDGES -- No --> STATE_LOCKED["State: LOCKED<br/>(Visual: Muted Slate / Lock Icon)"]
     end
 
-    subgraph InteractiveUI ["Web Client Skill Graph Interaction (/graph)"]
-        MARK_MASTERED & MARK_FRONTIER & MARK_LOCKED --> RENDER_SVG["Interactive Skill Graph (D3 / SVG Canvas)<br/>Default: 1 Block Selected (e.g., Foundations)"]
-        RENDER_SVG --> USER_CLICK_NODE["User Clicks Node in Canvas"]
-        USER_CLICK_NODE --> OPEN_DRAWER["Slide-over Drawer with Skill Deep-Dive:<br/>Prerequisites, Dependents, Estimated Hours, Take Quiz"]
-        OPEN_DRAWER --> TAKE_TOPIC_QUIZ["Learner takes Targeted 3-Question Topic Quiz"]
-        TAKE_TOPIC_QUIZ --> QUIZ_RESULT{Passed 100%?}
-        QUIZ_RESULT -- Yes --> PROMOTE_SKILL["Promote Skill S -> MASTERED<br/>Dynamically Re-evaluate Downstream Skills<br/>Unlock New FRONTIER Nodes!"]
-        QUIZ_RESULT -- No --> RETRY_TOPIC["Offer Targeted Learning Resources"]
+    subgraph UserInterface ["3. Frontend Interactive Graph (/graph)"]
+        STATE_MASTERED & STATE_FRONTIER & STATE_LOCKED --> RENDER_CANVAS["Render Interactive SVG Skill Graph<br/>Default Selection: 1 Block Checked (e.g. Foundations)"]
+        RENDER_CANVAS --> CLICK_NODE["User Clicks Node in Canvas"]
+        CLICK_NODE --> NODE_DETAILS["Open Slide-Over Drawer:<br/>Skill Name, Cluster, Difficulty, Direct Prerequisites & Dependents"]
     end
 
     classDef proc fill:#f0f9ff,stroke:#0284c7,stroke-width:2px,color:#0369a1;
-    classDef test fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
-    classDef success fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
-    classDef warning fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
-
-    class LOAD_YAML,CYCLE_DET,ORPHAN_CHECK,INVERSION_CHECK,SEED_DB,START_EVAL,RENDER_SVG,USER_CLICK_NODE,OPEN_DRAWER,TAKE_TOPIC_QUIZ,RETRY_TOPIC proc;
-    class CYCLE_CHECK,CHECK_PRE_SELECTED,CHECK_PREREQS,QUIZ_RESULT test;
-    class MARK_MASTERED,MARK_FRONTIER,PROMOTE_SKILL success;
-    class THROW_BOOT_ERR,MARK_LOCKED warning;
-```
-
----
-
-### 3.4 Feature 4: AI Learning Roadmap Generation & Milestone Progression
-
-Transforms assessment gaps and user time availability into an ordered, milestone-driven curriculum with weekly pacing.
-
-```mermaid
-flowchart TD
-    TRIGGER_ROADMAP([Learner requests personalized roadmap]) --> EXTRACT_GAPS["Gateway extracts Learner Profile:<br/>- Target Track (Backend Engineering)<br/>- Calibrated Ability θ<br/>- FRONTIER Skills list<br/>- Weekly Study Hours Budget"]
-    EXTRACT_GAPS --> DISPATCH_JOB["Create Task (Status: PENDING)<br/>Dispatch Async Job to Node.js AI Worker"]
-    DISPATCH_JOB --> PROMPT_BUILD["AI Worker constructs LLM Payload:<br/>Topological Graph Context + Pedagogical Guidelines"]
-    PROMPT_BUILD --> LLM_GEN["Invoke LLM via OpenRouter<br/>(Gemini 2.5 Flash / Claude 3.5 Sonnet)"]
-    LLM_GEN --> RAW_PAYLOAD["Receive Raw Milestone JSON"]
-    
-    RAW_PAYLOAD --> VALIDATE_SCHEMA{"Validate JSON against<br/>contracts/roadmap.schema.json"}
-    VALIDATE_SCHEMA -- Fails Schema --> REPAIR_PROMPT["Send Repair Prompt to LLM with validation errors"] --> LLM_GEN
-    VALIDATE_SCHEMA -- Passes Schema --> WORKER_CALLBACK["POST /internal/tasks/{id}/result<br/>Gateway saves Roadmap & Milestones"]
-    
-    WORKER_CALLBACK --> CLIENT_POLL["Web Client Polling detects status = 'COMPLETED'"]
-    CLIENT_POLL --> RENDER_ROADMAP["Display Milestone Timeline (/roadmap):<br/>- Phase 1: Core Fundamentals<br/>- Phase 2: High-Yield APIs & Storage<br/>- Phase 3: Distributed Systems"]
-    
-    RENDER_ROADMAP --> USER_STUDIES["Learner works on active milestone topics"]
-    USER_STUDIES --> TOGGLE_ITEM["Learner marks sub-task complete: PUT /api/v1/milestones/{id}"]
-    TOGGLE_ITEM --> RECALC_PROGRESS["Update Completion % & Streak Days"]
-    RECALC_PROGRESS --> CHECK_PHASE{All milestone tasks complete?}
-    CHECK_PHASE -- Yes --> UNLOCK_NEXT_PHASE["Trigger Capstone Challenge for Phase<br/>Unlock Phase Badge"]
-    CHECK_PHASE -- No --> USER_STUDIES
-
-    classDef task fill:#f8fafc,stroke:#64748b,stroke-width:2px,color:#1e293b;
-    classDef ai fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#4c1d95;
-    classDef ui fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d;
-    classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
-
-    class TRIGGER_ROADMAP,EXTRACT_GAPS,DISPATCH_JOB,WORKER_CALLBACK,USER_STUDIES,TOGGLE_ITEM,RECALC_PROGRESS task;
-    class PROMPT_BUILD,LLM_GEN,RAW_PAYLOAD,REPAIR_PROMPT ai;
-    class CLIENT_POLL,RENDER_ROADMAP,UNLOCK_NEXT_PHASE ui;
-    class VALIDATE_SCHEMA,CHECK_PHASE decision;
-```
-
----
-
-### 3.5 Feature 5: Capstone Project Verification Lab (GitHub Audit)
-
-Provides verifiable proof of skill by auditing learner code repositories for production architectural patterns, unit test coverage, and security best practices.
-
-```mermaid
-flowchart TD
-    START_SUBMISSION([Learner completes Project Milestone]) --> SUBMIT_REPO["Learner enters GitHub Repository URL<br/>e.g. https://github.com/user/distributed-cache-api"]
-    SUBMIT_REPO --> GATEWAY_VALIDATE["Gateway validates URL syntax & public accessibility"]
-    GATEWAY_VALIDATE --> DISPATCH_AUDIT["Enqueue PROJECT_VERIFY task to AI Worker"]
-    
-    DISPATCH_AUDIT --> CLONE_META["AI Worker fetches Repo Tree & Key Files:<br/>README.md, Dockerfile, pom.xml/package.json,<br/>Core Domain Services, Test Files"]
-    
-    CLONE_META --> LINTER_CHECK["Automated Lint & Structure Scan:<br/>- Presence of unit & integration tests<br/>- Separation of concerns (Layered vs Spaghetti)<br/>- OWASP Anti-patterns (Hardcoded secrets, SQL injection)"]
-    
-    LINTER_CHECK --> LLM_CODE_EVAL["LLM Deep Architecture Review:<br/>- Error Handling & Resilience<br/>- Clean Code & SOLID principles<br/>- API Documentation (OpenAPI/Swagger)"]
-    
-    LLM_CODE_EVAL --> SCORE_AGGREGATE["Compute Project Benchmark Score (0 - 100):<br/>Architecture (30) • Tests (25) • Code Quality (25) • Security (20)"]
-    
-    SCORE_AGGREGATE --> PASS_THRESHOLD{Score >= 75?}
-    
-    PASS_THRESHOLD -- Yes --> ISSUE_CREDENTIAL["Generate Verifiable Project Credential<br/>Cryptographic Signature & Unique Verification ID"]
-    ISSUE_CREDENTIAL --> UPDATE_PROFILE["Attach Badge to User Profile & Mentor Dashboard<br/>Mark Skill Graph Project Node: VERIFIED"]
-    
-    PASS_THRESHOLD -- No --> GENERATE_FEEDBACK["Generate Actionable Code Review Report:<br/>Line-by-line feedback & recommended PR changes"]
-    GENERATE_FEEDBACK --> PRESENT_REPORT(["Deliver Feedback in /projects Lab<br/>Allow unlimited re-submission"])
-
-    classDef start fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#14532d;
     classDef check fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
-    classDef alert fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
     classDef ok fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
+    classDef fail fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
 
-    class START_SUBMISSION,SUBMIT_REPO,GATEWAY_VALIDATE,DISPATCH_AUDIT,CLONE_META,LINTER_CHECK,LLM_CODE_EVAL,SCORE_AGGREGATE start;
-    class PASS_THRESHOLD check;
-    class GENERATE_FEEDBACK,PRESENT_REPORT alert;
-    class ISSUE_CREDENTIAL,UPDATE_PROFILE ok;
+    class LOAD_YAML,DFS_CYCLE,ORPHAN_CHECK,INVERSION_CHECK,DB_SYNC,EVAL_SKILL,RENDER_CANVAS,CLICK_NODE,NODE_DETAILS proc;
+    class CYCLE_FOUND,CHECK_MASTERY,CHECK_EDGES check;
+    class STATE_MASTERED,STATE_FRONTIER ok;
+    class BOOT_FAIL,STATE_LOCKED fail;
 ```
 
 ---
 
-### 3.6 Feature 6: Test History & Deep Psychometric Analytics Engine
+### 3.4 Feature 4: Test History & Psychometric Evaluation Tracking
 
-Aggregates learner ability curves over time, domain cluster mastery, and detailed question-by-question metrics for reflective self-improvement.
+Implemented in `AssessmentController` (`/api/v1/assessments/history`) and `TestHistoryPage.jsx`.
 
 ```mermaid
 flowchart TD
-    REQ_ANALYTICS([Learner navigates to /analytics or /history]) --> FETCH_HIST["GET /api/v1/assessments/history<br/>Spring Boot joins Assessment & Response tables"]
+    NAV_HIST([Learner navigates to /history]) --> FETCH_HIST["GET /api/v1/assessments/history<br/>Authenticated via JWT Bearer Token"]
+    FETCH_HIST --> QUERY_RUNS["Query assessments table for user_id<br/>ORDER BY created_at DESC"]
+    QUERY_RUNS --> ASSEMBLE_DTO["Assemble TestHistoryItemDto List:<br/>- Assessment ID & Timestamp<br/>- Final Ability θ & Competency Level<br/>- Questions Answered count<br/>- Stop Reason (LEVEL_CONFIRMED / MAX_ITEMS)"]
     
-    FETCH_HIST --> AGGREGATE["Aggregate Metrics in AnalyticsService:<br/>- Ability Trajectory θ over chronological tests<br/>- Cluster Mastery % (9 Domain Clusters)<br/>- Average Question Time & Discrimination Index<br/>- Top Strengths vs Critical Deficits"]
+    ASSEMBLE_DTO --> RENDER_LIST["Render Test History UI (/history):<br/>- Chronological Assessment Cards<br/>- Color-coded Competency Badges<br/>- Stopping Reason Diagnostics"]
     
-    AGGREGATE --> DATA_PAYLOAD["Return Structured Analytics DTO"]
-    
-    DATA_PAYLOAD --> VIZ_HIST["Render Test History (/history):<br/>- Interactive Test Runs List<br/>- Stopping Reason Pills (Level Confirmed, Max Items)<br/>- Final Ability Score & Date/Time"]
-    
-    DATA_PAYLOAD --> VIZ_RADAR["Render Domain Radar Chart (/analytics):<br/>- Foundations vs Architecture vs Security<br/>- Comparison against Industry Benchmark"]
-    
-    DATA_PAYLOAD --> VIZ_TRAJECTORY["Render θ Progress Trajectory Line Chart:<br/>Visually tracking growth from -1.5 (Beginner) to +1.8 (Advanced)"]
-    
-    DATA_PAYLOAD --> VIZ_DRILLDOWN["Render Item-by-Item Review Modal:<br/>- Question Stem & Options<br/>- Calibrated Difficulty b_i vs Learner Ability<br/>- Correct Answer & Full Technical Explanation"]
+    RENDER_LIST --> EXPAND_RUN["Learner expands specific test run"]
+    EXPAND_RUN --> RENDER_RESPONSES["Display question-by-question trajectory:<br/>- Question stem & choices<br/>- Item difficulty b_i vs ability θ after question<br/>- Direction shifts and convergence behavior"]
 
-    classDef flow fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#0f172a;
-    classDef render fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
+    classDef step fill:#f8fafc,stroke:#475569,stroke-width:2px,color:#0f172a;
+    classDef ui fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
 
-    class REQ_ANALYTICS,FETCH_HIST,AGGREGATE,DATA_PAYLOAD flow;
-    class VIZ_HIST,VIZ_RADAR,VIZ_TRAJECTORY,VIZ_DRILLDOWN render;
+    class NAV_HIST,FETCH_HIST,QUERY_RUNS,ASSEMBLE_DTO step;
+    class RENDER_LIST,EXPAND_RUN,RENDER_RESPONSES ui;
 ```
 
 ---
 
-### 3.7 Feature 7: Mentor Management, Cohort Analytics & Invite Key Linking
+### 3.5 Feature 5: Mentor Workspace, Cohort Analytics & Invite Key Linking
 
-Empowers enterprise educators, college professors, and senior engineering mentors to monitor student cohorts, audit skill gaps, and dispense guidance.
+Implemented across `MentorKeyController`, `StudentMentorLinkController`, `MentorAnalyticsController`, and `MentorDashboard.jsx`.
 
 ```mermaid
 flowchart TD
-    subgraph MentorOnboarding ["1. Mentor Provisioning & Key Generation"]
-        M_REG["Mentor registers via /signup (Selects: 'Mentor Role')"] --> M_FORM["Submits Full Name, Designation, Org & Password"]
-        M_FORM --> M_OTP["Verifies Email via 6-digit SMTP OTP"]
-        M_OTP --> M_DASH["Accesses Mentor Shell (/mentor)"]
-        M_DASH --> GEN_KEY["Click: 'Generate Cohort Invite Key' (/mentor/key)"]
-        GEN_KEY --> KEY_SERVICE["MentorKeyService creates unique Key:<br/>e.g. MENTOR-UNIX-8492 (Status: ACTIVE, Max: 50)"]
+    subgraph KeyIssuance ["1. Key Generation (MentorKeyService)"]
+        M_OPEN_KEY["Mentor opens /mentor/key"] --> M_CLICK_GEN["Click: 'Generate Cohort Invite Key'"]
+        M_CLICK_GEN --> GEN_LOGIC["Generate Key (e.g. MENTOR-UNIX-9204)<br/>Set status='ACTIVE', max_students=50<br/>Save to mentor_keys table"]
+        GEN_LOGIC --> DISPLAY_KEY["Display Key with 1-Click Copy"]
     end
 
-    subgraph StudentLinking ["2. Student Cohort Association"]
-        DISTRIBUTE["Mentor shares Key with students"] --> STU_ENTER["Student opens Settings / Dashboard<br/>Submits Key: POST /api/v1/students/mentor-link"]
-        STU_ENTER --> VAL_KEY{"Key Validator Checks"}
-        VAL_KEY -- "Key Revoked or Expired" --> KEY_ERR["Return 400 Bad Request"]
-        VAL_KEY -- "Student already linked" --> KEY_EXISTS["Return: 'Already linked to this mentor'"]
-        VAL_KEY -- "Valid & Available" --> CREATE_LINK["INSERT INTO student_mentor_links<br/>Increment mentor_keys.current_students"]
+    subgraph StudentAssociation ["2. Student Linking (StudentMentorLinkService)"]
+        SHARE_KEY["Mentor distributes key to students"] --> STU_ENTER["Student submits key:<br/>POST /api/v1/students/mentor-link"]
+        STU_ENTER --> CHECK_KEY_STATUS{Validate Key}
+        CHECK_KEY_STATUS -- "Key Revoked or Expired" --> KEY_FAIL["HTTP 400: Invalid Key"]
+        CHECK_KEY_STATUS -- "Student Already Linked to Key" --> KEY_ALREADY["Return: 'Already linked to this mentor'"]
+        CHECK_KEY_STATUS -- "Valid" --> LINK_SUCCESS["INSERT INTO student_mentor_links<br/>Increment mentor_keys.current_students"]
     end
 
-    subgraph MentorWorkspace ["3. Cohort Monitoring & Analytics (/mentor/*)"]
-        CREATE_LINK --> LIVE_ROSTER["Mentor opens /mentor/students:<br/>Full list of linked learners, latest θ score, last active time"]
-        LIVE_ROSTER --> COHORT_STATS["Mentor opens /mentor/analytics:<br/>- Cohort Average Ability Curve<br/>- Weakest Skill Clusters (e.g. Concurrency & Security)<br/>- Assessment Completion Rate"]
-        COHORT_STATS --> SKILL_AUDIT["Mentor opens /mentor/skills:<br/>Drill down into individual student skill nodes (Mastered vs Stuck)"]
-        SKILL_AUDIT --> TARGET_INTERVENTION(["Mentor initiates targeted curriculum review or assignment"])
+    subgraph MentorObservability ["3. Mentor Command Center (/mentor/*)"]
+        LINK_SUCCESS --> ROSTER["/mentor/students: View Roster<br/>Student Names, Latest θ Scores, Test Dates"]
+        ROSTER --> ANALYTICS["/mentor/analytics: Cohort Metrics<br/>Average Ability, Score Distribution, Test Completion %"]
+        ANALYTICS --> SKILLS["/mentor/skills: Skill Audit<br/>Inspect Cohort Mastery vs Stuck Nodes"]
     end
 
-    classDef mInit fill:#faf5ff,stroke:#9333ea,stroke-width:2px,color:#581c87;
-    classDef sLink fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
-    classDef mWork fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#14532d;
-    classDef err fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
+    classDef mStep fill:#faf5ff,stroke:#9333ea,stroke-width:2px,color:#581c87;
+    classDef sStep fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
+    classDef decNode fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef errNode fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
 
-    class M_REG,M_FORM,M_OTP,M_DASH,GEN_KEY,KEY_SERVICE mInit;
-    class DISTRIBUTE,STU_ENTER,CREATE_LINK sLink;
-    class LIVE_ROSTER,COHORT_STATS,SKILL_AUDIT,TARGET_INTERVENTION mWork;
-    class KEY_ERR,KEY_EXISTS err;
+    class M_OPEN_KEY,M_CLICK_GEN,GEN_LOGIC,DISPLAY_KEY,ROSTER,ANALYTICS,SKILLS mStep;
+    class SHARE_KEY,STU_ENTER,LINK_SUCCESS sStep;
+    class CHECK_KEY_STATUS decNode;
+    class KEY_FAIL,KEY_ALREADY errNode;
 ```
 
 ---
 
-### 3.8 Feature 8: Career Hub, ATS Optimization & AI Mock Interview Suite
+# 4. Active Engineering Invariants & Data Flow Matrix
 
-Closes the employability loop by scoring resumes against target job specs, identifying missing keywords, and executing real-time AI mock interviews.
-
-```mermaid
-flowchart TD
-    START_CAREER([Learner navigates to /career]) --> CAREER_SELECT["Select Target Career Role<br/>(e.g., Senior Backend Engineer / Microservices Specialist)"]
-    
-    CAREER_SELECT --> ATS_UPLOAD["Upload Resume (PDF / DOCX / Text)"]
-    ATS_UPLOAD --> PARSE_RESUME["Extract Extracted Skills, Experience & Projects"]
-    
-    PARSE_RESUME --> MATCH_GRAPH["Cross-reference with Verified Skill Graph & Assessments"]
-    MATCH_GRAPH --> ATS_SCORING["Compute ATS Match Score (0 - 100%):<br/>- Keywords Present vs Missing<br/>- Verified Skills vs Self-Reported Claims<br/>- High-Impact Action Verb Suggestions"]
-    
-    ATS_SCORING --> PRESENT_ATS["Render ATS Report (/career):<br/>Missing Keywords, Formatting Warnings, Matched Job Postings"]
-    
-    PRESENT_ATS --> START_INTERVIEW["Click: 'Start AI Technical Mock Interview'"]
-    START_INTERVIEW --> INTERVIEW_SESSION["AI Worker initiates conversational interview session:<br/>Generates questions tailored to learner's FRONTIER skills"]
-    
-    INTERVIEW_SESSION --> USER_ANSWER["Learner types or speaks response"]
-    USER_ANSWER --> AI_RUBRIC["AI evaluates on Standard Rubric:<br/>1. Technical Accuracy<br/>2. Depth of Architectural Reasoning<br/>3. Communication Clarity"]
-    
-    AI_RUBRIC --> NEXT_Q{Interview finished? (5 Questions)}
-    NEXT_Q -- No --> INTERVIEW_SESSION
-    NEXT_Q -- Yes --> SCORECARD(["Generate Comprehensive Interview Scorecard<br/>Strengths, Blindspots, Sample Model Answers & Placement Recommendation"])
-
-    classDef cHub fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af;
-    classDef ats fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
-    classDef interview fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#4c1d95;
-    classDef done fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
-
-    class START_CAREER,CAREER_SELECT cHub;
-    class ATS_UPLOAD,PARSE_RESUME,MATCH_GRAPH,ATS_SCORING,PRESENT_ATS ats;
-    class START_INTERVIEW,INTERVIEW_SESSION,USER_ANSWER,AI_RUBRIC interview;
-    class NEXT_Q,SCORECARD done;
-```
-
----
-
-# 4. Cross-Cutting Architectural Invariants & Data Flow Matrix
-
-To ensure system reliability, enterprise maintainability, and zero regression during rapid development, the platform adheres to this strict Architectural Invariants Matrix:
-
-| Invariant Category | Strict Architectural Rule | Enforcement Mechanism |
+| Architectural Principle | Active Implementation in Codebase | Verification Mechanism |
 | :--- | :--- | :--- |
-| **Authentication & Tokens** | Access tokens are strictly **IN-MEMORY** on client. Never in `localStorage` or `sessionStorage`. | Enforced in `api.js` (`let inMemoryToken = null;`). Refresh tokens stored strictly as SHA-256 hashes in database. |
-| **Token Anti-Theft** | If a previously rotated refresh token is presented, revoke all active sessions for that user. | Enforced in `AuthTokenServiceImpl.java` (`token.isRevoked()` triggers batch revocation). |
-| **Psychometric Integrity** | The CAT engine must produce bit-identical logit results for identical input sequences. | Enforced via pure deterministic Java math in `AssessmentService.java` (no random jitter). |
-| **Anti-Join Item Delivery** | Already-answered question items must never be served twice in the same assessment. | Enforced via SQL `LEFT JOIN AssessmentResponse r ON r.item_id = i.id AND r.assessment_id = :id WHERE r.id IS NULL`. |
-| **Startup Graph Safety** | The backend must abort boot sequence if the skill DAG has circular dependencies. | Enforced via DFS recursion check in `AssessmentDataLoader.java`. |
-| **Worker Isolation** | The AI Worker never accesses the database directly. Only communicates via Gateway callbacks. | Private VPC network; requests authenticated via secret header `X-Internal-API-Key`. |
-| **Contract Strictness** | Every generative payload must validate against Draft 7 JSON schemas before ingestion. | Schema validation in worker (`contracts/*.json`) and secondary schema assertion in Gateway. |
-| **CORS & Access Control** | Strictly allow approved origins only (`localhost:5173`, `localhost:3000`, `capacitor://localhost`). | Enforced via `SecurityConfig.java` using `app.auth.cors.allowed-origins`. |
-| **Database Integrity** | Flyway migrations manage schema evolution; foreign keys enforce referential cascades. | PostgreSQL constraints (`ON DELETE CASCADE` on responses, tokens, and prerequisites). |
+| **In-Memory JWT Access Tokens** | Stored strictly in module variable in `src/services/api.js`. Never in `localStorage` or `sessionStorage`. | Browser audit: `localStorage.getItem('token')` returns `null`. |
+| **HttpOnly Refresh Token Rotation** | Minted by `AuthTokenServiceImpl.java`, saved in `refresh_tokens` as SHA-256 hashes, transmitted in HttpOnly cookies. | Verified in `AuthTokenController.java`; reused rotated tokens trigger session invalidation. |
+| **Deterministic CAT Math** | 1-PL Rasch algorithm in `AssessmentService.java` executes pure deterministic arithmetic without random seeds. | Unit tests in `AssessmentServiceTest.java` guarantee identical inputs produce bit-identical logit results. |
+| **Duplicate Prevention (Anti-Join)** | `AssessmentItemRepository.java` uses `LEFT JOIN AssessmentResponse r ON r.item.id = i.id ... WHERE r.id IS NULL`. | Guarantees an item is never served more than once per test session. |
+| **Cycle Prevention at Startup** | `AssessmentDataLoader.java` runs Depth-First Search cycle detection before seeding skills into PostgreSQL. | Startup fails fast with `CircularDependencyException` if a cycle is introduced to `backend-skills.yaml`. |
+| **Unique Mentor Cohort Keys** | `MentorKeyGenerator.java` generates cryptographically unique keys with maximum capacity enforcement. | Database `UNIQUE(key_code)` constraint prevents duplicate keys. |
+| **Strict Single Block Default** | `InteractiveSkillGraph.jsx` initializes `defaultSelectedClusters` with only 1 block checked. | Verified in React state: loads 1 block (e.g. Foundations) by default. |
 
 ---
 
-> Built with precision by **Team Unix** (Lakshmi Narain College of Technology, Bhopal) for the **EPAM Systems CoE Programme**.  
+> Maintained by **Team Unix** (Lakshmi Narain College of Technology, Bhopal) for the **EPAM Systems CoE Programme**.  
 > Lead Maintainer: **Dev Sharma** (`dev47929@gmail.com`)
-
