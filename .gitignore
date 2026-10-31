@@ -27,3 +27,6 @@ dist-ssr
 *.sw?
 
 gateway/ai-upskilling-platform/src/main/resources/application.properties
+*.patch
+landing-page-inspo-LandingPage.jsx
+landing-page-inspo-LandingPage.css
