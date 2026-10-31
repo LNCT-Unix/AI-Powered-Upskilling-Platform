@@ -187,6 +187,64 @@ public final class AssessmentDtos {
         public int getMax() { return max; }
     }
 
+    /**
+     * Context and correctness of the last submitted answer.
+     * Used by the AI Voice Companion to provide immediate voice feedback.
+     */
+    public static class LastEvaluation {
+        private UUID assessmentId;
+        private UUID questionId;
+        private String skill;
+        private String topic;
+        private String question;
+        private List<String> options;
+        private String correctAnswer;
+        private String userAnswer;
+        @com.fasterxml.jackson.annotation.JsonProperty("isCorrect")
+        private boolean isCorrect;
+        private String difficultyLevel;
+
+        public LastEvaluation() {}
+
+        public LastEvaluation(UUID assessmentId, UUID questionId, String skill, String topic,
+                              String question, List<String> options, String correctAnswer,
+                              String userAnswer, boolean isCorrect, String difficultyLevel) {
+            this.assessmentId = assessmentId;
+            this.questionId = questionId;
+            this.skill = skill;
+            this.topic = topic;
+            this.question = question;
+            this.options = options;
+            this.correctAnswer = correctAnswer;
+            this.userAnswer = userAnswer;
+            this.isCorrect = isCorrect;
+            this.difficultyLevel = difficultyLevel;
+        }
+
+        public UUID getAssessmentId() { return assessmentId; }
+        public void setAssessmentId(UUID assessmentId) { this.assessmentId = assessmentId; }
+        public UUID getQuestionId() { return questionId; }
+        public void setQuestionId(UUID questionId) { this.questionId = questionId; }
+        public String getSkill() { return skill; }
+        public void setSkill(String skill) { this.skill = skill; }
+        public String getTopic() { return topic; }
+        public void setTopic(String topic) { this.topic = topic; }
+        public String getQuestion() { return question; }
+        public void setQuestion(String question) { this.question = question; }
+        public List<String> getOptions() { return options; }
+        public void setOptions(List<String> options) { this.options = options; }
+        public String getCorrectAnswer() { return correctAnswer; }
+        public void setCorrectAnswer(String correctAnswer) { this.correctAnswer = correctAnswer; }
+        public String getUserAnswer() { return userAnswer; }
+        public void setUserAnswer(String userAnswer) { this.userAnswer = userAnswer; }
+        @com.fasterxml.jackson.annotation.JsonProperty("isCorrect")
+        public boolean isCorrect() { return isCorrect; }
+        public boolean getIsCorrect() { return isCorrect; }
+        public void setCorrect(boolean correct) { isCorrect = correct; }
+        public String getDifficultyLevel() { return difficultyLevel; }
+        public void setDifficultyLevel(String difficultyLevel) { this.difficultyLevel = difficultyLevel; }
+    }
+
     /** Where the learner is right now. question is null once the test is done. */
     public static class AssessmentState {
         private final UUID assessmentId;
@@ -195,15 +253,23 @@ public final class AssessmentDtos {
         private final Question question;  // null when done
         private final int answered;
         private final int max;
+        private final LastEvaluation lastEvaluation;
 
         public AssessmentState(UUID assessmentId, String status, boolean done,
                                Question question, int answered, int max) {
+            this(assessmentId, status, done, question, answered, max, null);
+        }
+
+        public AssessmentState(UUID assessmentId, String status, boolean done,
+                               Question question, int answered, int max,
+                               LastEvaluation lastEvaluation) {
             this.assessmentId = assessmentId;
             this.status = status;
             this.done = done;
             this.question = question;
             this.answered = answered;
             this.max = max;
+            this.lastEvaluation = lastEvaluation;
         }
 
         public UUID getAssessmentId() { return assessmentId; }
@@ -213,8 +279,8 @@ public final class AssessmentDtos {
         public int getAnswered() { return answered; }
         public int getMax() { return max; }
         public Progress getProgress() { return new Progress(answered, max); }
+        public LastEvaluation getLastEvaluation() { return lastEvaluation; }
     }
-
     /** One skill in the result. */
     public static class SkillResult {
         private UUID skillId;

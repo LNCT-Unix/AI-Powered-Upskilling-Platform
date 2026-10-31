@@ -678,4 +678,59 @@ class AssessmentEndpointIntegrationTest {
                 .andExpect(jsonPath("$.passingScore").value(3))
                 .andExpect(jsonPath("$.newState").value("LOCKED"));
     }
+
+    @Test
+    @DisplayName("POST /api/v1/assessments/{id}/responses includes complete lastEvaluation for AI Voice Companion")
+    void testVoiceCompanionLastEvaluationReturnedOnAnswer() throws Exception {
+        StartRequest request = new StartRequest(activeTrack.getId());
+        MvcResult startResult = mockMvc.perform(post("/api/v1/assessments")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        var stateJson = objectMapper.readTree(startResult.getResponse().getContentAsString());
+        String assessmentId = stateJson.get("assessmentId").asText();
+        String currentItemId = stateJson.get("question").get("itemId").asText();
+        AssessmentItem item = itemRepo.findById(UUID.fromString(currentItemId)).orElseThrow();
+
+        // 1. Submit correct answer
+        MvcResult correctResult = mockMvc.perform(post("/api/v1/assessments/" + assessmentId + "/responses")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AnswerRequest(item.getId(), item.getCorrectOption()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lastEvaluation").exists())
+                .andExpect(jsonPath("$.lastEvaluation.isCorrect").value(true))
+                .andExpect(jsonPath("$.lastEvaluation.question").isNotEmpty())
+                .andExpect(jsonPath("$.lastEvaluation.correctAnswer").isNotEmpty())
+                .andExpect(jsonPath("$.lastEvaluation.userAnswer").isNotEmpty())
+                .andExpect(jsonPath("$.lastEvaluation.skill").isNotEmpty())
+                .andReturn();
+
+        var correctEvalJson = objectMapper.readTree(correctResult.getResponse().getContentAsString()).get("lastEvaluation");
+        assertThat(correctEvalJson.get("userAnswer").asText()).isEqualTo(correctEvalJson.get("correctAnswer").asText());
+
+        // 2. Submit wrong answer on next question
+        var nextStateJson = objectMapper.readTree(correctResult.getResponse().getContentAsString());
+        String nextItemId = nextStateJson.get("question").get("itemId").asText();
+        AssessmentItem nextItem = itemRepo.findById(UUID.fromString(nextItemId)).orElseThrow();
+        int wrongOption = (nextItem.getCorrectOption() + 1) % 4;
+
+        MvcResult wrongResult = mockMvc.perform(post("/api/v1/assessments/" + assessmentId + "/responses")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AnswerRequest(nextItem.getId(), wrongOption))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lastEvaluation").exists())
+                .andExpect(jsonPath("$.lastEvaluation.isCorrect").value(false))
+                .andExpect(jsonPath("$.lastEvaluation.question").isNotEmpty())
+                .andExpect(jsonPath("$.lastEvaluation.correctAnswer").isNotEmpty())
+                .andExpect(jsonPath("$.lastEvaluation.userAnswer").isNotEmpty())
+                .andReturn();
+
+        var wrongEvalJson = objectMapper.readTree(wrongResult.getResponse().getContentAsString()).get("lastEvaluation");
+        assertThat(wrongEvalJson.get("userAnswer").asText()).isNotEqualTo(wrongEvalJson.get("correctAnswer").asText());
+    }
 }

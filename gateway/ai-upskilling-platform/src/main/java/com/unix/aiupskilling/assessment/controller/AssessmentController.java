@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -112,6 +113,27 @@ public class AssessmentController {
     @GetMapping("/{id}/report")
     public AssessmentReport report(Authentication auth, @PathVariable UUID id) {
         return service.report(userId(auth), id);
+    }
+
+    /**
+     * Forwards AI Voice Companion requests to the Node.js assistant backend.
+     * Ensures internal service API keys remain securely on the server.
+     */
+    @PostMapping("/voice-feedback")
+    public org.springframework.http.ResponseEntity<String> voiceFeedback(Authentication auth, @RequestBody java.util.Map<String, Object> payload) {
+        userId(auth); // Verify caller is authenticated
+        return service.forwardVoiceFeedback(payload);
+    }
+
+    /**
+     * Streams AI Voice Companion audio clips through the gateway.
+     * Supports HTTP Range requests for smooth browser audio streaming.
+     */
+    @GetMapping("/voice-feedback/audio/{audioId}")
+    public org.springframework.http.ResponseEntity<byte[]> streamVoiceAudio(
+            @PathVariable String audioId,
+            @RequestHeader(value = "Range", required = false) String rangeHeader) {
+        return service.streamVoiceAudio(audioId, rangeHeader);
     }
 
     // ---------- 5-question node unlock quiz ----------

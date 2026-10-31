@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -73,6 +75,12 @@ public class AssessmentService {
     private final AssessmentSkillResultRepository skillResultRepo;
     private final AssessmentItemRepository itemRepo;
     private final ObjectMapper mapper;
+
+    @Value("${assistant.service.url:http://localhost:3002}")
+    private String assistantServiceUrl;
+
+    @Value("${assistant.service.internal-api-key:}")
+    private String assistantInternalApiKey;
 
     public AssessmentService(TrackRepository trackRepo, AssessmentRepository assessmentRepo,
                              AssessmentResponseRepository responseRepo,
@@ -200,6 +208,31 @@ public class AssessmentService {
 
         // Update in-memory state
         answers.add(response);
+        // Build lastEvaluation for AI voice companion
+        String skillSlug = expected.getSkillSlug();
+        String skillName = "General Engineering";
+        String topicName = "Core Concepts";
+        if (skillSlug != null) {
+            Optional<Skill> skillOpt = skillRepo.findByTrackIdAndSlug(a.getTrackId(), skillSlug);
+            if (skillOpt.isPresent()) {
+                Skill s = skillOpt.get();
+                if (s.getName() != null) skillName = s.getName();
+                if (s.getCluster() != null) topicName = s.getCluster();
+            } else {
+                skillName = skillSlug;
+            }
+        }
+        String diffLevel = expected.getDifficulty() <= 0.0 ? "Beginner"
+                : (expected.getDifficulty() <= 1.0 ? "Intermediate" : "Advanced");
+        String correctText = (expected.getCorrectOption() >= 0 && expected.getCorrectOption() < options.size())
+                ? options.get(expected.getCorrectOption()) : "";
+        String userText = (selectedOption >= 0 && selectedOption < options.size())
+                ? options.get(selectedOption) : "";
+        LastEvaluation lastEval = new LastEvaluation(
+                a.getId(), expected.getId(), skillName, topicName,
+                expected.getStem(), options, correctText, userText, isCorrect, diffLevel
+        );
+
 
         // Check stop condition
         String stop = stopReason(answers);
@@ -207,12 +240,12 @@ public class AssessmentService {
             double newTheta = theta + (isCorrect ? STEP : -STEP);
             AssessmentItem next = pickNext(a.getTrackId(), a.getId(), newTheta);
             if (next != null) {
-                return asState(a.getId(), "IN_PROGRESS", false, next, answers.size());
+                return asState(a.getId(), "IN_PROGRESS", false, next, answers.size(), lastEval);
             }
             stop = "NO_QUESTIONS_LEFT";
         }
 
-        return finishAssessment(a, answers, stop);
+        return finishAssessment(a, answers, stop, lastEval);
     }
 
     // ---------- result ----------
@@ -557,6 +590,10 @@ public class AssessmentService {
     }
 
     private AssessmentState finishAssessment(Assessment a, List<AssessmentResponse> answers, String stop) {
+        return finishAssessment(a, answers, stop, null);
+    }
+
+    private AssessmentState finishAssessment(Assessment a, List<AssessmentResponse> answers, String stop, LastEvaluation lastEvaluation) {
         int answered = answers.size();
         int correct = 0;
         for (AssessmentResponse r : answers) if (r.isCorrect()) correct++;
@@ -572,7 +609,7 @@ public class AssessmentService {
         assessmentRepo.save(a);
 
         saveSkillResults(a, finalTheta);
-        return finishedState(a);
+        return finishedState(a, lastEvaluation);
     }
 
     private List<SkillResult> buildSkillResults(UUID assessmentId, UUID trackId) {
@@ -625,12 +662,87 @@ public class AssessmentService {
 
     private AssessmentState asState(UUID assessmentId, String status, boolean done,
                                     AssessmentItem item, int answered) {
-        Question question = new Question(item.getId(), item.getStem(), parseOptions(item.getOptions()));
-        return new AssessmentState(assessmentId, status, done, question, answered, MAX_ITEMS);
+        return asState(assessmentId, status, done, item, answered, null);
+    }
+
+    private AssessmentState asState(UUID assessmentId, String status, boolean done,
+                                    AssessmentItem item, int answered, LastEvaluation lastEvaluation) {
+        Question question = item != null ? new Question(item.getId(), item.getStem(), parseOptions(item.getOptions())) : null;
+        return new AssessmentState(assessmentId, status, done, question, answered, MAX_ITEMS, lastEvaluation);
     }
 
     private AssessmentState finishedState(Assessment a) {
+        return finishedState(a, null);
+    }
+
+    private AssessmentState finishedState(Assessment a, LastEvaluation lastEvaluation) {
         return new AssessmentState(a.getId(), a.getStatus(), true, null,
-                a.getItemsAdministered() != null ? a.getItemsAdministered() : 0, MAX_ITEMS);
+                a.getItemsAdministered() != null ? a.getItemsAdministered() : 0, MAX_ITEMS, lastEvaluation);
+    }
+
+    /** Forward voice feedback request to AI assistant service, passing internal credentials securely */
+    public ResponseEntity<String> forwardVoiceFeedback(Map<String, Object> payload) {
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            String jsonBody = mapper.writeValueAsString(payload);
+            String targetUrl = (assistantServiceUrl != null ? assistantServiceUrl.replaceAll("/+$", "") : "http://localhost:3002") + "/api/assessment/voice-feedback";
+
+            java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(targetUrl))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json");
+
+            if (assistantInternalApiKey != null && !assistantInternalApiKey.isBlank()) {
+                reqBuilder.header("X-Internal-API-Key", assistantInternalApiKey);
+            }
+
+            java.net.http.HttpRequest request = reqBuilder
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonBody, java.nio.charset.StandardCharsets.UTF_8))
+                    .timeout(java.time.Duration.ofSeconds(30))
+                    .build();
+
+            java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+
+            String modifiedBody = response.body().replace("/api/assessment/voice-feedback/audio/", "/api/v1/assessments/voice-feedback/audio/");
+            return ResponseEntity.status(response.statusCode())
+                    .header("Content-Type", "application/json")
+                    .body(modifiedBody);
+        } catch (Exception e) {
+            log.warn("voice_feedback_forward_error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .header("Content-Type", "application/json")
+                    .body("{\"success\":false,\"error\":{\"code\":\"UPSTREAM_ERROR\",\"message\":\"" + e.getMessage() + "\"}}");
+        }
+    }
+
+    /** Forward audio streaming requests from gateway to assistant service, passing HTTP Range header */
+    public ResponseEntity<byte[]> streamVoiceAudio(String audioId, String rangeHeader) {
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            String targetUrl = (assistantServiceUrl != null ? assistantServiceUrl.replaceAll("/+$", "") : "http://localhost:3002")
+                    + "/api/assessment/voice-feedback/audio/" + audioId;
+
+            java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(targetUrl))
+                    .GET();
+
+            if (rangeHeader != null && !rangeHeader.isBlank()) {
+                reqBuilder.header("Range", rangeHeader);
+            }
+
+            java.net.http.HttpRequest request = reqBuilder.build();
+            java.net.http.HttpResponse<byte[]> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+
+            org.springframework.http.ResponseEntity.BodyBuilder builder = ResponseEntity.status(response.statusCode());
+            response.headers().firstValue("Content-Type").ifPresent(ct -> builder.header("Content-Type", ct));
+            response.headers().firstValue("Content-Range").ifPresent(cr -> builder.header("Content-Range", cr));
+            response.headers().firstValue("Accept-Ranges").ifPresent(ar -> builder.header("Accept-Ranges", ar));
+            response.headers().firstValue("Cache-Control").ifPresent(cc -> builder.header("Cache-Control", cc));
+
+            return builder.body(response.body());
+        } catch (Exception e) {
+            log.warn("voice_audio_forward_error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+        }
     }
 }
