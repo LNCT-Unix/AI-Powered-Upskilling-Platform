@@ -7,8 +7,12 @@ import {
   Check,
   AlertCircle,
   User,
+  Settings,
+  ShieldCheck,
   FileText,
   RotateCcw,
+  KeyRound,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/userService';
@@ -23,9 +27,10 @@ const TABS = [
   { id: 'custom', label: 'Custom Picture', icon: UploadCloud },
 ];
 
-export default function UpdateProfileModal({ isOpen, onClose }) {
+export default function UpdateProfileModal({ isOpen, onClose, initialSection = 'profile' }) {
   const { user, updateUser } = useAuth();
 
+  const [section, setSection] = useState(initialSection || 'profile');
   const [activeTab, setActiveTab] = useState('presets');
   const [fullName, setFullName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -42,6 +47,7 @@ export default function UpdateProfileModal({ isOpen, onClose }) {
   const [prevIsOpen, setPrevIsOpen] = useState(false);
   if (isOpen && !prevIsOpen) {
     setPrevIsOpen(true);
+    setSection(initialSection || 'profile');
     setFullName(user?.fullName || '');
     setAvatarUrl(user?.avatarUrl || '');
     setBio(user?.bio || '');
@@ -55,6 +61,12 @@ export default function UpdateProfileModal({ isOpen, onClose }) {
   } else if (!isOpen && prevIsOpen) {
     setPrevIsOpen(false);
   }
+
+  useEffect(() => {
+    if (isOpen) {
+      setSection(initialSection || 'profile');
+    }
+  }, [isOpen, initialSection]);
 
   // Handle keyboard Escape
   useEffect(() => {
@@ -165,19 +177,49 @@ export default function UpdateProfileModal({ isOpen, onClose }) {
         <div className="flex items-center justify-between border-b border-[#E8E0CC] px-6 py-4 bg-[#F7F3E8]/70">
           <div>
             <h2 id="modal-title" className="text-lg font-black text-slate-900 tracking-tight">
-              Update Profile
+              {section === 'account' ? 'Account Settings' : 'Profile Settings'}
             </h2>
             <p className="text-xs font-semibold text-slate-500 mt-0.5">
-              Personalize your identity and avatar icon
+              {section === 'account'
+                ? 'Manage your account credentials, security and mentor connections'
+                : 'Personalize your identity and avatar icon'}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-full p-2 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition"
+            className="rounded-full p-2 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition cursor-pointer"
           >
             <X size={18} />
+          </button>
+        </div>
+
+        {/* Section Tabs */}
+        <div className="flex border-b border-[#E8E0CC] px-6 bg-[#F7F3E8]/40">
+          <button
+            type="button"
+            onClick={() => setSection('profile')}
+            className={`flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+              section === 'profile'
+                ? 'border-[#7C5CFA] text-[#7C5CFA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <User size={15} />
+            <span>Profile Settings</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSection('account')}
+            className={`flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+              section === 'account'
+                ? 'border-[#7C5CFA] text-[#7C5CFA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Settings size={15} />
+            <span>Account Settings</span>
           </button>
         </div>
 
@@ -198,244 +240,312 @@ export default function UpdateProfileModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* Live Avatar Preview Card */}
-          <div className="flex items-center gap-4 rounded-3xl border border-[#E8E0CC] bg-white p-4 shadow-2xs">
-            <div className="relative">
-              <UserAvatar user={previewUser} size="xl" className="ring-4 ring-[#7C5CFA]/15" />
-              {avatarUrl && (
-                <button
-                  type="button"
-                  onClick={handleResetAvatar}
-                  title="Reset to default initials"
-                  className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-slate-100 border border-slate-300 text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition shadow-xs"
-                >
-                  <RotateCcw size={11} />
-                </button>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-black text-slate-900 truncate">
-                {fullName || 'Your Name'}
-              </p>
-              <p className="text-xs text-slate-500 truncate mt-0.5">
-                {user?.email || 'email@example.com'}
-              </p>
-            </div>
-          </div>
-
-          {/* Avatar Chooser Section */}
-          <div className="space-y-3">
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
-              Choose Profile Icon
-            </label>
-
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-1.5 rounded-2xl bg-[#F7F3E8] p-1 border border-[#E8E0CC]">
-              {TABS.map(({ id, label, icon: Icon }) => {
-                const isActive = activeTab === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setActiveTab(id)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-white text-[#7C5CFA] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Icon size={14} />
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Tab 1: Mascot & Icons Presets */}
-            {activeTab === 'presets' && (
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto p-1">
-                  {AVATAR_PRESETS.map((preset) => {
-                    const isSelected = avatarUrl === preset.id;
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => setAvatarUrl(preset.id)}
-                        className={`group relative flex flex-col items-center gap-1.5 rounded-2xl border p-2.5 transition-all text-center ${
-                          isSelected
-                            ? 'border-[#7C5CFA] bg-[#EFEAFC]/50 ring-2 ring-[#7C5CFA]/20 shadow-xs'
-                            : 'border-[#E8E0CC] bg-white hover:border-[#7C5CFA]/40 hover:bg-[#F7F3E8]/50'
-                        }`}
-                      >
-                        <div className="transition-transform group-hover:scale-105">
-                          {preset.render(42)}
-                        </div>
-                        <span className="text-[11px] font-bold text-slate-800 line-clamp-1">
-                          {preset.name}
-                        </span>
-                        {isSelected && (
-                          <span className="absolute top-1.5 right-1.5 grid h-4 w-4 place-items-center rounded-full bg-[#7C5CFA] text-white">
-                            <Check size={10} strokeWidth={3} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: Monogram Color Palette */}
-            {activeTab === 'monogram' && (
-              <div className="rounded-2xl border border-[#E8E0CC] bg-white p-4 space-y-3">
-                <p className="text-xs text-slate-600">
-                  Select a bold accent color for your monogram badge initials:
-                </p>
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
-                  {MONOGRAM_COLORS.map((col) => {
-                    const isSelected = avatarUrl === col.id;
-                    return (
-                      <button
-                        key={col.id}
-                        type="button"
-                        onClick={() => setAvatarUrl(col.id)}
-                        title={col.name}
-                        className={`group relative grid h-12 w-full place-items-center rounded-2xl font-black text-sm transition-all shadow-xs ${
-                          isSelected
-                            ? 'ring-3 ring-offset-2 ring-[#7C5CFA] scale-105'
-                            : 'hover:scale-102 opacity-90 hover:opacity-100'
-                        }`}
-                        style={{ backgroundColor: col.hex, color: col.textHex }}
-                      >
-                        {previewUser.fullName.slice(0, 2).toUpperCase()}
-                        {isSelected && (
-                          <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-white text-slate-900 shadow-xs">
-                            <Check size={10} strokeWidth={3} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Tab 3: Custom Upload / Image URL */}
-            {activeTab === 'custom' && (
-              <div className="rounded-2xl border border-[#E8E0CC] bg-white p-4 space-y-4">
-                {/* File Upload Button */}
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="avatar-file-upload"
-                  />
-                  <label
-                    htmlFor="avatar-file-upload"
-                    className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#7C5CFA]/30 bg-[#EFEAFC]/30 p-5 text-center cursor-pointer hover:border-[#7C5CFA] hover:bg-[#EFEAFC]/60 transition"
-                  >
-                    <UploadCloud size={24} className="text-[#7C5CFA]" />
-                    <div className="text-xs">
-                      <span className="font-bold text-[#7C5CFA]">Click to upload</span> or drag and drop
-                      <p className="text-[11px] text-slate-400 mt-0.5">PNG, JPG, or WebP (max 2MB)</p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* External URL Input */}
-                <div className="space-y-1.5 pt-1">
-                  <label className="block text-[11px] font-bold text-slate-600">
-                    Or paste an image web link (URL):
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={customUrlInput}
-                      onChange={(e) => setCustomUrlInput(e.target.value)}
-                      placeholder="https://example.com/my-avatar.png"
-                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/15"
-                    />
+          {section === 'profile' ? (
+            <>
+              {/* Live Avatar Preview Card */}
+              <div className="flex items-center gap-4 rounded-3xl border border-[#E8E0CC] bg-white p-4 shadow-2xs">
+                <div className="relative">
+                  <UserAvatar user={previewUser} size="xl" className="ring-4 ring-[#7C5CFA]/15" />
+                  {avatarUrl && (
                     <button
                       type="button"
-                      onClick={handleApplyCustomUrl}
-                      className="rounded-xl bg-slate-800 px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-900 transition"
+                      onClick={handleResetAvatar}
+                      title="Reset to default initials"
+                      className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-slate-100 border border-slate-300 text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition shadow-xs cursor-pointer"
                     >
-                      Apply
+                      <RotateCcw size={11} />
                     </button>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-black text-slate-900 truncate">
+                    {fullName || 'Your Name'}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                    {user?.email || 'email@example.com'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Avatar Chooser Section */}
+              <div className="space-y-3">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
+                  Choose Profile Icon
+                </label>
+
+                {/* Navigation Tabs */}
+                <div className="flex items-center gap-1.5 rounded-2xl bg-[#F7F3E8] p-1 border border-[#E8E0CC]">
+                  {TABS.map(({ id, label, icon: Icon }) => {
+                    const isActive = activeTab === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setActiveTab(id)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-white text-[#7C5CFA] shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Icon size={14} />
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Tab 1: Mascot & Icons Presets */}
+                {activeTab === 'presets' && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto p-1">
+                      {AVATAR_PRESETS.map((preset) => {
+                        const isSelected = avatarUrl === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => setAvatarUrl(preset.id)}
+                            className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'border-[#7C5CFA] bg-[#EFEAFC]/70 shadow-2xs ring-2 ring-[#7C5CFA]/20 scale-102'
+                                : 'border-[#E8E0CC] bg-white hover:bg-[#F7F3E8] hover:border-slate-300'
+                            }`}
+                          >
+                            <img
+                              src={preset.src}
+                              alt={preset.name}
+                              className="h-10 w-10 rounded-full object-cover border border-slate-200"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            <span className="text-[10px] font-bold text-slate-700 truncate max-w-full">
+                              {preset.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 2: Monogram Color Palette */}
+                {activeTab === 'monogram' && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-slate-600">
+                      Pick a custom background color for your two-letter monogram initials.
+                    </p>
+                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 p-1">
+                      {MONOGRAM_COLORS.map((item) => {
+                        const isSelected = avatarUrl === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setAvatarUrl(item.id)}
+                            className={`group relative flex flex-col items-center gap-1 p-1.5 rounded-2xl border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'border-[#7C5CFA] ring-2 ring-[#7C5CFA]/30 scale-105'
+                                : 'border-slate-200 hover:border-slate-400'
+                            }`}
+                          >
+                            <div
+                              className="h-9 w-9 rounded-full grid place-items-center text-white text-xs font-black shadow-2xs"
+                              style={{ backgroundColor: item.bg }}
+                            >
+                              {previewUser.fullName?.charAt(0) || 'L'}
+                            </div>
+                            <span className="text-[9px] font-semibold text-slate-500 truncate">
+                              {item.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 3: Custom Upload or URL */}
+                {activeTab === 'custom' && (
+                  <div className="space-y-3 p-1">
+                    <div className="rounded-2xl border-2 border-dashed border-[#E8E0CC] bg-white p-4 text-center">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="avatar-file-upload"
+                      />
+                      <label
+                        htmlFor="avatar-file-upload"
+                        className="flex flex-col items-center justify-center cursor-pointer gap-2"
+                      >
+                        <div className="grid h-10 w-10 place-items-center rounded-full bg-[#EFEAFC] text-[#7C5CFA]">
+                          <UploadCloud size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">
+                            Upload from your device
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            PNG, JPG or WebP (max 2 MB)
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-[#E8E0CC]" />
+                      </div>
+                      <div className="relative flex justify-center text-[10px] uppercase font-bold text-slate-400">
+                        <span className="bg-[#FFFDF7] px-2">or paste image link</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={customUrlInput}
+                        onChange={(e) => setCustomUrlInput(e.target.value)}
+                        placeholder="https://example.com/avatar.png"
+                        className="flex-1 rounded-2xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-900 outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/20 transition"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCustomUrl}
+                        className="rounded-2xl bg-[#EFEAFC] border border-[#7C5CFA]/30 px-4 py-2 text-xs font-bold text-[#7C5CFA] hover:bg-[#7C5CFA] hover:text-white transition cursor-pointer"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Form Fields: Name, Bio */}
+              <form id="profile-form" onSubmit={handleSubmit} className="space-y-4">
+                {/* Full Name */}
+                <div className="space-y-1">
+                  <label htmlFor="full-name" className="block text-xs font-black uppercase tracking-wider text-slate-700">
+                    Display Name <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                      <User size={15} />
+                    </span>
+                    <input
+                      id="full-name"
+                      type="text"
+                      required
+                      minLength={2}
+                      maxLength={100}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. Alex Mercer"
+                      className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/20 transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Bio / Goal */}
+                <div className="space-y-1">
+                  <label htmlFor="bio-input" className="block text-xs font-black uppercase tracking-wider text-slate-700">
+                    Headline / Learning Goal <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-3 text-slate-400">
+                      <FileText size={15} />
+                    </span>
+                    <textarea
+                      id="bio-input"
+                      rows={2}
+                      maxLength={250}
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="e.g. Aspiring Full-Stack Developer | Learning React & Spring Boot"
+                      className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-2 text-xs sm:text-sm font-normal text-slate-900 outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/20 transition resize-none"
+                    />
+                  </div>
+                </div>
+              </form>
+            </>
+          ) : (
+            /* Account Settings View */
+            <div className="space-y-5">
+              {/* Account Overview Header */}
+              <div className="flex items-center gap-3.5 rounded-2xl bg-white border border-[#E8E0CC] p-4">
+                <UserAvatar user={user} size="lg" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold text-slate-900 truncate">
+                      {user?.fullName || 'Learner'}
+                    </h3>
+                    <ShieldCheck size={15} className="text-emerald-600 shrink-0" />
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="rounded-full bg-[#EFEAFC] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#7C5CFA]">
+                      {user?.role || 'Learner'}
+                    </span>
+                    <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold">
+                      Active
+                    </span>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Form Fields: Name, Email, Bio */}
-          <form id="profile-form" onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name */}
-            <div className="space-y-1">
-              <label htmlFor="full-name" className="block text-xs font-black uppercase tracking-wider text-slate-700">
-                Display Name <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  <User size={15} />
-                </span>
-                <input
-                  id="full-name"
-                  type="text"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Alex Mercer"
-                  className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/20 transition"
-                />
+              {/* Account Credentials / Details */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                  Account Credentials
+                </h4>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-slate-600">
+                    Registered Email
+                  </label>
+                  <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-700">
+                    <Mail size={15} className="text-slate-400 shrink-0" />
+                    <span className="flex-1 truncate font-medium">{user?.email}</span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Verified
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-slate-600">
+                    Security & Password
+                  </label>
+                  <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <KeyRound size={16} className="text-[#7C5CFA] shrink-0" />
+                      <div>
+                        <p className="font-bold text-slate-900">Password Authentication</p>
+                        <p className="text-[11px] text-slate-500">Secure credentials via Spring Security & JWT</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mentor / Cohort Connection */}
+              <div className="space-y-2 pt-2 border-t border-slate-200">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                  Mentor Cohort Connection
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Connect with a mentor using their unique cohort key to share diagnostic reports.
+                </p>
+                <div className="pt-1">
+                  <StudentMentorConnector variant="compact" />
+                </div>
               </div>
             </div>
-
-            {/* Email (Read-only) */}
-            <div className="space-y-1">
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
-                Email Address
-              </label>
-              <input
-                type="email"
-                disabled
-                value={user?.email || ''}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-100/70 px-4 py-2.5 text-xs sm:text-sm text-slate-500 cursor-not-allowed select-all"
-              />
-            </div>
-
-            {/* Bio / Goal */}
-            <div className="space-y-1">
-              <label htmlFor="bio-input" className="block text-xs font-black uppercase tracking-wider text-slate-700">
-                Headline / Learning Goal <span className="text-slate-400 font-normal lowercase">(optional)</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-3 text-slate-400">
-                  <FileText size={15} />
-                </span>
-                <textarea
-                  id="bio-input"
-                  rows={2}
-                  maxLength={250}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="e.g. Aspiring Full-Stack Developer | Learning React & Spring Boot"
-                  className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 py-2 text-xs sm:text-sm font-normal text-slate-900 outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/20 transition resize-none"
-                />
-              </div>
-            </div>
-          </form>
-
-          {/* Mentor Cohort Connection */}
-          <div className="pt-2 border-t border-slate-200">
-            <StudentMentorConnector variant="compact" />
-          </div>
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -444,22 +554,23 @@ export default function UpdateProfileModal({ isOpen, onClose }) {
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-full px-5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 transition"
+            className="rounded-full px-5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 transition cursor-pointer"
           >
-            Cancel
+            {section === 'account' ? 'Close' : 'Cancel'}
           </button>
-          <Button
-            type="submit"
-            form="profile-form"
-            variant="primary"
-            loading={saving}
-            disabled={saving || !fullName.trim()}
-          >
-            Save Changes
-          </Button>
+          {section === 'profile' && (
+            <Button
+              type="submit"
+              form="profile-form"
+              variant="primary"
+              loading={saving}
+              disabled={saving || !fullName.trim()}
+            >
+              Save Changes
+            </Button>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

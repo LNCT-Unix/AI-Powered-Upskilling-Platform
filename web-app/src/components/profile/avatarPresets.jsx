@@ -2,6 +2,23 @@
 
 export const AVATAR_PRESETS = [
   {
+    id: 'preset:notionist-sketch',
+    name: 'Minimalist Sketch',
+    category: 'Illustrations',
+    bgColor: '#FFFFFF',
+    accentColor: '#1E293B',
+    description: 'Clean hand-drawn doodle portrait',
+    render: (size = 36) => (
+      <img
+        src="https://api.dicebear.com/9.x/notionists/svg?seed=Felix&backgroundColor=ffffff"
+        alt="Minimalist Sketch"
+        width={size}
+        height={size}
+        className="h-full w-full object-cover scale-110 rounded-full"
+      />
+    ),
+  },
+  {
     id: 'preset:octo-coder',
     name: 'Octo Coder',
     category: 'Mascot',

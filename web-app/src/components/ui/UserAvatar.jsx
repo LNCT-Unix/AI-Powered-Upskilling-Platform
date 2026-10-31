@@ -78,10 +78,31 @@ export default function UserAvatar({
     );
   }
 
-  // 4. Default fallback: signature warm yellow initials badge
+  // 4. Default fallback: Minimalist sketch avatar (Notionists style)
+  const defaultSketchUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(
+    fullName || user?.username || user?.email || 'Learner'
+  )}&backgroundColor=ffffff`;
+
+  if (!imgError) {
+    return (
+      <span
+        className={`relative inline-grid shrink-0 place-items-center bg-white border border-[#E8E0CC] overflow-hidden shadow-2xs select-none rounded-full ${sizeConfig.box} ${className}`}
+        title={user?.fullName || 'User'}
+      >
+        <img
+          src={defaultSketchUrl}
+          alt={user?.fullName || 'User avatar'}
+          onError={() => setImgError(true)}
+          className="h-full w-full object-cover scale-110"
+        />
+      </span>
+    );
+  }
+
+  // 5. Hard fallback if Dicebear image fails to load: initials
   return (
     <span
-      className={`relative inline-grid shrink-0 place-items-center font-black bg-[#FFC93C] text-slate-900 shadow-2xs select-none ${sizeConfig.box} ${sizeConfig.rounded} ${className}`}
+      className={`relative inline-grid shrink-0 place-items-center font-black bg-[#EFEAFC] text-[#7C5CFA] border border-[#7C5CFA]/30 shadow-2xs select-none rounded-full ${sizeConfig.box} ${className}`}
       title={user?.fullName || 'User'}
     >
       {initials}
