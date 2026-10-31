@@ -1,23 +1,57 @@
 import { useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
-import { Menu, Bell, X } from 'lucide-react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Menu, X, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
-import ProfileDropdown from '../profile/ProfileDropdown';
 import UpdateProfileModal from '../profile/UpdateProfileModal';
 
 export default function DashboardShell() {
   const [mobileOpen, setMobileOpen]               = useState(false);
-  const [notificationsOpen, setNotifOpen]         = useState(false);
   const [updateProfileOpen, setUpdateProfileOpen] = useState(false);
-  const { user } = useAuth();
+  const [profileModalSection, setProfileModalSection] = useState('profile');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar_collapsed') === 'true';
+    }
+    return false;
+  });
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebar_collapsed', String(next));
+      }
+      return next;
+    });
+  };
+
+  const handleOpenProfileModal = (section = 'profile') => {
+    setProfileModalSection(section);
+    setUpdateProfileOpen(true);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen lg:flex text-slate-900" style={{ background: '#F7F3E8' }}>
       {/* Desktop Sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 bg-white lg:block shadow-2xs">
-        <Sidebar />
+      <aside
+        className={`sticky top-0 hidden h-screen shrink-0 bg-white lg:block shadow-2xs transition-[width] duration-300 ease-in-out ${
+          isSidebarCollapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+          onOpenProfileModal={handleOpenProfileModal}
+        />
       </aside>
 
       {/* Mobile Drawer */}
@@ -38,7 +72,11 @@ export default function DashboardShell() {
             >
               <X size={18} />
             </button>
-            <Sidebar onClose={() => setMobileOpen(false)} />
+            <Sidebar
+              isCollapsed={false}
+              onClose={() => setMobileOpen(false)}
+              onOpenProfileModal={handleOpenProfileModal}
+            />
           </aside>
         </div>
       )}
@@ -47,7 +85,7 @@ export default function DashboardShell() {
       <div className="min-w-0 flex-1 flex flex-col">
         {/* ── Top bar ── matching Landing Page aesthetic ─────── */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E8E0CC] px-4 py-2.5 sm:py-3 sm:px-8 gap-4 bg-[#F7F3E8]/95 backdrop-blur-md pt-[max(env(safe-area-inset-top),0.625rem)]">
-          {/* Left: mobile hamburger + search */}
+          {/* Left: mobile hamburger + desktop sidebar toggle + logo on mobile */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
               type="button"
@@ -56,6 +94,17 @@ export default function DashboardShell() {
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={20} />
+            </button>
+
+            {/* Desktop toggle button in top bar */}
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="hidden lg:flex items-center justify-center rounded-xl p-2 text-slate-500 hover:bg-white hover:text-[#7C5CFA] border border-transparent hover:border-[#E8E0CC] transition shadow-2xs cursor-pointer"
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
             </button>
 
             {/* Mobile logo when sidebar hidden */}
@@ -72,45 +121,20 @@ export default function DashboardShell() {
             </Link>
           </div>
 
-          {/* Right: notifications + user profile dropdown */}
+          {/* Right: Auth actions / Logout */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Notification bell */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setNotifOpen(p => !p)}
-                aria-label="View notifications"
-                className="relative rounded-full p-2 bg-white/90 border border-[#E8E0CC] text-slate-500 hover:text-slate-900 hover:bg-white transition shadow-2xs"
-              >
-                <Bell size={16} />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#7C5CFA] ring-2 ring-white" />
-              </button>
-
-              {notificationsOpen && (
-                <div className="absolute right-0 mt-2.5 w-80 rounded-3xl border border-[#E8E0CC] bg-[#FFFDF7] p-5 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="flex items-center justify-between border-b border-[#E8E0CC] pb-3 mb-3">
-                    <p className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Notifications</p>
-                    <button type="button" onClick={() => setNotifOpen(false)} className="text-xs text-[#7C5CFA] font-bold hover:underline">
-                      Close
-                    </button>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="rounded-2xl bg-[#EFEAFC] border border-[#7C5CFA]/20 p-3">
-                      <p className="font-bold text-[#2F2A3E]">Diagnostic Assessment Ready</p>
-                      <p className="text-[#6E6880] text-[11px] mt-0.5">Start your 10-question CAT to update your ability score.</p>
-                    </div>
-                    <div className="rounded-2xl bg-[#FFEEDD] border border-[#FFD9B8] p-3">
-                      <p className="font-bold text-[#B45A14]">Daily Learning Streak Active</p>
-                      <p className="text-[#8D8471] text-[11px] mt-0.5">Solve 1 coding or conceptual milestone today.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* User Profile dropdown or Auth actions */}
             {user ? (
-              <ProfileDropdown onOpenUpdateModal={() => setUpdateProfileOpen(true)} />
+              /* Top-right corner Logout button */
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Log out"
+                aria-label="Log out"
+                className="rounded-full p-2 bg-white/90 border border-[#E8E0CC] text-slate-500 hover:text-slate-900 hover:bg-white transition shadow-2xs cursor-pointer"
+              >
+                <LogOut size={16} />
+              </button>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
@@ -142,6 +166,7 @@ export default function DashboardShell() {
       {/* Global Profile Update Modal */}
       <UpdateProfileModal
         isOpen={updateProfileOpen}
+        initialSection={profileModalSection}
         onClose={() => setUpdateProfileOpen(false)}
       />
     </div>
