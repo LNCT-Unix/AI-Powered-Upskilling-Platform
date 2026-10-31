@@ -69,8 +69,6 @@ services:
       - "5173:5173"
     environment:
       VITE_API_BASE_URL: http://localhost:8080
-      VITE_USE_MOCK_AUTH: "false"
-      VITE_USE_MOCK_DATA: "false"
 
 volumes:
   pgdata:
