@@ -92,10 +92,7 @@ export default function LandingPage() {
             <a href="#graph" className="hover:text-slate-900 transition">Skill graph</a>
             <a href="#features" className="hover:text-slate-900 transition">Platform features</a>
             <a href="#projects" className="hover:text-slate-900 transition">Lab &amp; Career</a>
-            <a href="#faq" className="hover:text-slate-900 transition flex items-center gap-1">
-              <span>FAQ</span>
-              <span className="text-[10px] bg-[#EFEAFC] text-[#7C5CFA] font-bold px-1.5 py-0.5 rounded-full">AI</span>
-            </a>
+            <a href="#faq" className="hover:text-slate-900 transition">FAQ</a>
           </nav>
 
           <div className="hidden sm:flex items-center gap-3">
@@ -156,7 +153,7 @@ export default function LandingPage() {
               <a href="#graph" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Skill graph</a>
               <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Platform features</a>
               <a href="#projects" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Project Lab &amp; Career</a>
-              <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">AI FAQ Bot</a>
+              <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">FAQ</a>
             </nav>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
               {user ? (

@@ -42,7 +42,7 @@ export default function LandingChatbot({ initialOpen = false }) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showTeaser, setShowTeaser] = useState(true);
+  const [showTeaser, setShowTeaser] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -307,60 +307,21 @@ export default function LandingChatbot({ initialOpen = false }) {
         aria-label="octoByte AI Chatbot"
         className="fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-50 flex flex-col items-end"
       >
-        {/* Teaser Tooltip Bubble (Dismissable, only when chat is closed) */}
-        {!isOpen && showTeaser && (
-          <div className="octo-teaser-bob mb-3 relative flex items-center gap-2.5 rounded-2xl bg-white/95 backdrop-blur-md px-4 py-2.5 border border-[#E8E0CC] shadow-xl text-slate-800 max-w-[280px]">
-            <span className="text-xl">🐙</span>
-            <div className="flex-1 text-left">
-              <p className="text-xs font-bold text-[#2F2A3E] leading-tight">Got questions?</p>
-              <p className="text-[11px] text-[#6E6880] leading-tight">
-                Ask Octo about our CAT tests &amp; roadmaps!
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowTeaser(false);
-              }}
-              className="text-slate-400 hover:text-slate-600 p-0.5 rounded-full transition cursor-pointer"
-              aria-label="Dismiss greeting"
-            >
-              <X size={13} />
-            </button>
-            <div className="absolute -bottom-1.5 right-6 w-3 h-3 bg-white border-b border-r border-[#E8E0CC] rotate-45" />
-          </div>
-        )}
-
         {/* Floating Toggle Button */}
         {!isOpen && (
           <button
             type="button"
             onClick={() => setIsOpen(true)}
             aria-expanded={isOpen}
-            aria-label="Open octoByte AI Assistant"
-            className="group relative flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#7C5CFA] to-[#6244E8] px-4 py-3 sm:px-5 sm:py-3.5 text-white font-bold text-sm octo-launcher-shadow octo-pulse-ring transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+            aria-label="Open Octo AI Assistant"
+            title="Ask Octo AI"
+            className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border border-[#E8E0CC] shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer p-2.5"
           >
-            <div className="relative flex items-center justify-center">
-              <img
-                src="/octobyte-logo.png"
-                alt="Octo Mascot"
-                className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow"
-              />
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-white" />
-              </span>
-            </div>
-            <div className="flex flex-col text-left leading-none">
-              <span className="font-extrabold text-sm tracking-tight flex items-center gap-1.5">
-                Ask Octo AI
-                <Sparkles size={13} className="text-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
-              </span>
-              <span className="text-[10px] text-white/80 font-medium mt-0.5">
-                Quick Questions
-              </span>
-            </div>
+            <img
+              src="/octobyte-logo.png"
+              alt="Octo Mascot"
+              className="w-full h-full object-contain"
+            />
           </button>
         )}
 
@@ -705,3 +666,4 @@ export default function LandingChatbot({ initialOpen = false }) {
     </>
   );
 }
+
