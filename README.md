@@ -18,37 +18,37 @@
 
 </div>
 
-## 📑 Table of Contents
+##  Table of Contents
 
-- [💡 The Idea](#-the-idea)
-- [✨ Features and Status](#-features-and-status)
-- [🔄 The Learner Journey](#-the-learner-journey)
-- [🏛️ Architecture](#️-architecture)
+- [ The Idea](#-the-idea)
+- [ Features and Status](#-features-and-status)
+- [ The Learner Journey](#-the-learner-journey)
+- [ Architecture](#️-architecture)
   - [AI Job Lifecycle](#ai-job-lifecycle)
-- [🎯 Diagnostic Test (IRT Rasch Model)](#-diagnostic-test-irt-rasch-model)
-- [📊 Skill Graph](#-skill-graph)
-- [🤖 AI Worker](#-ai-worker)
-- [📅 Delivery Plan](#-delivery-plan)
-- [📂 Repository Structure](#-repository-structure)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [🚀 Getting Started](#-getting-started)
-- [🔌 API Overview](#-api-overview)
-- [🗄️ Database Overview](#️-database-overview)
-- [🛡️ Security](#️-security)
-- [🧪 Testing](#-testing)
-- [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
-- [👥 Team](#-team)
+- [ Diagnostic Test (IRT Rasch Model)](#-diagnostic-test-irt-rasch-model)
+- [ Skill Graph](#-skill-graph)
+- [ AI Worker](#-ai-worker)
+- [ Delivery Plan](#-delivery-plan)
+- [ Repository Structure](#-repository-structure)
+- [ Tech Stack](#️-tech-stack)
+- [ Getting Started](#-getting-started)
+- [ API Overview](#-api-overview)
+- [ Database Overview](#️-database-overview)
+- [ Security](#️-security)
+- [ Testing](#-testing)
+- [ Documentation](#-documentation)
+- [ Contributing](#-contributing)
+- [ Team](#-team)
 
 ---
 
-## 💡 The Idea
+##  The Idea
 
 Most learners choose what to study by guesswork: repeating familiar concepts or jumping prematurely into topics they are unequipped for. This platform replaces guesswork with three precise, data-driven phases:
 
 ```
 ┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
-│     01. 🎯 MEASURE     │ ───► │      02. 🧭 PLAN       │ ───► │      03. 📈 TRACK      │
+│     01.   MEASURE      │ ───► │      02. PLAN          │ ───► │       03.  TRACK      │
 │  Adaptive test pins    │      │ AI model synthesizes   │      │ Progress marked step-  │
 │  actual ability level  │      │ skill graph & gaps     │      │ by-step with re-tests  │
 └────────────────────────┘      └────────────────────────┘      └────────────────────────┘
@@ -61,7 +61,7 @@ Most learners choose what to study by guesswork: repeating familiar concepts or 
 
 ---
 
-## ✨ Features and Status
+##  Features and Status
 
 | Feature Area | What the User Gets | Status |
 | :--- | :--- | :---: |
@@ -80,22 +80,22 @@ Most learners choose what to study by guesswork: repeating familiar concepts or 
 
 ---
 
-## 🔄 The Learner Journey
+##  The Learner Journey
 
 ```mermaid
 flowchart TD
-    A([🔑 Sign Up / Log In]) --> B[📊 Learner Dashboard]
-    B --> C[🎯 Select Track: Backend Engineering]
-    C --> D[📝 Diagnostic Adaptive Test\nMax 9 Questions / Rasch Model]
-    D --> E[📋 Test Result: Baseline Level & Skill Graph Map]
-    E --> F[🤖 Async Request: Generate AI Roadmap]
-    F --> G[🗺️ Dynamic Learning Roadmap]
-    G --> H[✅ Work through Steps & Complete Milestones]
-    H --> I[🔄 Periodic Re-Assessment]
+    A([ Sign Up / Log In]) --> B[ Learner Dashboard]
+    B --> C[ Select Track: Backend Engineering]
+    C --> D[ Diagnostic Adaptive Test\nMax 9 Questions / Rasch Model]
+    D --> E[ Test Result: Baseline Level & Skill Graph Map]
+    E --> F[ Async Request: Generate AI Roadmap]
+    F --> G[ Dynamic Learning Roadmap]
+    G --> H[ Work through Steps & Complete Milestones]
+    H --> I[ Periodic Re-Assessment]
     I -->|Measure Growth| B
 
     subgraph Institutional Oversight
-        M[👨‍🏫 Mentor / Org Admin] -.->|Inspect Cohort Analytics| B
+        M[ Mentor / Org Admin] -.->|Inspect Cohort Analytics| B
     end
 
     classDef primary fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
@@ -108,15 +108,15 @@ flowchart TD
 
 ---
 
-## 🏛️ Architecture
+##  Architecture
 
 The platform separates high-throughput transactional responsibilities from slow, asynchronous generative operations:
 
 ```mermaid
 graph LR
     subgraph Clients ["Client Applications"]
-        W[🌐 Web App]
-        M[📱 Mobile App]
+        W[ Web App]
+        M[ Mobile App]
     end
 
     subgraph GatewayCore ["Spring Boot Gateway (Port 8080)"]
@@ -140,7 +140,7 @@ graph LR
     end
 
     subgraph CloudAI ["Model Providers"]
-        LLM[🤖 LLM Provider API]
+        LLM[ LLM Provider API]
     end
 
     W & M -->|HTTP / JSON REST| GatewayCore
@@ -184,7 +184,7 @@ sequenceDiagram
 
 ---
 
-## 🎯 Diagnostic Test (IRT Rasch Model)
+##  Diagnostic Test (IRT Rasch Model)
 
 The diagnostic module employs **Item Response Theory (1-Parameter Logistic / Rasch Model)**. Implemented in pure Java without external dependencies, it guarantees deterministic, mathematically verifiable ability estimations:
 
@@ -205,7 +205,7 @@ The diagnostic module employs **Item Response Theory (1-Parameter Logistic / Ras
 
 ---
 
-## 📊 Skill Graph
+##  Skill Graph
 
 The curriculum is modeled as a formal Directed Acyclic Graph (DAG). The primary reference track is **Language-Agnostic Backend Engineering**, evaluating fundamental software engineering competencies rather than syntax trivia.
 
@@ -237,7 +237,7 @@ The curriculum is modeled as a formal Directed Acyclic Graph (DAG). The primary 
 
 ---
 
-## 🤖 AI Worker
+##  AI Worker
 
 The worker operates as a secure, sandboxed background subsystem handling heavy language model invocations.
 
@@ -255,7 +255,7 @@ The worker operates as a secure, sandboxed background subsystem handling heavy l
 
 ---
 
-## 📅 Delivery Plan
+##  Delivery Plan
 
 The roadmap targets a 4-sprint MVP structure.
 
@@ -268,7 +268,7 @@ The roadmap targets a 4-sprint MVP structure.
 
 ---
 
-## 📂 Repository Structure
+##  Repository Structure
 
 ```plaintext
 AI-Powered-Upskilling-Platform/
@@ -308,7 +308,7 @@ AI-Powered-Upskilling-Platform/
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ```
 +───────────────────+───────────────────────────────────────────────────────+
@@ -323,7 +323,7 @@ AI-Powered-Upskilling-Platform/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - **Java Development Kit (JDK):** Version 17 or higher
@@ -377,7 +377,7 @@ assessment:
 
 ---
 
-## 🔌 API Overview
+##  API Overview
 
 Public REST endpoints are prefixed with `/api/v1`.
 
@@ -406,7 +406,7 @@ Public REST endpoints are prefixed with `/api/v1`.
 
 ---
 
-## 🗄️ Database Overview
+##  Database Overview
 
 Engineered for relational integrity on PostgreSQL with strict schema migration controls:
 
@@ -434,7 +434,7 @@ Engineered for relational integrity on PostgreSQL with strict schema migration c
 
 ---
 
-## 🛡️ Security
+##  Security
 
 - **Cryptographic Hashing:** Passwords secured with salted `BCrypt`. Refresh tokens are stored strictly as irreversible cryptographic hashes and rotated on every single use.
 - **Stateless Authentication:** Short-lived access JWT tokens with automatic rate-limiting and lockout protection against brute-force attacks.
@@ -445,7 +445,7 @@ Engineered for relational integrity on PostgreSQL with strict schema migration c
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ```
   ✓ Diagnostic Engine Verification (Deterministic mock tests with fixed response sequences)
@@ -457,7 +457,7 @@ Engineered for relational integrity on PostgreSQL with strict schema migration c
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 | Document | Description |
 | :--- | :--- |
@@ -468,7 +468,7 @@ Engineered for relational integrity on PostgreSQL with strict schema migration c
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 1. Create a dedicated feature branch from `main`:
    ```bash
@@ -482,7 +482,7 @@ Engineered for relational integrity on PostgreSQL with strict schema migration c
 
 ---
 
-## 👥 Team
+##  Team
 
 Proudly developed by **Team Unix** at **Lakshmi Narain College of Technology, Bhopal** under the guidance of **EPAM Systems CoE Mentors**.
 
