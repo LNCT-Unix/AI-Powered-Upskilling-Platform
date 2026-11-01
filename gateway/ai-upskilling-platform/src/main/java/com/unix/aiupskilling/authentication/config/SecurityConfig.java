@@ -129,6 +129,9 @@ public class SecurityConfig {
         List<String> allowedOrigins = authProperties.getCors().getAllowedOrigins();
         List<String> patterns = new java.util.ArrayList<>(allowedOrigins);
         patterns.add("https://*.trycloudflare.com");
+        patterns.add("http://*.trycloudflare.com");
+        patterns.add("http://localhost:*");
+        patterns.add("https://localhost:*");
         config.setAllowedOriginPatterns(patterns);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Client-Platform", "Origin", "Accept"));
