@@ -1276,42 +1276,28 @@ export default function AssessmentPage() {
           </Card>
 
           {/* Action Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => {
-                setSelectedSkillSlugs(new Set());
-                handleStartTestWithSkills([]);
-              }}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline transition cursor-pointer"
-            >
-              I am starting from scratch (skip skill selection)
-            </button>
-
-            <div className="flex items-center gap-3">
-              {hasSavedResult && (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  disabled={submitting}
-                  onClick={handleCancelRetest}
-                  className="shadow-2xs"
-                >
-                  Cancel Retest
-                </Button>
-              )}
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+            {hasSavedResult && (
               <Button
-                variant="indigo"
+                variant="outline"
                 size="lg"
-                disabled={submitting || loadingConfig}
-                loading={submitting}
-                onClick={() => handleStartTestWithSkills(Array.from(selectedSkillSlugs))}
-                className="shadow-sm"
+                disabled={submitting}
+                onClick={handleCancelRetest}
+                className="shadow-2xs"
               >
-                Start Diagnostic Screening Test <ArrowRight size={16} />
+                Cancel Retest
               </Button>
-            </div>
+            )}
+            <Button
+              variant="indigo"
+              size="lg"
+              disabled={submitting || loadingConfig}
+              loading={submitting}
+              onClick={() => handleStartTestWithSkills(Array.from(selectedSkillSlugs))}
+              className="shadow-sm"
+            >
+              Start Diagnostic Screening Test <ArrowRight size={16} />
+            </Button>
           </div>
         </div>
       ) : !isCompleted && (currentQ || aiFeedbackReview) ? (
