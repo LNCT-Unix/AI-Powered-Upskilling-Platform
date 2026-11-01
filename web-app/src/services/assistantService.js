@@ -30,7 +30,8 @@ export const assistantService = {
 
   /**
    * Request real-time text feedback for an assessment answer.
-   * Strictly communicates through the authenticated Spring Boot gateway.
+   * Routes through Spring Boot gateway with an automatic direct fallback to
+   * skillup-assistant if the gateway encounters an upstream communication error.
    *
    * @param {Object} params
    * @param {string} params.assessmentId
@@ -46,9 +47,27 @@ export const assistantService = {
    * @returns {Promise<{isCorrect: boolean, feedback: {reaction: string, conceptReinforcement: string, bonusTip: string, speechText: string}}>}
    */
   async getVoiceFeedback(params) {
-    return apiClient('/api/v1/assessments/voice-feedback', {
-      method: 'POST',
-      body: params,
-    });
+    try {
+      return await apiClient('/api/v1/assessments/voice-feedback', {
+        method: 'POST',
+        body: params,
+      });
+    } catch (err) {
+      console.warn('Gateway voice feedback failed, falling back to direct assistant:', err?.message || err);
+      const res = await fetch(`${ASSISTANT_BASE_URL}/api/assessment/voice-feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+
+      if (!res.ok) {
+        const directErr = await res.json().catch(() => ({}));
+        throw new Error(directErr?.error?.message || `Voice feedback failed with HTTP ${res.status}`, { cause: err });
+      }
+
+      return res.json();
+    }
   },
 };

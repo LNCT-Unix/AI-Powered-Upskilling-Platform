@@ -19,8 +19,12 @@ export function createApp({ config, groqService, feedbackService }) {
   app.use(helmet());
   app.use(
     cors({
-      // Empty list => no CORS headers at all (server-to-server use only).
-      origin: config.corsOrigins.length > 0 ? config.corsOrigins : false,
+      origin:
+        config.corsOrigins.includes('*') || !config.isProduction
+          ? true
+          : config.corsOrigins.length > 0
+            ? config.corsOrigins
+            : false,
       methods: ['GET', 'POST'],
       allowedHeaders: ['Content-Type', 'x-internal-api-key'],
     }),
