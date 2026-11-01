@@ -6,6 +6,7 @@ import {
   PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { isNativeMobile } from '../../services/mobileStorage';
 import UserAvatar from '../ui/UserAvatar';
 
 const LEARNER_NAV = [
@@ -141,7 +142,7 @@ export default function Sidebar({
         }`}
       >
         <Link
-          to="/"
+          to={isNativeMobile() ? "/dashboard" : "/"}
           className={`flex items-center hover:opacity-85 transition group ${
             isCollapsed ? 'justify-center p-1' : 'gap-3 min-w-0'
           }`}
