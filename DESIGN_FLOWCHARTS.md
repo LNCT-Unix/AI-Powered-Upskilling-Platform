@@ -13,6 +13,9 @@
 1. [High-Level Design (HLD)](#1-high-level-design-hld)
    - [1.1 Current System Architecture & Runtime Topology](#11-current-system-architecture--runtime-topology)
    - [1.2 Dual-Persona Platform Lifecycle (Learner & Mentor)](#12-dual-persona-platform-lifecycle-learner--mentor)
+   - [1.3 Website Route Map (Site Map & Shells)](#13-website-route-map-site-map--shells)
+   - [1.4 Public Entry & Authentication Page Flow](#14-public-entry--authentication-page-flow)
+   - [1.5 In-App Learner & Mentor Navigation Flow](#15-in-app-learner--mentor-navigation-flow)
 2. [System Design](#2-system-design)
    - [2.1 Network Ingress, Security Filters & Communication Protocols](#21-network-ingress-security-filters--communication-protocols)
    - [2.2 In-Memory JWT & Refresh Token Anti-Theft Rotation State Machine](#22-in-memory-jwt--refresh-token-anti-theft-rotation-state-machine)
@@ -130,6 +133,193 @@ flowchart TD
 
     class S1,S2,S3,S4,S5,S6,S7 student;
     class M1,M2,M3,M4,M5,M6 mentor;
+```
+
+---
+
+### 1.3 Website Route Map (Site Map & Shells)
+
+Defined in `web-app/src/router.jsx` using `createBrowserRouter`. The site is split into public routes, a learner application shell (`DashboardShell.jsx`), and a mentor studio shell (`MentorDashboard.jsx`).
+
+```mermaid
+flowchart TB
+    ROOT(["Website Entry<br/>http://localhost:5173"])
+
+    subgraph PublicRoutes ["Public Routes (No App Shell)"]
+        direction TB
+        LANDING["/ — Landing Page<br/>LandingPage.jsx"]
+        LOGIN["/login — Login<br/>LoginPage.jsx"]
+        SIGNUP["/signup — Sign Up<br/>SignupPage.jsx"]
+        FORGOT["/forgot-password<br/>forgotPass.jsx"]
+        VERIFY["/verify-email<br/>VerifyEmailPage.jsx"]
+        CALLBACK["/auth/callback<br/>AuthCallbackPage.jsx"]
+        AUTH_ERR["/auth/error<br/>AuthErrorPage.jsx"]
+        ONBOARD["/onboarding<br/>Navigate → /dashboard"]
+    end
+
+    subgraph LearnerShell ["Learner App Shell (DashboardShell.jsx)"]
+        direction TB
+        DASH["/dashboard"]
+        ASSESS["/assessment"]
+        HISTORY["/history<br/>& /assessment/history"]
+        GRAPH["/graph"]
+        ROADMAP["/roadmap"]
+        ANALYTICS["/analytics"]
+        PROJECTS["/projects"]
+        CAREER["/career"]
+    end
+
+    subgraph MentorShell ["Mentor Studio Shell (MentorDashboard.jsx)"]
+        direction TB
+        M_OVER["/mentor — Overview"]
+        M_STU["/mentor/students"]
+        M_SKILLS["/mentor/skills"]
+        M_ANALYTICS["/mentor/analytics"]
+        M_KEY["/mentor/key"]
+        M_PROFILE["/mentor/profile"]
+    end
+
+    NOTFOUND["* — NotFoundPage.jsx"]
+
+    ROOT --> LANDING
+    LANDING --> LOGIN & SIGNUP
+    LOGIN --> FORGOT
+    LOGIN --> CALLBACK
+    SIGNUP --> VERIFY
+    CALLBACK -->|code exchange OK| DASH
+    CALLBACK -.->|exchange failed| AUTH_ERR
+    LOGIN -->|login success| DASH
+    LOGIN -->|mentor role| M_OVER
+    VERIFY -->|OTP confirmed| DASH
+    ONBOARD -->|redirect| DASH
+
+    DASH --- ASSESS & HISTORY & GRAPH & ROADMAP & ANALYTICS & PROJECTS & CAREER
+    M_OVER --- M_STU & M_SKILLS & M_ANALYTICS & M_KEY & M_PROFILE
+    ROOT -.->|unmatched URL| NOTFOUND
+
+    classDef pub fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef learner fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
+    classDef mentor fill:#faf5ff,stroke:#9333ea,stroke-width:2px,color:#581c87;
+    classDef fallback fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#334155;
+
+    class LANDING,LOGIN,SIGNUP,FORGOT,VERIFY,CALLBACK,AUTH_ERR,ONBOARD pub;
+    class DASH,ASSESS,HISTORY,GRAPH,ROADMAP,ANALYTICS,PROJECTS,CAREER learner;
+    class M_OVER,M_STU,M_SKILLS,M_ANALYTICS,M_KEY,M_PROFILE mentor;
+    class NOTFOUND fallback;
+```
+
+**Shell & Route Guard Behavior**
+
+| Area | Route Prefix | Shell / Guard | Behavior |
+| :--- | :--- | :--- | :--- |
+| Public pages | `/`, `/login`, `/signup`, `/forgot-password`, `/verify-email`, `/auth/*` | None | Rendered standalone; accessible without a session. |
+| Learner app | `/dashboard`, `/assessment`, `/history`, `/graph`, `/roadmap`, `/analytics`, `/projects`, `/career` | `DashboardShell.jsx` (sidebar + mobile nav) | Shell always renders; when unauthenticated it shows Log In / Sign Up actions instead of the logout control. |
+| Mentor studio | `/mentor`, `/mentor/students`, `/mentor/skills`, `/mentor/analytics`, `/mentor/key`, `/mentor/profile` | `MentorDashboard.jsx` | Redirects to `/login` on missing session; logout returns to `/login`. |
+| Onboarding | `/onboarding` | Redirect route | Immediately `Navigate replace` to `/dashboard`. |
+| Unknown URL | `*` | `NotFoundPage.jsx` | Catches all unmatched paths. |
+
+---
+
+### 1.4 Public Entry & Authentication Page Flow
+
+Page-level navigation across the landing, signup/login, OTP verification, OAuth callback, and password reset screens.
+
+```mermaid
+flowchart TD
+    VISIT([Visitor opens /]) --> LAND["Landing Page (/)"]
+    LAND -->|Log In| LOGIN["/login"]
+    LAND -->|Get Started| SIGNUP["/signup"]
+
+    LOGIN -->|Forgot password| FORGOT["/forgot-password"]
+    LOGIN -->|Continue with Google / GitHub| OAUTH["Provider OAuth Consent"]
+    SIGNUP -->|Email + Password| VERIFY["/verify-email"]
+    SIGNUP -->|Continue with Google / GitHub| OAUTH
+
+    FORGOT -->|Email → OTP → New password| LOGIN
+
+    OAUTH -->|Redirect with ?code=uuid| CB["/auth/callback"]
+    CB -->|Code exchange OK| ROLE{Role?}
+    CB -->|Exchange failed| ERR["/auth/error"]
+
+    ROLE -->|USER| DASH["/dashboard"]
+    ROLE -->|MENTOR| MENTOR["/mentor"]
+
+    VERIFY -->|6-digit OTP confirmed| DASH
+    ERR -->|Retry| LOGIN
+
+    classDef page fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef decision fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef dest fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
+    classDef error fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
+
+    class LAND,LOGIN,SIGNUP,FORGOT,VERIFY,OAUTH,CB page;
+    class ROLE decision;
+    class DASH,MENTOR dest;
+    class ERR error;
+```
+
+---
+
+### 1.5 In-App Learner & Mentor Navigation Flow
+
+Page-to-page transitions available from the sidebar / mobile bottom navigation after a session is established.
+
+```mermaid
+flowchart LR
+    subgraph LearnerNav ["Learner Shell — Sidebar / Mobile Nav"]
+        direction TB
+        DASH["/dashboard"]
+        ASSESS["/assessment"]
+        GRAPH["/graph"]
+        ROADMAP["/roadmap"]
+        HISTORY["/history"]
+        ANALYTICS["/analytics"]
+        PROJECTS["/projects"]
+        CAREER["/career"]
+
+        DASH --> ASSESS
+        DASH --> GRAPH
+        DASH --> ROADMAP
+        DASH --> HISTORY
+        DASH --> ANALYTICS
+        DASH --> PROJECTS
+        DASH --> CAREER
+    end
+
+    ASSESS -->|Final answer submitted| RESULT["Result Scorecard<br/>θ • Level • Stop Reason"]
+    RESULT --> GRAPH
+    RESULT --> HISTORY
+    HISTORY -->|Expand run| TRAJECTORY["Per-Question Trajectory"]
+    GRAPH -->|Click node| DRAWER["Skill Detail Drawer"]
+    ROADMAP -->|Milestone action| PROJECTS
+    CAREER -->|Skill gap review| GRAPH
+
+    subgraph MentorNav ["Mentor Studio — Sidebar"]
+        direction TB
+        M_OVER["/mentor"]
+        M_STU["/mentor/students"]
+        M_SKILLS["/mentor/skills"]
+        M_ANALYTICS["/mentor/analytics"]
+        M_KEY["/mentor/key"]
+        M_PROFILE["/mentor/profile"]
+
+        M_OVER --> M_STU
+        M_OVER --> M_SKILLS
+        M_OVER --> M_ANALYTICS
+        M_OVER --> M_KEY
+        M_OVER --> M_PROFILE
+        M_KEY -->|Share invite key| M_STU
+        M_ANALYTICS -->|Inspect weak areas| M_SKILLS
+        M_STU -->|Inspect student| M_SKILLS
+    end
+
+    classDef learner fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
+    classDef mentor fill:#faf5ff,stroke:#9333ea,stroke-width:2px,color:#581c87;
+    classDef detail fill:#f0f9ff,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+
+    class DASH,ASSESS,GRAPH,ROADMAP,HISTORY,ANALYTICS,PROJECTS,CAREER learner;
+    class M_OVER,M_STU,M_SKILLS,M_ANALYTICS,M_KEY,M_PROFILE mentor;
+    class RESULT,TRAJECTORY,DRAWER detail;
 ```
 
 ---
