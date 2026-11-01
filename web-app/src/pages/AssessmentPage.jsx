@@ -12,6 +12,8 @@ import {
   Server,
   Check,
   Search,
+  Clock,
+  Volume2,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -66,6 +68,7 @@ export default function AssessmentPage() {
   const [error, setError] = useState(null);
   const [expandedQuestions, setExpandedQuestions] = useState({});
   const [questionFilter, setQuestionFilter] = useState('all');
+  const [aiFeedbackReview, setAiFeedbackReview] = useState(null);
   const voiceReqSeqRef = useRef(0);
 
   const topicRows = useMemo(() => {
@@ -376,6 +379,27 @@ export default function AssessmentPage() {
     }
   };
 
+  const reviewSecondsLeft = aiFeedbackReview?.secondsLeft;
+  const hasActiveReview = Boolean(aiFeedbackReview);
+
+  // 10-second review countdown timer
+  useEffect(() => {
+    if (!hasActiveReview || reviewSecondsLeft === undefined || reviewSecondsLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setAiFeedbackReview((prev) => {
+        if (!prev) return null;
+        const nextSec = prev.secondsLeft - 1;
+        if (nextSec <= 0) {
+          return { ...prev, secondsLeft: 0, canProceed: true };
+        }
+        return { ...prev, secondsLeft: nextSec };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [reviewSecondsLeft, hasActiveReview]);
+
   // Submit answer for current question
   const handleSubmitAnswer = async () => {
     if (selectedOption === null || submitting || !assessmentState?.question?.itemId) return;
@@ -384,6 +408,14 @@ export default function AssessmentPage() {
     setError(null);
     triggerHaptic.submit();
 
+    const currentQuestionStem = currentQ?.stem || '';
+    const currentOptions = Array.isArray(currentQ?.options)
+      ? currentQ.options
+      : typeof currentQ?.options === 'string'
+      ? JSON.parse(currentQ.options)
+      : [];
+    const chosenIndex = selectedOption;
+
     try {
       const updatedState = await assessmentService.submitAnswer(
         assessmentState.assessmentId,
@@ -391,10 +423,22 @@ export default function AssessmentPage() {
         selectedOption
       );
 
-      setAssessmentState(updatedState);
+      // Initialize AI review mode with 10s timeout
+      setAiFeedbackReview({
+        questionStem: currentQuestionStem,
+        selectedOptionIndex: chosenIndex,
+        options: currentOptions,
+        evaluation: updatedState.lastEvaluation,
+        nextState: updatedState,
+        feedback: null,
+        loadingFeedback: true,
+        secondsLeft: 10,
+        canProceed: false,
+      });
+
       setSelectedOption(null);
 
-      // Immediately trigger silent AI text feedback and speak aloud in a female voice (no UI)
+      // Trigger AI text feedback and speak aloud in natural female voice
       if (updatedState?.lastEvaluation) {
         const currentSeq = ++voiceReqSeqRef.current;
         stopSpeech();
@@ -402,26 +446,34 @@ export default function AssessmentPage() {
         assistantService
           .getVoiceFeedback(updatedState.lastEvaluation)
           .then((feedback) => {
-            if (voiceReqSeqRef.current === currentSeq && feedback?.feedback?.speechText) {
-              speakFeedback(feedback.feedback.speechText);
+            if (voiceReqSeqRef.current === currentSeq && feedback?.feedback) {
+              setAiFeedbackReview((prev) =>
+                prev ? { ...prev, feedback: feedback.feedback, loadingFeedback: false } : null
+              );
+              if (feedback.feedback.speechText) {
+                speakFeedback(feedback.feedback.speechText);
+              }
             }
           })
           .catch((voiceErr) => {
             console.warn('Voice companion feedback skipped:', voiceErr);
+            const isCorrect = !!updatedState.lastEvaluation?.isCorrect;
+            const fallback = {
+              reaction: isCorrect ? 'Awesome job! You nailed that concept.' : 'Good try! Keep going.',
+              conceptReinforcement: isCorrect
+                ? 'Your answer demonstrates solid understanding of this topic.'
+                : `The correct answer is: ${updatedState.lastEvaluation?.correctAnswer || 'the verified choice'}`,
+              bonusTip: 'Review this concept in the interactive skill graph to strengthen mastery.',
+              speechText: isCorrect ? 'Awesome job! You nailed that concept.' : 'Good try! Keep going.',
+            };
+            setAiFeedbackReview((prev) =>
+              prev ? { ...prev, feedback: fallback, loadingFeedback: false } : null
+            );
           });
-      }
-
-      // Check if assessment completed
-      if (updatedState.done || updatedState.status === 'COMPLETED') {
-        triggerHaptic.success();
-        setPreparingReport(true);
-        try {
-          const report = await fetchFinalReport(updatedState.assessmentId);
-          setResult(report);
-          localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
-        } finally {
-          setPreparingReport(false);
-        }
+      } else {
+        setAiFeedbackReview((prev) =>
+          prev ? { ...prev, loadingFeedback: false } : null
+        );
       }
     } catch (err) {
       // Gracefully recover if 409 Conflict (e.g. out of order response or already submitted)
@@ -457,10 +509,36 @@ export default function AssessmentPage() {
     }
   };
 
+  const handleProceedToNext = () => {
+    if (!aiFeedbackReview?.nextState) return;
+    stopSpeech();
+    triggerHaptic.selection();
+
+    const nextState = aiFeedbackReview.nextState;
+    setAiFeedbackReview(null);
+    setSelectedOption(null);
+    setAssessmentState(nextState);
+
+    // Check if assessment completed
+    if (nextState.done || nextState.status === 'COMPLETED') {
+      triggerHaptic.success();
+      setPreparingReport(true);
+      fetchFinalReport(nextState.assessmentId)
+        .then((report) => {
+          setResult(report);
+          localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+        })
+        .finally(() => {
+          setPreparingReport(false);
+        });
+    }
+  };
+
   const handleRetest = () => {
     stopSpeech();
     sessionStorage.removeItem(ASSESSMENT_ID_KEY);
     localStorage.removeItem(ASSESSMENT_RESULT_KEY);
+    setAiFeedbackReview(null);
     setAssessmentState(null);
     setResult(null);
     setSelectedOption(null);
@@ -471,7 +549,10 @@ export default function AssessmentPage() {
     setIsConfiguring(true);
   };
 
-  const isCompleted = !isConfiguring && (result !== null || assessmentState?.done || assessmentState?.status === 'COMPLETED');
+  const isCompleted =
+    !isConfiguring &&
+    !aiFeedbackReview &&
+    (result !== null || assessmentState?.done || assessmentState?.status === 'COMPLETED');
 
   // Loading state
   if (loading) {
@@ -888,6 +969,8 @@ export default function AssessmentPage() {
             ? 'Diagnostic Screening Setup'
             : isCompleted
             ? 'Initial Skill Report & Gap Analysis'
+            : aiFeedbackReview
+            ? 'AI Companion Feedback'
             : 'Diagnostic Knowledge Assessment'}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -897,6 +980,8 @@ export default function AssessmentPage() {
             ? 'Select your specialization track and mark the skills you already know before starting your adaptive test.'
             : isCompleted
             ? 'Your ability parameter (θ) has converged. Verified strengths and learning paths are mapped below.'
+            : aiFeedbackReview
+            ? 'Review the concept breakdown and tips from Octo before advancing to the next question.'
             : 'Question difficulty dynamically calibrates after every answer based on your performance.'}
         </p>
       </div>
@@ -1139,14 +1224,16 @@ export default function AssessmentPage() {
             </Button>
           </div>
         </div>
-      ) : !isCompleted && currentQ ? (
+      ) : !isCompleted && (currentQ || aiFeedbackReview) ? (
         <>
           {/* Progress Tracker Card */}
           <Card className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-800">
-                  Question {answered + 1}
+                  {aiFeedbackReview
+                    ? `Question ${answered} of ${maxQuestions} (Review)`
+                    : `Question ${answered + 1}`}
                 </span>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
                   Up to {maxQuestions} max
@@ -1165,81 +1252,282 @@ export default function AssessmentPage() {
             </div>
           </Card>
 
-          {/* Active Dynamic Question Card */}
-          <Card className="space-y-6">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
-              {currentQ.stem}
-            </h2>
-
-            <div className="grid gap-2.5">
-              {(() => {
-                const optionsList = Array.isArray(currentQ?.options)
-                  ? currentQ.options
-                  : typeof currentQ?.options === 'string'
-                  ? JSON.parse(currentQ.options)
-                  : [];
-                return optionsList.map((option, optIdx) => {
-                  const isSelected = selectedOption === optIdx;
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      disabled={submitting}
-                      onClick={() => {
-                        if (!submitting) {
-                          triggerHaptic.selection();
-                          setSelectedOption(optIdx);
-                        }
-                      }}
-                      className={`flex w-full items-center justify-between rounded-2xl border p-3.5 sm:p-4 text-left text-xs sm:text-sm font-medium transition ${
-                        submitting ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
-                      } ${
-                        isSelected
-                          ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 ring-2 ring-indigo-500/30 shadow-sm'
-                          : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50 shadow-xs'
-                      }`}
-                    >
-                      <span className="flex items-center gap-3">
-                        <span
-                          className={`grid h-7 w-7 place-items-center rounded-xl text-xs font-bold shrink-0 ${
-                            isSelected
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'border border-slate-200 bg-slate-50 text-slate-600'
-                          }`}
-                        >
-                          {String.fromCharCode(65 + optIdx)}
-                        </span>
-                        <span className="leading-relaxed">{option}</span>
+          {aiFeedbackReview ? (
+            /* AI Companion Feedback Card */
+            <Card className="space-y-6 border border-indigo-100/90 bg-linear-to-b from-white via-indigo-50/25 to-white shadow-lg rounded-3xl p-5 sm:p-7 animate-in fade-in zoom-in-95 duration-200">
+              {/* Header with Octopus Logo & Status */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex items-center justify-center w-13 h-13 sm:w-15 sm:h-15 rounded-2xl bg-white border border-indigo-100 shadow-sm p-1.5 shrink-0">
+                    <img
+                      src="/octobyte-logo.png"
+                      alt="Octo Mascot"
+                      className="w-full h-full object-contain"
+                    />
+                    <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-600 border-2 border-white"></span>
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">
+                        Octo AI Companion
+                      </h3>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                        Feedback
                       </span>
-                      {isSelected && (
-                        <CheckCircle2 size={18} className="text-indigo-600 shrink-0 ml-2" />
-                      )}
-                    </button>
-                  );
-                });
-              })()}
-            </div>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Concept reinforcement & diagnostic feedback
+                    </p>
+                  </div>
+                </div>
 
-            {/* Stepper Navigation Buttons */}
-            <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-              <span className="text-xs text-slate-400">
-                {selectedOption !== null
-                  ? `Selected: Option ${String.fromCharCode(65 + selectedOption)}`
-                  : 'Select an option above to continue'}
-              </span>
-              <Button
-                variant="indigo"
-                size="md"
-                disabled={selectedOption === null || submitting}
-                loading={submitting}
-                onClick={handleSubmitAnswer}
-              >
-                Submit Answer & Next <ArrowRight size={15} />
-              </Button>
-            </div>
-          </Card>
+                {/* Correctness badge */}
+                {aiFeedbackReview.evaluation && (
+                  <div
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs sm:text-sm border shadow-2xs ${
+                      aiFeedbackReview.evaluation.isCorrect
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}
+                  >
+                    {aiFeedbackReview.evaluation.isCorrect ? (
+                      <>
+                        <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                        <span>Correct Answer!</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                        <span>Learning Moment</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Body: AI Message & Details */}
+              {aiFeedbackReview.loadingFeedback ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
+                  <Loader2 size={32} className="text-indigo-600 animate-spin" />
+                  <p className="text-sm font-semibold text-slate-600">
+                    Octo is crafting your personalized feedback...
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Main AI Response Speech Bubble */}
+                  <div className="relative rounded-2xl bg-indigo-50/70 border border-indigo-100 p-4 sm:p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1">
+                        <span className="text-2xl shrink-0 select-none">🐙</span>
+                        <div className="space-y-1.5 flex-1">
+                          <p className="text-base sm:text-lg font-extrabold text-indigo-950">
+                            {aiFeedbackReview.feedback?.reaction ||
+                              (aiFeedbackReview.evaluation?.isCorrect
+                                ? 'Awesome job! You nailed that concept.'
+                                : 'Good try! Keep going.')}
+                          </p>
+                          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                            {aiFeedbackReview.feedback?.conceptReinforcement ||
+                              (aiFeedbackReview.evaluation?.isCorrect
+                                ? 'Your answer demonstrates solid understanding of this topic.'
+                                : `The correct answer was: ${aiFeedbackReview.evaluation?.correctAnswer}`)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Replay audio button */}
+                      {aiFeedbackReview.feedback?.speechText && (
+                        <button
+                          type="button"
+                          onClick={() => speakFeedback(aiFeedbackReview.feedback.speechText)}
+                          className="p-2 rounded-xl bg-white border border-indigo-200/80 text-indigo-600 hover:bg-indigo-50 transition shadow-2xs shrink-0 cursor-pointer"
+                          title="Replay Voice Feedback"
+                          aria-label="Replay Voice Feedback"
+                        >
+                          <Volume2 size={16} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Bonus Tip */}
+                    {aiFeedbackReview.feedback?.bonusTip && (
+                      <div className="flex items-start gap-2.5 rounded-xl bg-white/90 border border-indigo-100/90 p-3 sm:p-3.5 text-xs text-slate-600 shadow-2xs mt-2">
+                        <Sparkles size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold text-slate-800 mr-1.5">Pro Tip:</span>
+                          <span className="leading-relaxed">{aiFeedbackReview.feedback.bonusTip}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Question Recap */}
+                  <div className="text-xs text-slate-600 bg-slate-50/80 rounded-2xl p-3.5 sm:p-4 border border-slate-100 space-y-2">
+                    <div className="font-semibold text-slate-800 line-clamp-2">
+                      Question: {aiFeedbackReview.questionStem}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                      <span>
+                        Your choice:{' '}
+                        <strong
+                          className={
+                            aiFeedbackReview.evaluation?.isCorrect
+                              ? 'text-emerald-700'
+                              : 'text-rose-600'
+                          }
+                        >
+                          {aiFeedbackReview.options[aiFeedbackReview.selectedOptionIndex]}
+                        </strong>
+                      </span>
+                      {!aiFeedbackReview.evaluation?.isCorrect &&
+                        aiFeedbackReview.evaluation?.correctAnswer && (
+                          <span className="text-slate-500">
+                            Correct answer:{' '}
+                            <strong className="text-emerald-700">
+                              {aiFeedbackReview.evaluation.correctAnswer}
+                            </strong>
+                          </span>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Countdown Progress & Next Button Footer */}
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-600 flex items-center gap-1.5">
+                    <Clock size={14} className="text-indigo-600" />
+                    {aiFeedbackReview.secondsLeft > 0
+                      ? `Next question unlocks in ${aiFeedbackReview.secondsLeft}s`
+                      : 'Review timeout complete! You can move to the next question.'}
+                  </span>
+                  <span className="text-xs font-extrabold text-indigo-700 tabular-nums">
+                    {aiFeedbackReview.secondsLeft > 0
+                      ? `${aiFeedbackReview.secondsLeft}s`
+                      : 'Ready'}
+                  </span>
+                </div>
+
+                {/* Progress bar for 10s countdown */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 relative">
+                  <div
+                    className="h-full bg-linear-to-r from-indigo-500 to-indigo-600 transition-all duration-1000 ease-linear rounded-full"
+                    style={{ width: `${(aiFeedbackReview.secondsLeft / 10) * 100}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <Button
+                    variant="indigo"
+                    size="md"
+                    disabled={!aiFeedbackReview.canProceed}
+                    onClick={handleProceedToNext}
+                    className={`w-full sm:w-auto font-bold justify-center transition-all ${
+                      aiFeedbackReview.canProceed
+                        ? 'shadow-md shadow-indigo-500/20 ring-2 ring-indigo-500/40 cursor-pointer animate-pulse'
+                        : 'opacity-60 cursor-not-allowed'
+                    }`}
+                  >
+                    {aiFeedbackReview.canProceed ? (
+                      <>
+                        {aiFeedbackReview.nextState?.done ||
+                        aiFeedbackReview.nextState?.status === 'COMPLETED'
+                          ? 'View Final Diagnostic Report'
+                          : 'Next Question'}{' '}
+                        <ArrowRight size={15} />
+                      </>
+                    ) : (
+                      <>
+                        Next Question in {aiFeedbackReview.secondsLeft}s
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ) : currentQ ? (
+            /* Active Dynamic Question Card */
+            <Card className="space-y-6">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+                {currentQ.stem}
+              </h2>
+
+              <div className="grid gap-2.5">
+                {(() => {
+                  const optionsList = Array.isArray(currentQ?.options)
+                    ? currentQ.options
+                    : typeof currentQ?.options === 'string'
+                    ? JSON.parse(currentQ.options)
+                    : [];
+                  return optionsList.map((option, optIdx) => {
+                    const isSelected = selectedOption === optIdx;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => {
+                          if (!submitting) {
+                            triggerHaptic.selection();
+                            setSelectedOption(optIdx);
+                          }
+                        }}
+                        className={`flex w-full items-center justify-between rounded-2xl border p-3.5 sm:p-4 text-left text-xs sm:text-sm font-medium transition ${
+                          submitting ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                        } ${
+                          isSelected
+                            ? 'border-indigo-600 bg-indigo-50/60 text-slate-900 ring-2 ring-indigo-500/30 shadow-sm'
+                            : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50 shadow-xs'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          <span
+                            className={`grid h-7 w-7 place-items-center rounded-xl text-xs font-bold shrink-0 ${
+                              isSelected
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'border border-slate-200 bg-slate-50 text-slate-600'
+                            }`}
+                          >
+                            {String.fromCharCode(65 + optIdx)}
+                          </span>
+                          <span className="leading-relaxed">{option}</span>
+                        </span>
+                        {isSelected && (
+                          <CheckCircle2 size={18} className="text-indigo-600 shrink-0 ml-2" />
+                        )}
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* Stepper Navigation Buttons */}
+              <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                <span className="text-xs text-slate-400">
+                  {selectedOption !== null
+                    ? `Selected: Option ${String.fromCharCode(65 + selectedOption)}`
+                    : 'Select an option above to continue'}
+                </span>
+                <Button
+                  variant="indigo"
+                  size="md"
+                  disabled={selectedOption === null || submitting}
+                  loading={submitting}
+                  onClick={handleSubmitAnswer}
+                >
+                  Submit Answer & Next <ArrowRight size={15} />
+                </Button>
+              </div>
+            </Card>
+          ) : null}
+
           {/* Mobile Floating Sticky Submit Bar - Placed above MobileNav, strictly lg:hidden */}
-          {selectedOption !== null && !submitting && (
+          {!aiFeedbackReview && selectedOption !== null && !submitting && (
             <div className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 p-3 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg lg:hidden">
               <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
                 <div className="flex flex-col min-w-0">
