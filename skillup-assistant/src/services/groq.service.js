@@ -35,7 +35,7 @@ function extractJson(content) {
   return match ? match[1].trim() : trimmed;
 }
 
-const SYSTEM_PROMPT = `You are a supportive, positive learning companion for college students on an upskilling platform.
+const ASSESSMENT_SYSTEM_PROMPT = `You are a supportive, positive learning companion for college students on an upskilling platform.
 Your task is to provide an encouraging, memorable voice reaction whenever a student answers an assessment question.
 
 CRITICAL RULES:
@@ -48,73 +48,98 @@ CRITICAL RULES:
      * React gently and warmly without any shame (e.g., "Good try! Don't worry, that's a tricky one.").
      * Clearly state the correct understanding in one simple sentence.
      * Share ONE helpful memory tip or quick explanation.
-2. SPOKEN BREVITY: Keep the total "speechText" concise (approx. 20–35 words, 6–10 seconds of speech).
-3. NATURAL SPEECH: "speechText" will be read aloud by browser text-to-speech. Make it flow smoothly like natural dialogue.
-4. STRICT JSON OUTPUT: Return ONLY a valid JSON object matching these exact 4 keys:
-   - "reaction": Opening congratulatory or encouraging sentence
-   - "conceptReinforcement": 1 sentence reinforcing the concept
-   - "bonusTip": 1 concise tip or insight
-   - "speechText": The complete voice script combining reaction, reinforcement, and tip`;
 
+2. CONCISE VOICE SCRIPT (speechText):
+   - speechText must be between 15 and 35 words (about 5-10 seconds when spoken aloud).
+   - Natural spoken English suitable for TTS narration. No bullet points, headers, or markdown in speechText.
+
+3. STRICT JSON OUTPUT FORMAT:
+   Return ONLY a valid JSON object with EXACTLY these 4 keys:
+   {
+     "reaction": "Immediate enthusiastic or encouraging short reaction phrase",
+     "conceptReinforcement": "One simple sentence explaining why the correct answer is right",
+     "bonusTip": "One memorable tip, shortcut, or real-world practice insight",
+     "speechText": "Natural script combining reaction, reinforcement, and tip (15-35 words)"
+   }`;
+
+const OCTO_CHAT_SYSTEM_PROMPT = `You are Octo, the friendly, brilliant, and encouraging AI learning guide and mascot of octoByte (an adaptive upskilling and career-launching platform for developers and engineering students).
+
+Your core knowledge & areas you guide users through:
+1. Adaptive Skill Diagnostics:
+   - Ultra-fast ~4-minute computer-adaptive tests powered by Rasch IRT (Item Response Theory).
+   - Calibrates ability in real-time (theta score), pinpointing knowledge gaps accurately without hours of tedious quizzes.
+2. Interactive Skill Graph:
+   - Visual 2D/3D DAG (Directed Acyclic Graph) showing prerequisites and mastery paths across 56+ backend competencies (APIs, Databases, Concurrency, Performance, Security, Distributed Systems, DevOps).
+3. Personalized Learning Roadmaps:
+   - Dynamically generated milestone pathways designed to close specific diagnostic weaknesses.
+4. Verified GitHub Capstone Projects:
+   - Automated code evaluation and audits (AST parsing, test suite verification, architecture craftsmanship) that prove production readiness.
+5. Direct Job & Recruiter Matching:
+   - Unbiased talent marketplace connecting verified skill mastery directly to tech employers and hiring managers.
+6. Curriculum & Tech Explanations:
+   - Answer general computer science and software development questions (Java, Python, SQL, REST APIs, concurrency, data structures, algorithms, Docker, system design) accurately, concisely, and with practical clarity.
+
+Tone and style guidelines:
+- Warm, helpful, energetic, and clear.
+- Format responses cleanly with brief paragraphs and markdown bullet points for readability.
+- Keep answers focused (2-3 short paragraphs max).
+- Stay in character as Octo with an occasional cheerful octopus emoji (🐙).
+- When appropriate, encourage the learner to take an assessment, explore the skill graph, or build a capstone project.`;
+
+/**
+ * Creates the Groq LLM service for assessment feedback and conversational chatbot.
+ */
 export function createGroqService(config, fetchImpl = globalThis.fetch) {
-  const groq = config?.groq;
-  const url = `${groq?.baseUrl || 'https://api.groq.com/openai/v1'}/chat/completions`;
-  const timeoutMs = config?.requestTimeoutMs || 30_000;
+  const { groq, requestTimeoutMs } = config;
+  const chatUrl = `${groq.baseUrl}/chat/completions`;
+  const timeoutMs = requestTimeoutMs ?? 30000;
 
-  async function generateFeedback({
-    skill,
-    topic,
-    question,
-    options,
-    correctAnswer,
-    userAnswer,
-    isCorrect,
-    difficultyLevel,
-  }) {
-    // Mock mode for local testing
-    if (groq?.apiKey === 'mock') {
-      return {
-        reaction: isCorrect
-          ? "Awesome job! You nailed that concept."
-          : "Good try! Don't worry, that's a tricky one.",
-        conceptReinforcement: isCorrect
-          ? `Great understanding of ${skill} ${topic || 'concepts'}. Method overloading allows multiple methods to share a name with different parameters.`
-          : `The correct concept is: ${correctAnswer}.`,
-        bonusTip: "Remember: Overloading is resolved at compile time, while overriding happens at runtime!",
-        speechText: isCorrect
-          ? `Awesome job! Method overloading allows multiple methods to share a name with different parameters. Remember: Java resolves overloading at compile time!`
-          : `Good try! The correct concept is ${correctAnswer}. Quick tip: method overloading happens at compile time, while overriding is at runtime!`,
-      };
-    }
+  const sessionHistoryMap = new Map();
+  const MAX_HISTORY_MESSAGES = 10;
+  const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-    if (!groq?.apiKey) {
-      throw unavailable('LLM_AUTH_FAILED', 502, { reason: 'groq_api_key_not_configured' });
-    }
+  async function generateFeedback(params) {
+    const {
+      skill,
+      topic,
+      question,
+      options,
+      correctAnswer,
+      userAnswer,
+      isCorrect,
+      difficultyLevel,
+    } = params;
 
-    const userPrompt = `Subject/Skill: ${skill}
+    const formattedOptions = Array.isArray(options)
+      ? options.map((opt, idx) => `${idx + 1}. ${opt}`).join('\n')
+      : 'None provided';
+
+    const userPrompt = `Subject/Skill: ${skill || 'General'}
 Topic: ${topic || 'General'}
 Difficulty Level: ${difficultyLevel || 'Intermediate'}
 Question: ${question}
 Answer Choices:
-${(options || []).map((opt, i) => `${i + 1}. ${opt}`).join('\n')}
+${formattedOptions}
 Correct Answer: ${correctAnswer}
 Student's Selected Answer: ${userAnswer}
-Answer Result: ${isCorrect ? 'CORRECT' : 'INCORRECT'}`;
+Answer Result: ${isCorrect ? 'CORRECT' : 'INCORRECT'}
+
+Generate encouraging voice feedback for this result in the required JSON format.`;
 
     const requestBody = {
-      model: groq.model || 'openai/gpt-oss-20b',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
+      model: groq.model,
       temperature: 0.5,
       max_tokens: 800,
       response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: ASSESSMENT_SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
     };
 
     let response;
     try {
-      response = await fetchImpl(url, {
+      response = await fetchImpl(chatUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -176,5 +201,79 @@ Answer Result: ${isCorrect ? 'CORRECT' : 'INCORRECT'}`;
     return validation.data;
   }
 
-  return { generateFeedback };
+  async function chat({ message, sessionId }) {
+    const now = Date.now();
+    let session = sessionHistoryMap.get(sessionId);
+    if (!session || now - session.lastActive > SESSION_TTL_MS) {
+      session = { history: [], lastActive: now };
+    }
+    session.lastActive = now;
+
+    // Prune stale sessions if cache grows
+    if (sessionHistoryMap.size > 200) {
+      for (const [id, s] of sessionHistoryMap.entries()) {
+        if (now - s.lastActive > SESSION_TTL_MS) {
+          sessionHistoryMap.delete(id);
+        }
+      }
+    }
+
+    const messages = [
+      { role: 'system', content: OCTO_CHAT_SYSTEM_PROMPT },
+      ...session.history.slice(-MAX_HISTORY_MESSAGES),
+      { role: 'user', content: message },
+    ];
+
+    let response;
+    try {
+      response = await fetchImpl(chatUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${groq.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: groq.model,
+          messages,
+          temperature: 0.6,
+          max_tokens: 600,
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (err) {
+      if (isTimeout(err)) {
+        throw new AppError('LLM_TIMEOUT', 504, 'The assistant took too long to respond. Please try again.');
+      }
+      throw unavailable('LLM_NETWORK_ERROR', 502, { errorName: err?.name });
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      logger.error('groq.chat_upstream_error', {
+        status: response.status,
+        bodySnippet: errorText.slice(0, 300),
+      });
+      throw mapUpstreamStatus(response.status);
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw unavailable('LLM_INVALID_RESPONSE', 502, { reason: 'groq_chat_json_parse_failed' });
+    }
+
+    const content = data?.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw unavailable('LLM_INVALID_RESPONSE', 502, { reason: 'groq_empty_chat_content' });
+    }
+
+    session.history.push({ role: 'user', content: message });
+    session.history.push({ role: 'assistant', content });
+    sessionHistoryMap.set(sessionId, session);
+
+    return { content };
+  }
+
+  return { generateFeedback, chat };
 }

@@ -17,7 +17,7 @@ export function newMessageId() {
   return `msg_${randomUUID().replace(/-/g, '')}`;
 }
 
-export function buildChatSuccess({ conversationId, content }) {
+export function buildChatSuccess({ conversationId, content, model = null }) {
   return {
     success: true,
     conversationId,
@@ -29,10 +29,8 @@ export function buildChatSuccess({ conversationId, content }) {
       suggestions: [],
     },
     metadata: {
-      // Lyzr's documented response contains only the answer text, so neither the
-      // model nor knowledge-base attribution can be verified per answer.
-      source: 'lyzr_agent',
-      model: null,
+      source: 'octo_groq',
+      model: model ?? 'openai/gpt-oss-20b',
     },
   };
 }

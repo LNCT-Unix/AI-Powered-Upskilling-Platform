@@ -22,7 +22,7 @@ const REQUEST_PARAMS = {
   difficultyLevel: 'INTERMEDIATE',
 };
 
-describe('GroqService', () => {
+describe('GroqService — Assessment Feedback', () => {
   it('successfully generates structured feedback using native JSON response', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
       jsonResponse({
@@ -154,3 +154,50 @@ describe('GroqService', () => {
   });
 });
 
+describe('GroqService — Octo Chatbot', () => {
+  it('generates chat responses and preserves conversation history across turns', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          choices: [{ message: { role: 'assistant', content: 'Hello! I am Octo 🐙' } }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          choices: [{ message: { role: 'assistant', content: 'You can test your skills on the assessment page!' } }],
+        }),
+      );
+
+    const config = loadEnv(TEST_ENV);
+    const service = createGroqService(config, fetchMock);
+
+    // Turn 1
+    const res1 = await service.chat({ message: 'Hi there', sessionId: 'conv_123' });
+    expect(res1.content).toBe('Hello! I am Octo 🐙');
+
+    // Turn 2
+    const res2 = await service.chat({ message: 'How do I start?', sessionId: 'conv_123' });
+    expect(res2.content).toBe('You can test your skills on the assessment page!');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    // Verify turn 2 included turn 1 history in the prompt
+    const secondCallBody = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(secondCallBody.messages).toHaveLength(4); // system, user(1), assistant(1), user(2)
+    expect(secondCallBody.messages[1].content).toBe('Hi there');
+    expect(secondCallBody.messages[2].content).toBe('Hello! I am Octo 🐙');
+    expect(secondCallBody.messages[3].content).toBe('How do I start?');
+  });
+
+  it('handles empty chat choices with 502', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ choices: [] }));
+    const config = loadEnv(TEST_ENV);
+    const service = createGroqService(config, fetchMock);
+
+    await expect(service.chat({ message: 'Hello', sessionId: 'conv_empty' })).rejects.toMatchObject({
+      code: 'LLM_INVALID_RESPONSE',
+      status: 502,
+    });
+  });
+});

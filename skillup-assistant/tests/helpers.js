@@ -2,17 +2,12 @@ import { vi } from 'vitest';
 import { createApp } from '../src/app.js';
 import { loadEnv } from '../src/config/env.js';
 import { createFeedbackService } from '../src/services/feedback.service.js';
-import { createLyzrService } from '../src/services/lyzr.service.js';
 import { createGroqService } from '../src/services/groq.service.js';
 
-export const LYZR_TEST_KEY = 'test-lyzr-secret-key';
 export const GROQ_TEST_KEY = 'test-groq-secret-key';
 
 export const TEST_ENV = {
   NODE_ENV: 'test',
-  LYZR_API_KEY: LYZR_TEST_KEY,
-  LYZR_AGENT_ID: 'agent_test_123',
-  LYZR_API_BASE_URL: 'https://lyzr.test/v3',
   GROQ_API_KEY: GROQ_TEST_KEY,
   GROQ_MODEL: 'openai/gpt-oss-20b',
   GROQ_BASE_URL: 'https://api.groq.com/openai/v1',
@@ -22,18 +17,19 @@ export const TEST_ENV = {
 };
 
 /** Builds the real app wired to a mocked upstream `fetch` — no network, no credentials needed. */
-export function buildApp({ env = {}, fetchImpl, feedbackService } = {}) {
+export function buildApp({ env = {}, fetchImpl, feedbackService, groqService } = {}) {
   const config = loadEnv({ ...TEST_ENV, ...env });
   const fetchMock = fetchImpl ?? vi.fn();
+  const resolvedGroqService = groqService ?? createGroqService(config, fetchMock);
   const resolvedFeedbackService =
     feedbackService ??
     createFeedbackService({
-      groqService: createGroqService(config, fetchMock),
+      groqService: resolvedGroqService,
     });
 
   const app = createApp({
     config,
-    lyzrService: createLyzrService(config, fetchMock),
+    groqService: resolvedGroqService,
     feedbackService: resolvedFeedbackService,
   });
 
@@ -41,6 +37,7 @@ export function buildApp({ env = {}, fetchImpl, feedbackService } = {}) {
     app,
     config,
     fetchMock,
+    groqService: resolvedGroqService,
     feedbackService: resolvedFeedbackService,
   };
 }

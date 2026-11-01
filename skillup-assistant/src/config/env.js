@@ -20,14 +20,9 @@ const envSchema = z.object({
   FRONTEND_ORIGIN: z.string().optional(),
   TRUST_PROXY: intWithDefault(0, 10, 0),
 
-  LYZR_API_KEY: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG),
-  LYZR_AGENT_ID: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG),
-  LYZR_API_BASE_URL: z.string().url().refine(notPlaceholder, PLACEHOLDER_MSG),
-  LYZR_USER_ID: z.string().min(1).max(128).default('skillup-web-visitor'),
-
   INTERNAL_API_KEY: z.string().min(16, 'must be at least 16 characters').optional(),
 
-  GROQ_API_KEY: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG).optional(),
+  GROQ_API_KEY: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG),
   GROQ_MODEL: z.string().min(1).default('openai/gpt-oss-20b'),
   GROQ_BASE_URL: z.string().url().refine(notPlaceholder, PLACEHOLDER_MSG).default('https://api.groq.com/openai/v1'),
 
@@ -56,12 +51,8 @@ export function loadEnv(source = process.env) {
   }
 
   const env = result.data;
-  const baseUrl = env.LYZR_API_BASE_URL.replace(/\/+$/, '');
   const groqBaseUrl = env.GROQ_BASE_URL.replace(/\/+$/, '');
 
-  if (env.NODE_ENV === 'production' && !baseUrl.startsWith('https://')) {
-    throw new ConfigError(['LYZR_API_BASE_URL: must use https in production']);
-  }
   if (env.NODE_ENV === 'production' && !groqBaseUrl.startsWith('https://')) {
     throw new ConfigError(['GROQ_BASE_URL: must use https in production']);
   }
@@ -76,14 +67,8 @@ export function loadEnv(source = process.env) {
       .map((o) => o.trim())
       .filter(Boolean),
     trustProxy: env.TRUST_PROXY,
-    lyzr: Object.freeze({
-      apiKey: env.LYZR_API_KEY,
-      agentId: env.LYZR_AGENT_ID,
-      baseUrl,
-      userId: env.LYZR_USER_ID,
-    }),
     groq: Object.freeze({
-      apiKey: env.GROQ_API_KEY ?? null,
+      apiKey: env.GROQ_API_KEY,
       model: env.GROQ_MODEL,
       baseUrl: groqBaseUrl,
     }),

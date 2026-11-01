@@ -26,11 +26,6 @@ export const chatResponseSchema = z.object({
   }),
 });
 
-// The ONLY shape accepted from Lyzr's documented chat response: { response: string }.
-export const lyzrChatResponseSchema = z.object({
-  response: z.string().trim().min(1),
-});
-
 export function toValidationError(zodError) {
   const details = zodError.issues.map((issue) => ({
     field: issue.path.join('.') || 'body',

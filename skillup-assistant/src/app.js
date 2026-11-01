@@ -12,7 +12,7 @@ import { healthBody } from './utils/response.js';
  * Builds the Express app. Config and services are injected so tests can
  * supply mocked upstreams; nothing here reads process.env.
  */
-export function createApp({ config, lyzrService, feedbackService }) {
+export function createApp({ config, groqService, feedbackService }) {
   const app = express();
 
   app.set('trust proxy', config.trustProxy);
@@ -31,7 +31,7 @@ export function createApp({ config, lyzrService, feedbackService }) {
     res.status(200).json(healthBody());
   });
 
-  const assistantController = createAssistantController({ lyzrService, config });
+  const assistantController = createAssistantController({ groqService, config });
   app.use('/api/assistant', createAssistantRouter({ controller: assistantController, config }));
 
   const assessmentController = createAssessmentController({

@@ -2,7 +2,6 @@ import 'dotenv/config';
 import { createApp } from './app.js';
 import { ConfigError, loadEnv } from './config/env.js';
 import { createFeedbackService } from './services/feedback.service.js';
-import { createLyzrService } from './services/lyzr.service.js';
 import { createGroqService } from './services/groq.service.js';
 import { logger } from './utils/logger.js';
 
@@ -28,7 +27,7 @@ const feedbackService = createFeedbackService({ groqService });
 
 const app = createApp({
   config,
-  lyzrService: createLyzrService(config),
+  groqService,
   feedbackService,
 });
 

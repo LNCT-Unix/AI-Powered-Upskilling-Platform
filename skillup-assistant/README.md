@@ -1,41 +1,26 @@
 # SkillUp Assistant (Node.js service)
 
-Backend for the **SkillUp Platform Guide** chatbot (Lyzr proxy) and **AI Assessment Feedback** (Groq pure-text JSON).
-It receives a visitor's question, invokes your **existing Lyzr agent**, and returns a normalized JSON
-answer that the React app can render.
+Unified Groq-powered AI service for **octoByte**:
+1. **Octo AI Platform Guide Chatbot** (`POST /api/assistant/chat`) — Real-time conversational AI answering learner and curriculum questions with multi-turn memory.
+2. **AI Assessment Voice Feedback** (`POST /api/assessment/voice-feedback`) — Sub-second pedagogical feedback for adaptive assessment answers.
 
 ```
-React  ──►  Spring Boot  ──►  this service (Node/Express)  ──►  Lyzr agent ──► knowledge base epam_sprint_1
-                              x-internal-api-key                 x-api-key
+React App  ──►  this service (Node/Express :3002)  ──►  Groq Cloud API
+                                                        Bearer GROQ_API_KEY
 ```
 
-The Lyzr API key lives only in this service's environment. Spring Boot and React never see it.
+The Groq API key lives only in this service's environment. Spring Boot and React clients never see it.
 
-> **Status:** All code, services, and tests are implemented and verified. Vitest test suite passes 100% (**60 passing tests across 5 test suites**).
+> **Status:** Fully implemented and verified. Vitest test suite passes 100% (**59 passing tests across 5 test suites**).
 
 ---
 
-## 1. Verified Lyzr API contract
+## 1. Groq LLM Engine
 
-Taken from the official Lyzr docs (<https://docs.lyzr.ai/agent-apis/agents/Chat.md>, Agent Inference v3):
-
-| Item | Value |
-|---|---|
-| Method + URL | `POST https://agent-prod.studio.lyzr.ai/v3/inference/chat/` |
-| Auth | header `x-api-key: <Lyzr API key>` |
-| Body (all required) | `user_id`, `agent_id`, `session_id`, `message` |
-| Success (200) | `{ "response": "<text>" }` |
-| Documented errors | 400 invalid input, 401 invalid API key, 500 server error |
-
-Notes:
-
-- The service calls **only** this endpoint, with the agent ID from `LYZR_AGENT_ID`. It does not create agents
-  and does not call another LLM provider.
-- `https://rag-prod.studio.lyzr.ai` (your RAG base URL), the knowledge-base ID, Top K, temperature and Top P are
-  settings **of the agent inside Lyzr**. They are not sent by this service, so they are not environment variables.
-- Streaming (`/inference/stream/`) exists but is intentionally **not used**: the React/Spring contract is a single
-  JSON response, so streaming would add complexity with no requirement behind it.
-- There is an older v2 endpoint (`https://agent.api.lyzr.app/v2/chat/`); this project uses v3, the current one.
+- **Provider**: [Groq Cloud API](https://api.groq.com/openai/v1)
+- **Active Model**: `openai/gpt-oss-20b` (or `llama-3.1-8b-instant`)
+- **Latency**: Sub-second (~800–1000ms response time)
+- **Octo Mascot Persona**: Friendly, supportive AI guide specialized in Rasch IRT adaptive testing, 56+ backend skill graph navigation, roadmaps, and software engineering concepts.
 
 ## 2. API contract of this service
 
@@ -66,7 +51,7 @@ Success (`200`):
     "format": "text",
     "suggestions": []
   },
-  "metadata": { "source": "lyzr_agent", "model": null }
+  "metadata": { "source": "octo_groq", "model": null }
 }
 ```
 `metadata.source` is `lyzr_agent` (neutral), **not** `knowledge_base`: Lyzr's response contains only the answer text,

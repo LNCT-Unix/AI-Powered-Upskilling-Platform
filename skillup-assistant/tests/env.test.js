@@ -12,38 +12,32 @@ describe('loadEnv', () => {
     }
     expect(error).toBeInstanceOf(ConfigError);
     const text = error.problems.join('\n');
-    expect(text).toContain('LYZR_API_KEY');
-    expect(text).toContain('LYZR_AGENT_ID');
-    expect(text).toContain('LYZR_API_BASE_URL');
+    expect(text).toContain('GROQ_API_KEY');
   });
 
   it('rejects untouched .env.example placeholders', () => {
-    expect(() => loadEnv({ ...TEST_ENV, LYZR_API_KEY: 'replace_with_your_lyzr_api_key' })).toThrow(ConfigError);
     expect(() => loadEnv({ ...TEST_ENV, GROQ_API_KEY: 'replace_with_your_groq_api_key' })).toThrow(ConfigError);
   });
 
   it('never includes secret values in the error', () => {
     try {
-      loadEnv({ ...TEST_ENV, LYZR_API_BASE_URL: 'not-a-url' });
+      loadEnv({ ...TEST_ENV, GROQ_BASE_URL: 'not-a-url' });
     } catch (err) {
-      expect(err.message).not.toContain(TEST_ENV.LYZR_API_KEY);
+      expect(err.message).not.toContain(TEST_ENV.GROQ_API_KEY);
       return;
     }
     throw new Error('expected loadEnv to throw');
   });
 
-  it('rejects a too-short internal key and non-https Lyzr URL in production', () => {
+  it('rejects a too-short internal key and non-https Groq URL in production', () => {
     expect(() => loadEnv({ ...TEST_ENV, INTERNAL_API_KEY: 'short' })).toThrow(ConfigError);
-    expect(() => loadEnv({ ...TEST_ENV, NODE_ENV: 'production', LYZR_API_BASE_URL: 'http://lyzr.test/v3' })).toThrow(ConfigError);
     expect(() => loadEnv({ ...TEST_ENV, NODE_ENV: 'production', GROQ_BASE_URL: 'http://api.groq.com/openai/v1' })).toThrow(ConfigError);
   });
 
   it('applies defaults, treats empty strings as unset and normalizes the base URL', () => {
     const config = loadEnv({
       NODE_ENV: 'test',
-      LYZR_API_KEY: 'k',
-      LYZR_AGENT_ID: 'a',
-      LYZR_API_BASE_URL: 'https://lyzr.test/v3/',
+      GROQ_API_KEY: 'test-key',
       INTERNAL_API_KEY: '',
       FRONTEND_ORIGIN: '',
     });
@@ -52,10 +46,9 @@ describe('loadEnv', () => {
     expect(config.maxMessageLength).toBe(4000);
     expect(config.internalApiKey).toBeNull();
     expect(config.corsOrigins).toEqual([]);
-    expect(config.lyzr.baseUrl).toBe('https://lyzr.test/v3');
     expect(config.groq.baseUrl).toBe('https://api.groq.com/openai/v1');
     expect(config.groq.model).toBe('openai/gpt-oss-20b');
-    expect(config.groq.apiKey).toBeNull();
+    expect(config.groq.apiKey).toBe('test-key');
   });
 
   it('parses a comma-separated list of CORS origins', () => {
