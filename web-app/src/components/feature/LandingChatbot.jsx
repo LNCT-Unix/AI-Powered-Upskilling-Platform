@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   X,
   Send,
-  RotateCcw,
   Sparkles,
   BrainCircuit,
   Network,
@@ -42,16 +41,25 @@ export default function LandingChatbot({ initialOpen = false }) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showTeaser, setShowTeaser] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [showQuestionsDrawer, setShowQuestionsDrawer] = useState(false);
 
+  // Friendly user-focused phrasing matching the reference image layout
+  const friendlyQuestions = [
+    "How does the skill test work?",
+    "Can you explain the skill network?",
+    "How do personalized roadmaps work?",
+    "How do you verify GitHub projects?",
+    "How does job matching work?",
+    "How do I start and track my progress?"
+  ];
+
   const initialWelcome = {
     id: 'welcome-msg',
     sender: 'bot',
-    text: `👋 **Welcome to octoByte!** I'm **Octo**, your AI learning assistant.\n\nI can help you understand how our adaptive diagnostic tests work, explore the 56-skill graph, learn about personalized roadmaps, project verification, and career matching.\n\nChoose any of the **6 assigned questions** below or ask me anything!`,
+    text: `👋 **Hey there! Welcome to octoByte!** I'm **Octo**, your friendly AI learning guide.\n\nI'm here to help you discover how we match you with top job opportunities.\n\nChoose any of the **6 popular questions** below or just type your own question!`,
     isWelcome: true,
     showQuestions: true,
     timestamp: getNowTime(),
@@ -68,14 +76,15 @@ export default function LandingChatbot({ initialOpen = false }) {
   };
 
   // Handle assigned question selection
-  const handleSelectQuestion = useCallback((q) => {
+  const handleSelectQuestion = useCallback((q, customDisplayText) => {
     setShowQuestionsDrawer(false);
 
+    const questionText = customDisplayText || q.question;
     const userMsgId = 'usr-' + Date.now();
     const userMsg = {
       id: userMsgId,
       sender: 'user',
-      text: q.question,
+      text: questionText,
       timestamp: getNowTime(),
     };
 
@@ -105,11 +114,11 @@ export default function LandingChatbot({ initialOpen = false }) {
   useEffect(() => {
     const handleOpenEvent = (e) => {
       setIsOpen(true);
-      setShowTeaser(false);
       if (e.detail?.questionId) {
         const found = ASSIGNED_QUESTIONS.find((item) => item.id === e.detail.questionId);
         if (found) {
-          setTimeout(() => handleSelectQuestion(found), 150);
+          const index = ASSIGNED_QUESTIONS.findIndex(item => item.id === found.id);
+          setTimeout(() => handleSelectQuestion(found, friendlyQuestions[index] || found.question), 150);
         }
       }
     };
@@ -145,7 +154,6 @@ export default function LandingChatbot({ initialOpen = false }) {
       const lower = text.toLowerCase();
       let matchedCustom = null;
 
-      // 1. Direct match with assigned questions
       let matchedQuestion = ASSIGNED_QUESTIONS.find(
         (q) =>
           lower.includes(q.shortTitle.toLowerCase()) ||
@@ -153,7 +161,6 @@ export default function LandingChatbot({ initialOpen = false }) {
           q.question.toLowerCase().includes(lower)
       );
 
-      // 2. Keyword match
       if (!matchedQuestion) {
         for (const item of INTENT_KEYWORDS) {
           if (item.keywords.some((kw) => lower.includes(kw))) {
@@ -190,14 +197,13 @@ export default function LandingChatbot({ initialOpen = false }) {
           feedback: null,
         };
       } else {
-        // Fallback response with the 6 assigned questions
         botResponse = {
           id: 'bot-' + Date.now(),
           sender: 'bot',
-          text: `I specialize in explaining **octoByte's learning platform**, including our adaptive CAT testing, 56-skill DAG, AI roadmap generation, GitHub project verification, and career matching.\n\nHere are the **6 core questions** that can help you explore:`,
+          text: `I'd love to help you learn all about **octoByte**! You can ask me anything about our skill tests, learning paths, or career matching.\n\nHere are 6 common questions to help you explore:`,
           actions: [
-            { label: 'Explore Platform Features', anchor: '#features' },
-            { label: 'Start Free Account', route: '/signup', primary: true }
+            { label: 'Explore All Features', anchor: '#features' },
+            { label: 'Create Free Account', route: '/signup', primary: true }
           ],
           showQuestions: true,
           timestamp: getNowTime(),
@@ -208,18 +214,6 @@ export default function LandingChatbot({ initialOpen = false }) {
       setMessages((prev) => [...prev, botResponse]);
       setIsTyping(false);
     }, 650);
-  };
-
-  // Reset conversation to initial state
-  const handleReset = () => {
-    setMessages([
-      {
-        ...initialWelcome,
-        id: 'welcome-' + Date.now(),
-        timestamp: getNowTime(),
-      },
-    ]);
-    setShowQuestionsDrawer(false);
   };
 
   // Copy text to clipboard
@@ -263,7 +257,6 @@ export default function LandingChatbot({ initialOpen = false }) {
           const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
           const cleanLine = isBullet ? line.replace(/^[•-]\s*/, '') : line;
 
-          // Parse bold (**text**) and code (`code`)
           const parts = cleanLine.split(/(\*\*.*?\*\*|`.*?`)/g).map((part, pIdx) => {
             if (part.startsWith('**') && part.endsWith('**')) {
               return (
@@ -307,14 +300,13 @@ export default function LandingChatbot({ initialOpen = false }) {
         aria-label="octoByte AI Chatbot"
         className="fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-50 flex flex-col items-end"
       >
-        {/* Floating Toggle Button */}
         {!isOpen && (
           <button
             type="button"
             onClick={() => setIsOpen(true)}
             aria-expanded={isOpen}
-            aria-label="Open Octo AI Assistant"
-            title="Ask Octo AI"
+            aria-label="Open octoByte AI Assistant"
+            title="Ask octoByte AI"
             className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border border-[#E8E0CC] shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer p-2.5"
           >
             <img
@@ -348,10 +340,10 @@ export default function LandingChatbot({ initialOpen = false }) {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <h3 className="font-extrabold text-sm sm:text-base tracking-tight leading-none text-white">
-                      Octo AI Assistant
+                      octoByte AI Assistant
                     </h3>
                     <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9.5px] font-bold text-amber-200">
-                      Landing Guide
+                      Guide
                     </span>
                   </div>
                   <p className="text-[11px] text-white/80 font-medium leading-tight mt-1 flex items-center gap-1">
@@ -361,17 +353,8 @@ export default function LandingChatbot({ initialOpen = false }) {
                 </div>
               </div>
 
-              {/* Header Action Controls */}
+              {/* Header Action Controls (Reload button removed) */}
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  title="Restart Conversation"
-                  aria-label="Restart Conversation"
-                  className="p-1.5 rounded-xl text-white/80 hover:text-white hover:bg-white/15 transition cursor-pointer"
-                >
-                  <RotateCcw size={16} />
-                </button>
                 <button
                   type="button"
                   onClick={() => setIsExpanded(!isExpanded)}
@@ -396,13 +379,13 @@ export default function LandingChatbot({ initialOpen = false }) {
             {/* Quick-Access Assigned Questions Pill Bar */}
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[#F7F3E8] border-b border-[#E8E0CC] overflow-x-auto octo-chip-scroll shrink-0">
               <span className="text-[10px] font-black uppercase tracking-wider text-[#6E6880] shrink-0 pl-1">
-                Assigned:
+                POPULAR:
               </span>
-              {ASSIGNED_QUESTIONS.map((q) => (
+              {ASSIGNED_QUESTIONS.map((q, idx) => (
                 <button
                   key={q.id}
                   type="button"
-                  onClick={() => handleSelectQuestion(q)}
+                  onClick={() => handleSelectQuestion(q, friendlyQuestions[idx] || q.question)}
                   disabled={isTyping}
                   className="shrink-0 text-left rounded-full bg-white border border-[#E8E0CC] px-2.5 py-1 text-[11px] font-semibold text-[#2F2A3E] hover:border-[#7C5CFA] hover:text-[#7C5CFA] hover:bg-[#EFEAFC]/50 transition cursor-pointer disabled:opacity-50"
                 >
@@ -416,14 +399,13 @@ export default function LandingChatbot({ initialOpen = false }) {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`octo-msg-in flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'
-                    }`}
+                  className={`octo-msg-in flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
                 >
                   {/* Sender Tag & Timestamp */}
                   <div className="flex items-center gap-1.5 px-1 mb-1 text-[10px] text-[#8D8471] font-medium">
                     {msg.sender === 'bot' ? (
                       <>
-                        <span className="font-bold text-[#7C5CFA]">Octo</span>
+                        <span className="font-bold text-[#7C5CFA]">octoByte AI</span>
                         {msg.category && (
                           <span className="rounded-full bg-[#EFEAFC] text-[#6244E8] px-1.5 py-0.2 text-[9px] font-bold">
                             {msg.category}
@@ -480,37 +462,38 @@ export default function LandingChatbot({ initialOpen = false }) {
                   {/* 6 Assigned Questions Grid (Rendered inside Welcome message or Fallback) */}
                   {msg.showQuestions && (
                     <div className="mt-3 w-full space-y-2">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#6E6880] px-1 flex items-center gap-1">
-                        <HelpCircle size={12} className="text-[#7C5CFA]" />
-                        Select one of 6 Assigned Questions:
-                      </p>
                       <div className="grid grid-cols-1 gap-2">
                         {ASSIGNED_QUESTIONS.map((q, idx) => {
                           const IconComponent = ICON_MAP[q.icon] || HelpCircle;
+                          const displayQuestion = friendlyQuestions[idx] || q.question;
+
                           return (
                             <button
                               key={q.id}
                               type="button"
-                              onClick={() => handleSelectQuestion(q)}
+                              onClick={() => handleSelectQuestion(q, displayQuestion)}
                               disabled={isTyping}
-                              className="group text-left flex items-start gap-3 rounded-2xl border border-[#E8E0CC] bg-white p-3 hover:border-[#7C5CFA] hover:bg-[#FAF8F2] hover:shadow-sm transition-all duration-150 cursor-pointer disabled:opacity-50"
+                              className="group text-left flex items-center gap-3 rounded-2xl border border-[#E8E0CC] bg-white p-3 hover:border-[#7C5CFA] hover:bg-[#FAF8F2] hover:shadow-sm transition-all duration-150 cursor-pointer disabled:opacity-50"
                             >
-                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#EFEAFC] text-[#7C5CFA] group-hover:bg-[#7C5CFA] group-hover:text-white transition-colors">
-                                <IconComponent size={16} />
+                              {/* Monochrome Icon Container */}
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center text-[#2F2A3E] group-hover:text-[#7C5CFA] transition-colors">
+                                <IconComponent size={18} />
                               </div>
+
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
+                                <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#FF9838]">
-                                    Q{idx + 1} &middot; {q.badge}
+                                    QUESTION {idx + 1} 
                                   </span>
                                 </div>
                                 <p className="text-xs font-bold text-[#2F2A3E] group-hover:text-[#6244E8] transition-colors leading-tight">
-                                  {q.question}
+                                  {displayQuestion}
                                 </p>
                               </div>
+
                               <ChevronRight
                                 size={15}
-                                className="text-slate-400 group-hover:text-[#7C5CFA] group-hover:translate-x-0.5 transition-all mt-1"
+                                className="text-slate-400 group-hover:text-[#7C5CFA] group-hover:translate-x-0.5 transition-all"
                               />
                             </button>
                           );
@@ -542,7 +525,7 @@ export default function LandingChatbot({ initialOpen = false }) {
                       </button>
 
                       <div className="flex items-center gap-1.5 ml-2">
-                        <span>Helpful?</span>
+                        <span>Was this helpful?</span>
                         <button
                           type="button"
                           onClick={() => handleFeedback(msg.id, 'up')}
@@ -580,7 +563,7 @@ export default function LandingChatbot({ initialOpen = false }) {
                     <Sparkles size={14} className="animate-spin" style={{ animationDuration: '3s' }} />
                   </div>
                   <div className="flex items-center gap-1.5 rounded-2xl bg-[#F9F6EE] border border-[#E8E0CC] px-4 py-3 shadow-xs">
-                    <span className="text-xs font-semibold text-[#6E6880] mr-1">Octo is thinking</span>
+                    <span className="text-xs font-semibold text-[#6E6880] mr-1">octoByte AI is thinking</span>
                     <span className="octo-dot-1 h-1.5 w-1.5 rounded-full bg-[#7C5CFA]" />
                     <span className="octo-dot-2 h-1.5 w-1.5 rounded-full bg-[#7C5CFA]" />
                     <span className="octo-dot-3 h-1.5 w-1.5 rounded-full bg-[#7C5CFA]" />
@@ -596,7 +579,7 @@ export default function LandingChatbot({ initialOpen = false }) {
               <div className="px-4 py-3 bg-[#F7F3E8] border-t border-[#E8E0CC] max-h-48 overflow-y-auto octo-chat-scroll space-y-1.5">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-bold text-[#6E6880] uppercase tracking-wide">
-                    Choose from 6 Assigned Questions
+                    Pick a question to ask
                   </span>
                   <button
                     type="button"
@@ -606,17 +589,20 @@ export default function LandingChatbot({ initialOpen = false }) {
                     Close
                   </button>
                 </div>
-                {ASSIGNED_QUESTIONS.map((q) => (
-                  <button
-                    key={q.id}
-                    type="button"
-                    onClick={() => handleSelectQuestion(q)}
-                    className="w-full text-left rounded-xl bg-white border border-[#E8E0CC] p-2 text-xs font-medium text-[#2F2A3E] hover:border-[#7C5CFA] hover:text-[#7C5CFA] transition cursor-pointer flex items-center justify-between"
-                  >
-                    <span className="truncate pr-2">{q.question}</span>
-                    <ChevronRight size={13} className="shrink-0 text-slate-400" />
-                  </button>
-                ))}
+                {ASSIGNED_QUESTIONS.map((q, idx) => {
+                  const displayQuestion = friendlyQuestions[idx] || q.question;
+                  return (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => handleSelectQuestion(q, displayQuestion)}
+                      className="w-full text-left rounded-xl bg-white border border-[#E8E0CC] p-2 text-xs font-medium text-[#2F2A3E] hover:border-[#7C5CFA] hover:text-[#7C5CFA] transition cursor-pointer flex items-center justify-between"
+                    >
+                      <span className="truncate pr-2">{displayQuestion}</span>
+                      <ChevronRight size={13} className="shrink-0 text-slate-400" />
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -626,8 +612,8 @@ export default function LandingChatbot({ initialOpen = false }) {
                 <button
                   type="button"
                   onClick={() => setShowQuestionsDrawer(!showQuestionsDrawer)}
-                  title="View Assigned Questions"
-                  aria-label="Toggle Assigned Questions drawer"
+                  title="View Popular Questions"
+                  aria-label="Toggle Questions drawer"
                   className={`p-2 rounded-xl border transition cursor-pointer ${showQuestionsDrawer
                     ? 'bg-[#EFEAFC] border-[#7C5CFA] text-[#6244E8]'
                     : 'bg-[#FAF8F2] border-[#E8E0CC] text-[#6E6880] hover:text-[#2F2A3E]'
@@ -641,7 +627,7 @@ export default function LandingChatbot({ initialOpen = false }) {
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask a question or select from assigned..."
+                  placeholder="Ask me anything..."
                   aria-label="Type your message"
                   className="flex-1 rounded-2xl bg-[#FAF8F2] border border-[#E8E0CC] px-4 py-2.5 text-xs sm:text-sm text-[#2F2A3E] placeholder-[#8D8471] focus:outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/20 transition"
                 />
@@ -656,7 +642,7 @@ export default function LandingChatbot({ initialOpen = false }) {
                 </button>
               </form>
               <div className="flex items-center justify-between mt-1.5 px-1 text-[10px] text-[#8D8471]">
-                <span>Click ? for 6 preset questions</span>
+                <span>Tap ? for popular questions</span>
                 <span>Powered by octoByte</span>
               </div>
             </footer>
@@ -666,4 +652,3 @@ export default function LandingChatbot({ initialOpen = false }) {
     </>
   );
 }
-

@@ -203,8 +203,8 @@ export default function LandingPage() {
         {/* Heading block */}
         <div className="text-center pt-8 pb-4 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tight">
-            Diagnose your gaps,<br />
-            build real skills with <span className="text-[#7C5CFA]">octoByte</span>.
+            Stop Guessing. Start Building. <br />
+            Level Up with <span className="text-[#7C5CFA]">octoByte</span>.
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
             Stop guessing what to learn. Take a short quiz that adapts to your level, get a personalised step-by-step learning plan, and build real projects that show employers you’re job-ready.
@@ -473,82 +473,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Interactive FAQ & AI Chatbot Showcase ─────── */}
-      <section className="section" id="faq">
-        <div className="landing-container">
-          <div className="sec-head">
-            <span className="kicker reveal">Interactive Assistant</span>
-            <h2 className="reveal" style={{ '--d': '.08s' }}>Common Questions? Ask Octo AI</h2>
-            <p className="sec-sub reveal" style={{ '--d': '.16s' }}>
-              Select any of the 6 core questions below for instant scientific explanations, or chat with Octo directly.
-            </p>
-          </div>
-
-          <div className="stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginTop: '36px' }}>
-            {ASSIGNED_QUESTIONS.map((q, idx) => {
-              const IconComp = {
-                BrainCircuit,
-                Network,
-                GraduationCap,
-                GitPullRequest,
-                Briefcase,
-                CheckCircle2,
-              }[q.icon] || Sparkles;
-
-              return (
-                <div
-                  key={q.id}
-                  className="stat reveal flex flex-col justify-between text-left cursor-pointer group"
-                  style={{ '--d': `${idx * 0.08}s` }}
-                  onClick={() =>
-                    window.dispatchEvent(
-                      new CustomEvent('octobyte:open-chat', {
-                        detail: { questionId: q.id },
-                      })
-                    )
-                  }
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EFEAFC] text-[#6244E8] px-3 py-1 text-xs font-bold">
-                        <IconComp size={13} />
-                        {q.badge}
-                      </span>
-                      <span className="text-xs font-extrabold text-[#FF9838]">Q{idx + 1}</span>
-                    </div>
-                    <h3 className="text-base font-bold text-[#2F2A3E] group-hover:text-[#7C5CFA] transition-colors leading-snug mb-2">
-                      {q.question}
-                    </h3>
-                    <p className="text-xs text-[#6E6880] leading-relaxed line-clamp-3">
-                      {q.answer.replace(/[*#•-]/g, '').trim()}
-                    </p>
-                  </div>
-
-                  <div className="mt-5 pt-4 border-t border-[#E8E0CC]/80 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#7C5CFA] group-hover:text-[#6244E8]">
-                      <span>Ask Octo in Chat</span>
-                      <ArrowRight size={13} />
-                    </span>
-                    <span className="text-[11px] text-[#8D8471] font-semibold">{q.tag}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-9 text-center">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('octobyte:open-chat'))}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#7C5CFA] to-[#6244E8] px-7 py-3.5 text-sm font-bold text-white hover:opacity-95 transition shadow-lg shadow-[#7C5CFA]/25 cursor-pointer"
-            >
-              <MessageSquare size={16} />
-              <span>Open AI Chatbot with 6 Assigned Questions</span>
-              <span className="text-base">💬</span>
-            </button>
-          </div>
-        </div>
-      </section>
 
       {/* ── CTA ──────────────────────────────────────── */}
       <section className="cta-wrap" id="cta">

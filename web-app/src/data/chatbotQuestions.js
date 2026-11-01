@@ -9,7 +9,7 @@ export const ASSIGNED_QUESTIONS = [
     tag: 'CAT & IRT Engine',
     question: 'How does the AI adaptive diagnostic test (CAT) work?',
     icon: 'BrainCircuit',
-    badge: 'Core Feature',
+  
     answer: `Our diagnostic test uses **Computerized Adaptive Testing (CAT)** powered by the **3-Parameter Logistic (3PL) Item Response Theory (IRT)** model — the exact same scientific standard used in the GRE and GMAT:
 
 • **Calibrates in 7–9 questions**: Instead of a tedious 50-question multiple-choice exam, octoByte re-estimates your true latent ability score (θ) after every single answer.
@@ -26,7 +26,6 @@ export const ASSIGNED_QUESTIONS = [
     tag: 'Interactive DAG',
     question: 'What is the Interactive Skill Graph and how does it map my learning?',
     icon: 'Network',
-    badge: 'Visual Learning',
     answer: `The Skill Graph is an interactive **Directed Acyclic Graph (DAG)** modeling 56 backend engineering competencies across 9 core clusters:
 
 • **9 Core Clusters**: Foundations, Web APIs, Databases, Security, Architecture & Design, Performance, Async & Distributed Systems, Quality & Observability, and DevOps.
@@ -45,7 +44,6 @@ export const ASSIGNED_QUESTIONS = [
     tag: 'Personalized Plan',
     question: 'How does octoByte generate my personalized learning roadmap?',
     icon: 'GraduationCap',
-    badge: 'Targeted Growth',
     answer: `octoByte replaces generic one-size-fits-all bootcamps with **evidence-based learning pathways**:
 
 • **Evidence-Based Sequencing**: Your diagnostic ability baseline (θ) is topologically sorted with your target role to eliminate what you already know and focus only on verified knowledge gaps.
@@ -62,7 +60,6 @@ export const ASSIGNED_QUESTIONS = [
     tag: 'Hands-on Proof',
     question: 'How does the Project Lab and GitHub code verification work?',
     icon: 'GitPullRequest',
-    badge: 'Code Verification',
     answer: `Multiple-choice tests prove memory; the **Project Lab proves engineering execution**:
 
 • **Submit Real Repositories**: Connect your public GitHub repositories implementing specific milestone briefs (e.g. Rate Limiters, RESTful microservices, Redis caching layers).
@@ -79,7 +76,6 @@ export const ASSIGNED_QUESTIONS = [
     tag: 'Hiring Benchmarks',
     question: 'How does Career Match Scoring connect me with real tech jobs?',
     icon: 'Briefcase',
-    badge: 'Job Readiness',
     answer: `Your verified ability is directly mapped against real engineering role benchmarks across Indian startups and global product companies:
 
 • **Real-Time Match Score**: See your percentage readiness for roles like *Junior Backend Developer*, *API Platform Engineer*, and *Distributed Systems Specialist*.
@@ -96,7 +92,6 @@ export const ASSIGNED_QUESTIONS = [
     tag: 'Free for Learners',
     question: 'Is octoByte free to use and how do I get started right now?',
     icon: 'CheckCircle2',
-    badge: 'Quick Onboarding',
     answer: `**Yes, octoByte is 100% free for learners and students!**
 
 Here is how you can get started in 3 simple steps:
@@ -151,7 +146,6 @@ export const INTENT_KEYWORDS = [
     customResponse: {
       answer: `Hello! 👋 I'm **Octo**, your friendly AI upskilling companion on octoByte.
 
-I can explain how our adaptive diagnostic works, walk you through the skill graph, describe personalized roadmaps, project verification, and career matching.
 
 Pick any of the assigned questions below or type your question anytime!`,
       actions: []
