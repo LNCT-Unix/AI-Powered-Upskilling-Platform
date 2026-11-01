@@ -648,7 +648,7 @@ export default function LandingChatbot({ initialOpen = false }) {
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask me anything..."
+                  placeholder="Ask about studies or octoByte..."
                   aria-label="Type your message"
                   className="flex-1 rounded-2xl bg-[#FAF8F2] border border-[#E8E0CC] px-4 py-2.5 text-xs sm:text-sm text-[#2F2A3E] placeholder-[#8D8471] focus:outline-none focus:border-[#7C5CFA] focus:ring-2 focus:ring-[#7C5CFA]/20 transition"
                 />
