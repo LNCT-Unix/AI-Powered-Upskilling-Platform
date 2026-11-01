@@ -7,6 +7,7 @@ import { useAuth } from './hooks/useAuth';
 import { isNativeMobile } from './services/mobileStorage';
 import { initializeMobileDeepLinks } from './services/mobileAuth';
 import SplashScreenOverlay from './components/mobile/SplashScreenOverlay';
+import { PostLoginTransitionProvider } from './context/PostLoginTransitionContext';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
@@ -93,8 +94,10 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <MobileBridge />
-        <RouterProvider router={router} />
+        <PostLoginTransitionProvider>
+          <MobileBridge />
+          <RouterProvider router={router} />
+        </PostLoginTransitionProvider>
       </AuthProvider>
     </LanguageProvider>
   );

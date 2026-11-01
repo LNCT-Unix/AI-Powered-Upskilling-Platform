@@ -5,6 +5,8 @@ import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
 import UpdateProfileModal from '../profile/UpdateProfileModal';
+import OctoMascot from '../common/OctoMascot';
+import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
 
 export default function DashboardShell() {
   const [mobileOpen, setMobileOpen]               = useState(false);
@@ -17,6 +19,7 @@ export default function DashboardShell() {
     return false;
   });
   const { user, logout } = useAuth();
+  const { isTransitioning, hasLanded } = usePostLoginTransition();
   const navigate = useNavigate();
 
   const toggleSidebar = () => {
@@ -107,14 +110,17 @@ export default function DashboardShell() {
               {isSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
             </button>
 
-            {/* Mobile logo when sidebar hidden */}
-            <Link to="/" className="flex items-center gap-2 lg:hidden">
-              <img
-                src="/octobyte-logo.png"
-                alt="octoByte Logo"
-                className="h-7 w-auto max-w-[42px] object-contain"
-              />
-              <span className="text-sm font-black text-slate-900">
+            {/* Octobyte Logo with Mascot in Top Navbar */}
+            <Link to="/dashboard" className="flex items-center gap-2.5 group select-none">
+              <div
+                id="navbar-octobyte-mascot-target"
+                className={`navbar-octo-target relative flex items-center justify-center shrink-0 w-8 h-8 sm:w-9 sm:h-9 transition-all duration-300 ${
+                  isTransitioning && !hasLanded ? 'opacity-0 scale-75' : 'opacity-100 scale-100 navbar-mascot-settled'
+                }`}
+              >
+                <OctoMascot size={32} idPrefix="shell-nav-octo" animated={true} withBook={true} />
+              </div>
+              <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none">
                 <span className="text-[#2F2A3E]">octo</span>
                 <span className="text-[#7C5CFA]">Byte</span>
               </span>
