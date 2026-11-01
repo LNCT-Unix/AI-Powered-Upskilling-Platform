@@ -1,29 +1,30 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import PostLoginTransitionOverlay from '../components/auth/PostLoginTransitionOverlay';
+import { PostLoginTransitionContext } from './postLoginTransitionContextInstance';
 import { router } from '../router';
-
-const PostLoginTransitionContext = createContext(null);
 
 export function PostLoginTransitionProvider({ children }) {
   const [transitionState, setTransitionState] = useState({
     active: false,
     initialRect: null,
     hasLanded: false,
+    email: '',
   });
 
-  const startPostLoginTransition = useCallback(({ initialRect, targetUrl = '/dashboard' }) => {
-    // Check prefers-reduced-motion
+  const startPostLoginTransition = useCallback(({ initialRect, targetUrl = '/dashboard', email = '' }) => {
+    // Respect prefers-reduced-motion: skip animation immediately
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setTransitionState({ active: false, initialRect: null, hasLanded: true });
+      setTransitionState({ active: false, initialRect: null, hasLanded: true, email: '' });
       router.navigate(targetUrl, { replace: true });
       return;
     }
 
-    // 1. Immediately activate transition state with measured mascot rect
+    // 1. Immediately activate transition state
     setTransitionState({
       active: true,
       initialRect,
       hasLanded: false,
+      email,
     });
 
     // 2. Immediately navigate so dashboard is mounted & rendered behind the sliding doors
@@ -39,6 +40,7 @@ export function PostLoginTransitionProvider({ children }) {
       active: false,
       initialRect: null,
       hasLanded: true,
+      email: '',
     });
   }, []);
 
@@ -57,22 +59,11 @@ export function PostLoginTransitionProvider({ children }) {
       {transitionState.active && (
         <PostLoginTransitionOverlay
           initialRect={transitionState.initialRect}
+          email={transitionState.email}
           onMascotLanded={handleMascotLanded}
           onComplete={handleTransitionComplete}
         />
       )}
     </PostLoginTransitionContext.Provider>
   );
-}
-
-export function usePostLoginTransition() {
-  const context = useContext(PostLoginTransitionContext);
-  if (!context) {
-    return {
-      isTransitioning: false,
-      hasLanded: true,
-      startPostLoginTransition: () => {},
-    };
-  }
-  return context;
 }
