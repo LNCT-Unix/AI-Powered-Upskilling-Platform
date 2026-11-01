@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { useAuth } from '../../hooks/useAuth';
 import UpdateProfileModal from '../profile/UpdateProfileModal';
-import OctoMascot from '../common/OctoMascot';
-import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
 
 export default function DashboardShell() {
   const [mobileOpen, setMobileOpen]               = useState(false);
@@ -19,7 +17,6 @@ export default function DashboardShell() {
     return false;
   });
   const { user, logout } = useAuth();
-  const { isTransitioning, hasLanded } = usePostLoginTransition();
   const navigate = useNavigate();
 
   const toggleSidebar = () => {
@@ -38,8 +35,11 @@ export default function DashboardShell() {
   };
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    try {
+      await logout();
+    } finally {
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
@@ -88,7 +88,7 @@ export default function DashboardShell() {
       <div className="min-w-0 flex-1 flex flex-col">
         {/* ── Top bar ── matching Landing Page aesthetic ─────── */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E8E0CC] px-4 py-2.5 sm:py-3 sm:px-8 gap-4 bg-[#F7F3E8]/95 backdrop-blur-md pt-[max(env(safe-area-inset-top),0.625rem)]">
-          {/* Left: mobile hamburger + desktop sidebar toggle + logo on mobile */}
+          {/* Left: mobile hamburger */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
               type="button"
@@ -98,33 +98,6 @@ export default function DashboardShell() {
             >
               <Menu size={20} />
             </button>
-
-            {/* Desktop toggle button in top bar */}
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              className="hidden lg:flex items-center justify-center rounded-xl p-2 text-slate-500 hover:bg-white hover:text-[#7C5CFA] border border-transparent hover:border-[#E8E0CC] transition shadow-2xs cursor-pointer"
-              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            </button>
-
-            {/* Octobyte Logo with Mascot in Top Navbar */}
-            <Link to="/dashboard" className="flex items-center gap-2.5 group select-none">
-              <div
-                id="navbar-octobyte-mascot-target"
-                className={`navbar-octo-target relative flex items-center justify-center shrink-0 w-8 h-8 sm:w-9 sm:h-9 transition-all duration-300 ${
-                  isTransitioning && !hasLanded ? 'opacity-0 scale-75' : 'opacity-100 scale-100 navbar-mascot-settled'
-                }`}
-              >
-                <OctoMascot size={32} idPrefix="shell-nav-octo" animated={true} withBook={true} />
-              </div>
-              <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-none">
-                <span className="text-[#2F2A3E]">octo</span>
-                <span className="text-[#7C5CFA]">Byte</span>
-              </span>
-            </Link>
           </div>
 
           {/* Right: Auth actions / Logout */}

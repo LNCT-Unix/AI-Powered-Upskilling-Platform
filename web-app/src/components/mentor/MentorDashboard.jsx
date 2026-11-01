@@ -12,7 +12,7 @@ import UserAvatar from '../ui/UserAvatar';
 import { useAuth } from '../../hooks/useAuth';
 import { mentorService } from '../../services/mentorService';
 import OctoMascot from '../common/OctoMascot';
-import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
+import { usePostLoginTransition } from '../../hooks/usePostLoginTransition';
 
 const SECTION_LABELS = {
   '/mentor': 'Overview',
@@ -196,7 +196,11 @@ export default function MentorDashboard() {
               <div
                 id="mentor-navbar-mascot-target"
                 className={`navbar-octo-target relative flex items-center justify-center shrink-0 w-8 h-8 transition-all duration-300 ${
-                  isTransitioning && !hasLanded ? 'opacity-0 scale-75' : 'opacity-100 scale-100 navbar-mascot-settled'
+                  isTransitioning && !hasLanded
+                    ? 'opacity-0 scale-75 pointer-events-none'
+                    : hasLanded
+                    ? 'opacity-100 scale-100 navbar-mascot-settled'
+                    : 'opacity-100 scale-100'
                 }`}
               >
                 <OctoMascot size={28} idPrefix="mentor-nav-octo" animated={true} withBook={true} />

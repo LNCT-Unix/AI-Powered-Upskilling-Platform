@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Map, ClipboardCheck, History, FlaskConical,
-  BarChart2, Briefcase, User, Settings, Sun, Moon, LogOut,
+  BarChart2, Briefcase, User, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -93,25 +93,6 @@ export default function Sidebar({
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'light';
-    }
-    return 'light';
-  });
-
-  const toggleTheme = () => {
-    const nextTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(nextTheme);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('theme', nextTheme);
-      if (nextTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  };
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -142,8 +123,11 @@ export default function Sidebar({
   const handleLogout = async () => {
     setIsProfileMenuOpen(false);
     if (onClose) onClose();
-    await logout();
-    navigate('/');
+    try {
+      await logout();
+    } finally {
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
@@ -161,6 +145,7 @@ export default function Sidebar({
           className={`flex items-center hover:opacity-85 transition group ${
             isCollapsed ? 'justify-center p-1' : 'gap-3 min-w-0'
           }`}
+          id="navbar-octobyte-mascot-target"
           title="octoByte AI Platform"
         >
           <img
@@ -295,25 +280,6 @@ export default function Sidebar({
                   <span>Account Settings</span>
                 </button>
 
-                {/* Light / Dark Mode Toggle */}
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={toggleTheme}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 transition-colors cursor-pointer"
-                >
-                  {theme === 'dark' ? (
-                    <>
-                      <Moon size={16} className="text-slate-700 shrink-0 stroke-[1.8]" />
-                      <span>Dark mode</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sun size={16} className="text-slate-700 shrink-0 stroke-[1.8]" />
-                      <span>Light mode</span>
-                    </>
-                  )}
-                </button>
               </div>
 
               <div className="border-t border-slate-100" />
