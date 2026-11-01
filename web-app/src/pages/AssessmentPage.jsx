@@ -6,10 +6,8 @@ import {
   AlertCircle,
   RotateCcw,
   Sparkles,
-  Layers,
   Loader2,
   Compass,
-  Zap,
   ChevronDown,
   Server,
   Check,
@@ -17,10 +15,9 @@ import {
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
 import { assessmentService, BACKEND_TRACK_ID } from '../services/assessmentService';
 import { assistantService } from '../services/assistantService';
-import VoiceCompanionWidget, { stopCurrentVoiceAudio } from '../components/feature/VoiceCompanionWidget';
+import { speakFeedback, stopSpeech } from '../utils/speechUtils';
 import { triggerHaptic } from '../services/hapticsService';
 import './AssessmentReport.css';
 
@@ -69,8 +66,6 @@ export default function AssessmentPage() {
   const [error, setError] = useState(null);
   const [expandedQuestions, setExpandedQuestions] = useState({});
   const [questionFilter, setQuestionFilter] = useState('all');
-  const [voiceFeedback, setVoiceFeedback] = useState(null);
-  const [voiceLoading, setVoiceLoading] = useState(false);
   const voiceReqSeqRef = useRef(0);
 
   const topicRows = useMemo(() => {
@@ -237,7 +232,7 @@ export default function AssessmentPage() {
   // Ensure audio playback resources are cleaned up on unmount
   useEffect(() => {
     return () => {
-      stopCurrentVoiceAudio();
+      stopSpeech();
     };
   }, []);
 
@@ -399,26 +394,20 @@ export default function AssessmentPage() {
       setAssessmentState(updatedState);
       setSelectedOption(null);
 
-      // Immediately trigger AI Voice Companion with Spring Boot evaluated answer
+      // Immediately trigger silent AI text feedback and speak aloud in a female voice (no UI)
       if (updatedState?.lastEvaluation) {
         const currentSeq = ++voiceReqSeqRef.current;
-        setVoiceLoading(true);
-        setVoiceFeedback(null);
-        stopCurrentVoiceAudio();
+        stopSpeech();
 
         assistantService
           .getVoiceFeedback(updatedState.lastEvaluation)
           .then((feedback) => {
-            if (voiceReqSeqRef.current === currentSeq) {
-              setVoiceFeedback(feedback);
-              setVoiceLoading(false);
+            if (voiceReqSeqRef.current === currentSeq && feedback?.feedback?.speechText) {
+              speakFeedback(feedback.feedback.speechText);
             }
           })
           .catch((voiceErr) => {
             console.warn('Voice companion feedback skipped:', voiceErr);
-            if (voiceReqSeqRef.current === currentSeq) {
-              setVoiceLoading(false);
-            }
           });
       }
 
@@ -469,9 +458,7 @@ export default function AssessmentPage() {
   };
 
   const handleRetest = () => {
-    stopCurrentVoiceAudio();
-    setVoiceFeedback(null);
-    setVoiceLoading(false);
+    stopSpeech();
     sessionStorage.removeItem(ASSESSMENT_ID_KEY);
     localStorage.removeItem(ASSESSMENT_RESULT_KEY);
     setAssessmentState(null);
@@ -573,19 +560,6 @@ export default function AssessmentPage() {
             <AlertCircle size={16} className="text-rose-600 shrink-0" />
             <span>{error}</span>
           </div>
-        )}
-
-        {/* Final question voice companion feedback */}
-        {(voiceLoading || voiceFeedback) && (
-          <VoiceCompanionWidget
-            voiceFeedback={voiceFeedback}
-            loading={voiceLoading}
-            onClose={() => {
-              stopCurrentVoiceAudio();
-              setVoiceFeedback(null);
-              setVoiceLoading(false);
-            }}
-          />
         )}
 
         <h1>Initial skill report</h1>
@@ -1190,19 +1164,6 @@ export default function AssessmentPage() {
               />
             </div>
           </Card>
-
-          {/* AI Voice Companion Interactive Feedback Widget */}
-          {(voiceLoading || voiceFeedback) && (
-            <VoiceCompanionWidget
-              voiceFeedback={voiceFeedback}
-              loading={voiceLoading}
-              onClose={() => {
-                stopCurrentVoiceAudio();
-                setVoiceFeedback(null);
-                setVoiceLoading(false);
-              }}
-            />
-          )}
 
           {/* Active Dynamic Question Card */}
           <Card className="space-y-6">

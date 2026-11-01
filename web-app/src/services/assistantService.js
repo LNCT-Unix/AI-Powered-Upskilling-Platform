@@ -1,4 +1,4 @@
-import { apiClient, getApiBaseUrl } from './api';
+import { apiClient } from './api';
 
 const ASSISTANT_BASE_URL = (
   import.meta.env.VITE_ASSISTANT_API_URL || 'http://localhost:3002'
@@ -29,9 +29,8 @@ export const assistantService = {
   },
 
   /**
-   * Request real-time AI Voice Companion feedback for an assessment answer.
+   * Request real-time text feedback for an assessment answer.
    * Strictly communicates through the authenticated Spring Boot gateway.
-   * No direct client fallback to prevent bypassing internal service authentication.
    *
    * @param {Object} params
    * @param {string} params.assessmentId
@@ -44,28 +43,12 @@ export const assistantService = {
    * @param {string} params.userAnswer
    * @param {boolean} params.isCorrect
    * @param {string} [params.difficultyLevel]
-   * @returns {Promise<{isCorrect: boolean, feedback: {reaction: string, conceptReinforcement: string, bonusTip: string, speechText: string}, audio: {available: boolean, url: string}}>}
+   * @returns {Promise<{isCorrect: boolean, feedback: {reaction: string, conceptReinforcement: string, bonusTip: string, speechText: string}}>}
    */
   async getVoiceFeedback(params) {
     return apiClient('/api/v1/assessments/voice-feedback', {
       method: 'POST',
       body: params,
     });
-  },
-
-  /**
-   * Resolves audio URL for browser audio streaming.
-   * Relative paths are routed through the Spring Boot gateway.
-   *
-   * @param {string} relativeUrl
-   * @returns {string}
-   */
-  getAudioUrl(relativeUrl) {
-    if (!relativeUrl) return '';
-    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-      return relativeUrl;
-    }
-    const gatewayBaseUrl = getApiBaseUrl();
-    return `${gatewayBaseUrl}${relativeUrl.startsWith('/') ? '' : '/'}${relativeUrl}`;
   },
 };
