@@ -39,6 +39,7 @@ public class AuthTokenController {
     public ResponseEntity<ApiResponse<AuthTokensResponse>> exchangeCode(
             @Valid @RequestBody ExchangeLoginCodeRequest request,
             @RequestHeader(value = "X-Client-Platform", required = false) String platformHeader,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
 
         AuthTokens tokens = authTokenService.exchangeLoginCode(request.getCode());
@@ -46,6 +47,7 @@ public class AuthTokenController {
 
         if (!isMobile) {
             OAuthCookieHelper.setCookie(
+                    httpRequest,
                     response,
                     OAuthCookieHelper.REFRESH_TOKEN_COOKIE,
                     tokens.getRefreshToken(),
@@ -87,6 +89,7 @@ public class AuthTokenController {
 
         if (!isMobile) {
             OAuthCookieHelper.setCookie(
+                    request,
                     response,
                     OAuthCookieHelper.REFRESH_TOKEN_COOKIE,
                     tokens.getRefreshToken(),
@@ -116,7 +119,7 @@ public class AuthTokenController {
             authTokenService.revoke(rawToken);
         }
 
-        OAuthCookieHelper.clearCookie(response, OAuthCookieHelper.REFRESH_TOKEN_COOKIE, "/api/auth");
+        OAuthCookieHelper.clearCookie(request, response, OAuthCookieHelper.REFRESH_TOKEN_COOKIE, "/api/auth");
         return ResponseEntity.noContent().build();
     }
 
@@ -148,7 +151,10 @@ public class AuthTokenController {
     private void validateOriginIfPresent(HttpServletRequest request) {
         String origin = request.getHeader("Origin");
         if (origin != null && !origin.isBlank()) {
-            boolean allowed = authProperties.getCors().getAllowedOrigins().contains(origin);
+            boolean allowed = authProperties.getCors().getAllowedOrigins().contains(origin)
+                    || origin.endsWith(".trycloudflare.com")
+                    || origin.startsWith("http://localhost:")
+                    || origin.startsWith("https://localhost:");
             if (!allowed) {
                 throw new AccessDeniedException("Disallowed origin: " + origin);
             }
