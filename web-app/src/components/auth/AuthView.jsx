@@ -12,6 +12,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { isNativeMobile } from '../../services/mobileStorage';
 import MentorRegistrationForm from './MentorRegistrationForm';
 import './AuthPage.css';
 
@@ -277,7 +278,7 @@ export default function AuthView({ initialMode = 'login' }) {
         <span className="auth-bubble" style={{ '--x': '84%', '--s': '10px', '--t': '10s', '--d': '5.1s' }}></span>
         <span className="auth-bubble" style={{ '--x': '93%', '--s': '12px', '--t': '11.5s', '--d': '0.8s' }}></span>
 
-        <Link to="/" className="art-head rise" style={{ '--i': 0, textDecoration: 'none' }} aria-label="Octobyte Home">
+        <Link to={isNativeMobile() ? "/login" : "/"} className="art-head rise" style={{ '--i': 0, textDecoration: 'none' }} aria-label="Octobyte Home">
           <svg viewBox="0 0 64 64" aria-hidden="true">
             <ellipse cx="32" cy="25" rx="19" ry="18" fill="#B9A5FF" />
             <ellipse cx="25" cy="17" rx="7" ry="4.5" fill="#fff" opacity="0.25" transform="rotate(-18 25 17)" />
@@ -326,9 +327,11 @@ export default function AuthView({ initialMode = 'login' }) {
 
       {/* ================= RIGHT · AUTH PANEL ================= */}
       <main className="auth-panel">
-        <Link className="auth-back" to="/">
-          &larr; Back to site
-        </Link>
+        {!isNativeMobile() && (
+          <Link className="auth-back" to="/">
+            &larr; Back to site
+          </Link>
+        )}
 
         <div className="form-wrap">
           <header className="panel-head rise" style={{ '--i': 0 }}>
