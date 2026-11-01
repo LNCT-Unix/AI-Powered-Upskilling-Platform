@@ -12,28 +12,32 @@
   background: transparent;
 }
 
-/* ── Split Doors ───────────────────────────────────────────── */
-.post-login-door {
+.post-login-split-wrap {
   position: absolute;
-  top: 0;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Split Doors (Desktop: Horizontal Sliding Doors) ─────────── */
+.post-login-door {
+  position: relative;
   height: 100%;
   will-change: transform;
 }
 
 .post-login-door-left {
-  left: 0;
-  width: 51.5%;
-  background: linear-gradient(160deg, #33277A 0%, #3D2C86 42%, #6244E8 100%);
-  box-shadow: 15px 0 45px rgba(20, 12, 52, 0.45);
-  animation: postLoginDoorSlideLeft 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  box-shadow: 20px 0 50px rgba(20, 12, 52, 0.45);
+  animation: postLoginDoorSlideLeft 1.35s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  z-index: 2;
 }
 
 .post-login-door-right {
-  right: 0;
-  width: 48.5%;
-  background: #F7F3E8;
-  box-shadow: -15px 0 45px rgba(47, 42, 62, 0.12);
-  animation: postLoginDoorSlideRight 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  box-shadow: -20px 0 50px rgba(47, 42, 62, 0.15);
+  animation: postLoginDoorSlideRight 1.35s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  z-index: 2;
 }
 
 @keyframes postLoginDoorSlideLeft {
@@ -54,24 +58,21 @@
   }
 }
 
-/* ── Mobile Stacked Layout (<= 880px) ───────────────────────── */
+/* ── Mobile Stacked Layout (<= 880px: Vertical Sliding Doors) ── */
 @media (max-width: 880px) {
+  .post-login-split-wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
   .post-login-door-left {
-    width: 100%;
-    height: 38%;
-    top: 0;
-    left: 0;
-    box-shadow: 0 15px 35px rgba(20, 12, 52, 0.45);
-    animation: postLoginDoorSlideUp 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    box-shadow: 0 20px 45px rgba(20, 12, 52, 0.45);
+    animation: postLoginDoorSlideUp 1.35s cubic-bezier(0.65, 0, 0.35, 1) forwards;
   }
 
   .post-login-door-right {
-    width: 100%;
-    height: 62%;
-    top: 38%;
-    right: 0;
-    box-shadow: 0 -15px 35px rgba(47, 42, 62, 0.12);
-    animation: postLoginDoorSlideDown 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    box-shadow: 0 -20px 45px rgba(47, 42, 62, 0.15);
+    animation: postLoginDoorSlideDown 1.35s cubic-bezier(0.65, 0, 0.35, 1) forwards;
   }
 
   @keyframes postLoginDoorSlideUp {
@@ -93,14 +94,14 @@
   }
 }
 
-/* ── Flying Octopus Mascot ─────────────────────────────────── */
+/* ── Detached Flying Octopus Mascot ─────────────────────────── */
 .post-login-flying-mascot {
   position: fixed;
   z-index: 100000;
   pointer-events: none;
   transform-origin: center center;
   will-change: transform, opacity;
-  animation: postLoginMascotFly 1.15s cubic-bezier(0.25, 0.9, 0.35, 1) 0.14s forwards;
+  animation: postLoginMascotFly 1.16s cubic-bezier(0.25, 0.9, 0.35, 1) 0.14s forwards;
 }
 
 @keyframes postLoginMascotFly {
@@ -108,41 +109,47 @@
     transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
     opacity: 1;
   }
-  25% {
-    /* Slight upward arc & joyful lean */
-    transform: translate3d(calc(var(--dx) * 0.28), calc(var(--dy) * 0.22 - 24px), 0)
-               scale(calc(1 - (1 - var(--target-scale)) * 0.28))
-               rotate(-4.5deg);
+  20% {
+    /* Upward arc and slight lean */
+    transform: translate3d(calc(var(--dx) * 0.20), calc(var(--dy) * 0.15 - 24px), 0)
+               scale(calc(1 - (1 - var(--target-scale)) * 0.20))
+               rotate(-4deg);
+    opacity: 1;
   }
-  60% {
-    transform: translate3d(calc(var(--dx) * 0.72), calc(var(--dy) * 0.68 - 10px), 0)
-               scale(calc(1 - (1 - var(--target-scale)) * 0.72))
+  55% {
+    /* Mid flight */
+    transform: translate3d(calc(var(--dx) * 0.60), calc(var(--dy) * 0.55 - 12px), 0)
+               scale(calc(1 - (1 - var(--target-scale)) * 0.60))
                rotate(3deg);
+    opacity: 1;
   }
   85% {
-    /* Touchdown point */
-    transform: translate3d(var(--dx), var(--dy), 0)
-               scale(var(--target-scale))
-               rotate(0deg);
+    /* Approaching navbar target */
+    transform: translate3d(calc(var(--dx) * 0.92), calc(var(--dy) * 0.90 - 2px), 0)
+               scale(calc(1 - (1 - var(--target-scale)) * 0.92))
+               rotate(-1deg);
+    opacity: 1;
   }
-  91% {
-    /* Gentle bounce overshoot */
-    transform: translate3d(var(--dx), calc(var(--dy) - 6px), 0)
-               scale(calc(var(--target-scale) * 1.15))
-               rotate(-2deg);
-  }
-  96% {
-    /* Rebound */
-    transform: translate3d(var(--dx), calc(var(--dy) + 2px), 0)
-               scale(calc(var(--target-scale) * 0.96))
-               rotate(1deg);
-  }
-  100% {
-    /* Settled perfectly in navbar */
+  92% {
+    /* Touchdown */
     transform: translate3d(var(--dx), var(--dy), 0)
                scale(var(--target-scale))
                rotate(0deg);
     opacity: 1;
+  }
+  96% {
+    /* Gentle bounce overshoot */
+    transform: translate3d(var(--dx), calc(var(--dy) - 4px), 0)
+               scale(calc(var(--target-scale) * 1.14))
+               rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    /* Settled perfectly */
+    transform: translate3d(var(--dx), var(--dy), 0)
+               scale(var(--target-scale))
+               rotate(0deg);
+    opacity: 0;
   }
 }
 
@@ -154,10 +161,10 @@
 @keyframes navbarMascotSettle {
   0% {
     transform: scale(0.85) translateY(2px);
-    opacity: 0.7;
+    opacity: 0.8;
   }
   60% {
-    transform: scale(1.12) translateY(-2px);
+    transform: scale(1.15) translateY(-2px);
     opacity: 1;
   }
   100% {
