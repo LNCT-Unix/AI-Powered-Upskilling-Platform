@@ -28,24 +28,60 @@ public final class OAuthCookieHelper {
         return Optional.empty();
     }
 
+    public static boolean isSecureRequest(HttpServletRequest request) {
+        if (request == null) {
+            return false;
+        }
+        if (request.isSecure()) {
+            return true;
+        }
+        String proto = request.getHeader("X-Forwarded-Proto");
+        if ("https".equalsIgnoreCase(proto)) {
+            return true;
+        }
+        String ssl = request.getHeader("X-Forwarded-Ssl");
+        if ("on".equalsIgnoreCase(ssl)) {
+            return true;
+        }
+        String origin = request.getHeader("Origin");
+        if (origin != null && origin.startsWith("https://")) {
+            return true;
+        }
+        String referer = request.getHeader("Referer");
+        if (referer != null && referer.startsWith("https://")) {
+            return true;
+        }
+        return false;
+    }
+
     public static void clearCookie(HttpServletResponse response, String name, String path) {
+        clearCookie(null, response, name, path);
+    }
+
+    public static void clearCookie(HttpServletRequest request, HttpServletResponse response, String name, String path) {
+        boolean isSecure = isSecureRequest(request);
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .path(path)
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
+                .secure(isSecure)
+                .sameSite(isSecure ? "None" : "Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     public static void setCookie(HttpServletResponse response, String name, String value, String path, long maxAgeSeconds) {
+        setCookie(null, response, name, value, path, maxAgeSeconds);
+    }
+
+    public static void setCookie(HttpServletRequest request, HttpServletResponse response, String name, String value, String path, long maxAgeSeconds) {
+        boolean isSecure = isSecureRequest(request);
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .path(path)
                 .maxAge(maxAgeSeconds)
                 .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
+                .secure(isSecure)
+                .sameSite(isSecure ? "None" : "Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
