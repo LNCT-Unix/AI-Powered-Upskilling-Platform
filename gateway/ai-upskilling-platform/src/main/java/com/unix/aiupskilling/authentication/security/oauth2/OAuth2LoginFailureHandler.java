@@ -39,7 +39,7 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
         String delimiter = errorUrl.contains("?") ? "&" : "?";
         String targetUrl = errorUrl + delimiter + "error=" + errorCode;
 
-        OAuthCookieHelper.clearCookie(response, OAuthCookieHelper.LINK_INTENT_COOKIE, "/");
+        OAuthCookieHelper.clearCookie(request, response, OAuthCookieHelper.LINK_INTENT_COOKIE, "/");
 
         HttpSession session = request.getSession(false);
         if (session != null) {

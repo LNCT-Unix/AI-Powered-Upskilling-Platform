@@ -43,7 +43,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String delimiter = callbackUrl.contains("?") ? "&" : "?";
         String targetUrl = callbackUrl + delimiter + "code=" + code;
 
-        OAuthCookieHelper.clearCookie(response, OAuthCookieHelper.LINK_INTENT_COOKIE, "/");
+        OAuthCookieHelper.clearCookie(request, response, OAuthCookieHelper.LINK_INTENT_COOKIE, "/");
 
         HttpSession session = request.getSession(false);
         if (session != null) {
