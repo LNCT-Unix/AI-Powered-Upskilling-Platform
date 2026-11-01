@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { usePostLoginTransition } from '../../context/PostLoginTransitionContext';
+import { usePostLoginTransition } from '../../hooks/usePostLoginTransition';
 import OctoMascot from '../common/OctoMascot';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -39,7 +39,13 @@ export default function AuthView({ initialMode = 'login' }) {
   const [showSignupPass, setShowSignupPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const mascotRef = useRef(null);
+  const isSubmittingLoginRef = useRef(false);
   const { startPostLoginTransition, isTransitioning } = usePostLoginTransition();
+
+  // Preload dashboard bundle so it is already mounted & rendered when sliding doors part open
+  useEffect(() => {
+    import('../../pages/DashboardPage').catch(() => {});
+  }, []);
 
   // Form states
   const [loginEmail, setLoginEmail] = useState(() => localStorage.getItem('skillpath_remember_email') || '');
@@ -63,9 +69,9 @@ export default function AuthView({ initialMode = 'login' }) {
   const defaultDestination = '/dashboard';
   const destination = location.state?.from?.pathname || defaultDestination;
 
-  // If already logged in, redirect (skip if post-login transition is active)
+  // If already logged in, redirect (skip if logging in right now or transition is active)
   useEffect(() => {
-    if (isAuthenticated && !isTransitioning) {
+    if (isAuthenticated && !isTransitioning && !isSubmittingLoginRef.current) {
       const dest = user?.role === 'MENTOR' ? '/mentor' : destination;
       navigate(dest, { replace: true });
     }
@@ -128,6 +134,7 @@ export default function AuthView({ initialMode = 'login' }) {
       return;
     }
 
+    isSubmittingLoginRef.current = true;
     setLoading(true);
     try {
       if (rememberMe) {
@@ -148,11 +155,14 @@ export default function AuthView({ initialMode = 'login' }) {
         startPostLoginTransition({
           initialRect: mascotRect,
           targetUrl,
+          email,
         });
       } else {
+        isSubmittingLoginRef.current = false;
         setError(res?.error || 'Invalid email or password. Please try again.');
       }
     } catch (err) {
+      isSubmittingLoginRef.current = false;
       setError(err?.message || 'Failed to sign in. Please check your credentials.');
     } finally {
       setLoading(false);
