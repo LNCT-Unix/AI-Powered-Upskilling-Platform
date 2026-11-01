@@ -21,6 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { ASSIGNED_QUESTIONS, INTENT_KEYWORDS } from '../../data/chatbotQuestions';
+import { assistantService } from '../../services/assistantService';
 import './LandingChatbot.css';
 
 const ICON_MAP = {
@@ -45,6 +46,7 @@ export default function LandingChatbot({ initialOpen = false }) {
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [showQuestionsDrawer, setShowQuestionsDrawer] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
 
   // Friendly user-focused phrasing matching the reference image layout
   const friendlyQuestions = [
@@ -133,8 +135,8 @@ export default function LandingChatbot({ initialOpen = false }) {
     }
   }, [isOpen, messages, isTyping]);
 
-  // Handle custom typed user input
-  const handleSendMessage = (e) => {
+  // Handle custom typed user input with live Groq LLM
+  const handleSendMessage = async (e) => {
     e?.preventDefault();
     const text = inputValue.trim();
     if (!text || isTyping) return;
@@ -150,10 +152,28 @@ export default function LandingChatbot({ initialOpen = false }) {
     setInputValue('');
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      // Call live LLM backend (Groq Octo)
+      const res = await assistantService.sendChatMessage(text, conversationId);
+      if (res?.conversationId) {
+        setConversationId(res.conversationId);
+      }
+
+      const botResponse = {
+        id: 'bot-' + Date.now(),
+        sender: 'bot',
+        text: res?.message?.content || "I'm here to help you navigate octoByte!",
+        timestamp: getNowTime(),
+        feedback: null,
+      };
+
+      setMessages((prev) => [...prev, botResponse]);
+    } catch (err) {
+      console.warn('Live LLM assistant call failed, falling back to local knowledge:', err);
+
+      // Local keyword matching fallback if backend service is unreachable
       const lower = text.toLowerCase();
       let matchedCustom = null;
-
       let matchedQuestion = ASSIGNED_QUESTIONS.find(
         (q) =>
           lower.includes(q.shortTitle.toLowerCase()) ||
@@ -175,9 +195,9 @@ export default function LandingChatbot({ initialOpen = false }) {
         }
       }
 
-      let botResponse = {};
+      let fallbackResponse;
       if (matchedQuestion) {
-        botResponse = {
+        fallbackResponse = {
           id: 'bot-' + Date.now(),
           sender: 'bot',
           text: matchedQuestion.answer,
@@ -188,7 +208,7 @@ export default function LandingChatbot({ initialOpen = false }) {
           relatedQuestionId: matchedQuestion.id,
         };
       } else if (matchedCustom) {
-        botResponse = {
+        fallbackResponse = {
           id: 'bot-' + Date.now(),
           sender: 'bot',
           text: matchedCustom.answer,
@@ -197,7 +217,7 @@ export default function LandingChatbot({ initialOpen = false }) {
           feedback: null,
         };
       } else {
-        botResponse = {
+        fallbackResponse = {
           id: 'bot-' + Date.now(),
           sender: 'bot',
           text: `I'd love to help you learn all about **octoByte**! You can ask me anything about our skill tests, learning paths, or career matching.\n\nHere are 6 common questions to help you explore:`,
@@ -211,9 +231,10 @@ export default function LandingChatbot({ initialOpen = false }) {
         };
       }
 
-      setMessages((prev) => [...prev, botResponse]);
+      setMessages((prev) => [...prev, fallbackResponse]);
+    } finally {
       setIsTyping(false);
-    }, 650);
+    }
   };
 
   // Copy text to clipboard
