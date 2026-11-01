@@ -10,6 +10,7 @@ import com.unix.aiupskilling.authentication.security.oauth2.OAuthCookieHelper;
 import com.unix.aiupskilling.authentication.service.OAuthLinkIntentService;
 import com.unix.aiupskilling.shared.dto.ApiResponse;
 import com.unix.aiupskilling.user.User;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,7 @@ public class AuthLinkController {
             @PathVariable String provider,
             @RequestBody(required = false) LinkIntentRequest request,
             Authentication authentication,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
 
         if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
@@ -62,6 +64,7 @@ public class AuthLinkController {
         String rawIntent = oauthLinkIntentService.createIntent(user.getId(), oAuthProvider);
 
         OAuthCookieHelper.setCookie(
+                httpRequest,
                 response,
                 OAuthCookieHelper.LINK_INTENT_COOKIE,
                 rawIntent,
@@ -75,7 +78,6 @@ public class AuthLinkController {
                 .expiresInSeconds(300)
                 .build();
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(data, "Link intent created"));
+        return ResponseEntity.ok(ApiResponse.ok(data, "OAuth link intent registered"));
     }
 }
