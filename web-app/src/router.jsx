@@ -10,6 +10,28 @@ const pageFallback = (
   </div>
 );
 
+import { isNativeMobile } from './services/mobileStorage';
+import { useAuth } from './hooks/useAuth';
+
+const LandingPageLazy = lazy(() => import('./pages/LandingPage'));
+
+function RootRoute() {
+  if (isNativeMobile()) {
+    return <MobileRootRedirect />;
+  }
+  return (
+    <Suspense fallback={pageFallback}>
+      <LandingPageLazy />
+    </Suspense>
+  );
+}
+
+function MobileRootRedirect() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return pageFallback;
+  return <Navigate to={user ? '/dashboard' : '/login'} replace />;
+}
+
 const lazyPage = (load) => {
   const Page = lazy(load);
   return (
@@ -22,7 +44,7 @@ const lazyPage = (load) => {
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: lazyPage(() => import('./pages/LandingPage')),
+    element: <RootRoute />,
     errorElement: <RouteErrorBoundary />,
   },
   {
