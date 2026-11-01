@@ -1,3 +1,4 @@
+import { isNativeMobile } from '../../services/mobileStorage';
 import { NavLink, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -57,7 +58,7 @@ export default function MentorSidebar({ mentor, onClose, onLogout }) {
   return (
     <div className="flex h-full flex-col overflow-y-auto border-r border-[#E8E0CC] bg-white select-none">
       <Link
-        to="/"
+        to={isNativeMobile() ? "/mentor" : "/"}
         onClick={onClose}
         className="flex items-center gap-3 border-b border-[#E8E0CC] px-5 py-4 transition hover:bg-[#F7F3E8]/60"
       >

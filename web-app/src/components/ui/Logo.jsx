@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { isNativeMobile } from '../../services/mobileStorage';
 
 export default function Logo({ onClick, asLink = true }) {
   const content = (
@@ -23,7 +24,7 @@ export default function Logo({ onClick, asLink = true }) {
   if (asLink && !onClick) {
     return (
       <Link
-        to="/"
+        to={isNativeMobile() ? "/dashboard" : "/"}
         className="inline-flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
         aria-label="octoByte Home"
       >
