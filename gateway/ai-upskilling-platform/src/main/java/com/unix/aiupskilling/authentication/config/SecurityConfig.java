@@ -103,7 +103,6 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/logout",
                                 "/api/auth/oauth2/exchange",
-                                "/api/v1/assessments/voice-feedback/audio/**",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/error",

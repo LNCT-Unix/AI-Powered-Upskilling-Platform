@@ -703,46 +703,14 @@ public class AssessmentService {
 
             java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
-            String modifiedBody = response.body().replace("/api/assessment/voice-feedback/audio/", "/api/v1/assessments/voice-feedback/audio/");
             return ResponseEntity.status(response.statusCode())
                     .header("Content-Type", "application/json")
-                    .body(modifiedBody);
+                    .body(response.body());
         } catch (Exception e) {
             log.warn("voice_feedback_forward_error: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                     .header("Content-Type", "application/json")
                     .body("{\"success\":false,\"error\":{\"code\":\"UPSTREAM_ERROR\",\"message\":\"" + e.getMessage() + "\"}}");
-        }
-    }
-
-    /** Forward audio streaming requests from gateway to assistant service, passing HTTP Range header */
-    public ResponseEntity<byte[]> streamVoiceAudio(String audioId, String rangeHeader) {
-        try {
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-            String targetUrl = (assistantServiceUrl != null ? assistantServiceUrl.replaceAll("/+$", "") : "http://localhost:3002")
-                    + "/api/assessment/voice-feedback/audio/" + audioId;
-
-            java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(targetUrl))
-                    .GET();
-
-            if (rangeHeader != null && !rangeHeader.isBlank()) {
-                reqBuilder.header("Range", rangeHeader);
-            }
-
-            java.net.http.HttpRequest request = reqBuilder.build();
-            java.net.http.HttpResponse<byte[]> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofByteArray());
-
-            org.springframework.http.ResponseEntity.BodyBuilder builder = ResponseEntity.status(response.statusCode());
-            response.headers().firstValue("Content-Type").ifPresent(ct -> builder.header("Content-Type", ct));
-            response.headers().firstValue("Content-Range").ifPresent(cr -> builder.header("Content-Range", cr));
-            response.headers().firstValue("Accept-Ranges").ifPresent(ar -> builder.header("Accept-Ranges", ar));
-            response.headers().firstValue("Cache-Control").ifPresent(cc -> builder.header("Cache-Control", cc));
-
-            return builder.body(response.body());
-        } catch (Exception e) {
-            log.warn("voice_audio_forward_error: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
     }
 }

@@ -125,17 +125,6 @@ public class AssessmentController {
         return service.forwardVoiceFeedback(payload);
     }
 
-    /**
-     * Streams AI Voice Companion audio clips through the gateway.
-     * Supports HTTP Range requests for smooth browser audio streaming.
-     */
-    @GetMapping("/voice-feedback/audio/{audioId}")
-    public org.springframework.http.ResponseEntity<byte[]> streamVoiceAudio(
-            @PathVariable String audioId,
-            @RequestHeader(value = "Range", required = false) String rangeHeader) {
-        return service.streamVoiceAudio(audioId, rangeHeader);
-    }
-
     // ---------- 5-question node unlock quiz ----------
 
     /**
