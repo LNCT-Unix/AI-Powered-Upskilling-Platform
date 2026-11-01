@@ -95,8 +95,8 @@ export default function TestHistoryPage() {
 
   const handleRetest = () => {
     sessionStorage.removeItem('skillpath_assessment_id');
-    localStorage.removeItem('skillpath_assessment_result');
-    navigate('/assessment');
+    // Keep skillpath_assessment_result intact so the skill graph is not wiped!
+    navigate('/assessment?retake=true');
   };
 
   return (

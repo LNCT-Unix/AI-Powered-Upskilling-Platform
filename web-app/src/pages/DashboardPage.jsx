@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -19,6 +19,7 @@ import { useAuth } from '../hooks/useAuth';
 import InteractiveSkillGraph from '../components/graph/InteractiveSkillGraph';
 import UserAvatar from '../components/ui/UserAvatar';
 import StudentMentorConnector from '../components/mentor/StudentMentorConnector';
+import { assessmentService } from '../services/assessmentService';
 
 /* ── Pretty Stat Card matching Landing Page ───────────────── */
 function StatCard({ label, value, sub, icon: Icon, badgeBg, iconColor, onClick }) {
@@ -53,6 +54,48 @@ export default function DashboardPage() {
       return null;
     }
   });
+
+  // If localStorage is empty, try to restore the latest completed assessment from backend history
+  useEffect(() => {
+    if (assessmentResult) return;
+    let ignore = false;
+
+    async function restoreLatestResult() {
+      try {
+        const history = await assessmentService.getHistory();
+        if (ignore || !Array.isArray(history) || history.length === 0) return;
+        const latestCompleted = history.find((h) => h.status === 'COMPLETED');
+        if (!latestCompleted?.assessmentId) return;
+
+        const report = await assessmentService.getReport(latestCompleted.assessmentId);
+        if (ignore || !report) return;
+
+        const formatted = {
+          ...report,
+          theta: report.finalTheta !== undefined ? report.finalTheta : (report.theta ?? 0),
+          unlockedSkills: report.unlockedSkills || (report.skills || []).filter(
+            (s) => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN'
+          ),
+          responses: report.responses || [],
+        };
+        try {
+          localStorage.setItem('skillpath_assessment_result', JSON.stringify(formatted));
+        } catch {
+          // ignore
+        }
+        if (!ignore) {
+          setAssessmentResult(formatted);
+        }
+      } catch (err) {
+        console.warn('Could not restore latest assessment result from history:', err);
+      }
+    }
+
+    restoreLatestResult();
+    return () => {
+      ignore = true;
+    };
+  }, [assessmentResult]);
 
   const skills = useMemo(() => {
     return assessmentResult?.skills || [];
@@ -129,7 +172,7 @@ export default function DashboardPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate('/assessment')}
+                    onClick={() => navigate('/assessment?retake=true')}
                     className="inline-flex items-center gap-1.5 rounded-full bg-white/95 border border-[#E8E0CC] px-4 py-2.5 text-xs font-bold text-[#2F2A3E] hover:bg-[#F7F3E8] transition cursor-pointer shadow-2xs"
                   >
                     <Flame size={14} className="text-[#FF9838]" /> Retake Diagnostic

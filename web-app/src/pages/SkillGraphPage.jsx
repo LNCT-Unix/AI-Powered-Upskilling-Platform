@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GitFork, Sparkles, ArrowRight, Compass, CheckCircle2 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import InteractiveSkillGraph from '../components/graph/InteractiveSkillGraph';
+import { assessmentService } from '../services/assessmentService';
 import './SkillGraphPage.css';
 
 export default function SkillGraphPage() {
@@ -16,6 +17,48 @@ export default function SkillGraphPage() {
       return null;
     }
   });
+
+  // If assessmentResult is missing from localStorage, attempt to restore from backend history
+  useEffect(() => {
+    if (assessmentResult) return;
+    let ignore = false;
+
+    async function restoreLatestResult() {
+      try {
+        const history = await assessmentService.getHistory();
+        if (ignore || !Array.isArray(history) || history.length === 0) return;
+        const latestCompleted = history.find((h) => h.status === 'COMPLETED');
+        if (!latestCompleted?.assessmentId) return;
+
+        const report = await assessmentService.getReport(latestCompleted.assessmentId);
+        if (ignore || !report) return;
+
+        const formatted = {
+          ...report,
+          theta: report.finalTheta !== undefined ? report.finalTheta : (report.theta ?? 0),
+          unlockedSkills: report.unlockedSkills || (report.skills || []).filter(
+            (s) => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN'
+          ),
+          responses: report.responses || [],
+        };
+        try {
+          localStorage.setItem('skillpath_assessment_result', JSON.stringify(formatted));
+        } catch {
+          // ignore
+        }
+        if (!ignore) {
+          setAssessmentResult(formatted);
+        }
+      } catch (err) {
+        console.warn('Could not restore latest assessment result from history:', err);
+      }
+    }
+
+    restoreLatestResult();
+    return () => {
+      ignore = true;
+    };
+  }, [assessmentResult]);
 
   const skills = useMemo(() => {
     if (!assessmentResult) return [];
@@ -111,7 +154,7 @@ export default function SkillGraphPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/assessment')}
+            onClick={() => navigate('/assessment?retake=true')}
             className="text-xs"
           >
             Retest / Switch Track

@@ -44,6 +44,9 @@ export default function AssessmentPage() {
   const [assessmentState, setAssessmentState] = useState(null);
   const [result, setResult] = useState(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isRetake = urlParams.get('retake') === 'true' || urlParams.get('mode') === 'retake';
+      if (isRetake) return null;
       const saved = localStorage.getItem(ASSESSMENT_RESULT_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch {
@@ -52,7 +55,14 @@ export default function AssessmentPage() {
   });
 
   // Pre-test configuration questionnaire state
-  const [isConfiguring, setIsConfiguring] = useState(false);
+  const [isConfiguring, setIsConfiguring] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('retake') === 'true' || urlParams.get('mode') === 'retake';
+    } catch {
+      return false;
+    }
+  });
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(BACKEND_TRACK_ID);
   const [selectedTrack, setSelectedTrack] = useState(null);
@@ -150,8 +160,20 @@ export default function AssessmentPage() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const urlAssessmentId = urlParams.get('id');
+        const isRetake = urlParams.get('retake') === 'true' || urlParams.get('mode') === 'retake';
 
-        // 0. If a specific assessment ID is requested via URL query param (e.g. from Test History)
+        // 0. If user explicitly requested a retake: start configuration, keep stored skill graph intact!
+        if (isRetake) {
+          sessionStorage.removeItem(ASSESSMENT_ID_KEY);
+          if (ignore) return;
+          setResult(null);
+          setAssessmentState(null);
+          setIsConfiguring(true);
+          setLoading(false);
+          return;
+        }
+
+        // 1. If a specific assessment ID is requested via URL query param (e.g. from Test History)
         if (urlAssessmentId) {
           setPreparingReport(true);
           try {
@@ -171,7 +193,7 @@ export default function AssessmentPage() {
 
         const savedId = sessionStorage.getItem(ASSESSMENT_ID_KEY);
 
-        // 1. If an assessment ID is in session, attempt to resume it
+        // 2. If an assessment ID is in session, attempt to resume it
         if (savedId) {
           try {
             const state = await assessmentService.getState(savedId);
@@ -196,7 +218,7 @@ export default function AssessmentPage() {
           }
         }
 
-        // 2. If a completed result exists in localStorage and no active test in session
+        // 3. If a completed result exists in localStorage and no active test in session
         const savedResult = localStorage.getItem(ASSESSMENT_RESULT_KEY);
         if (savedResult) {
           try {
@@ -212,7 +234,26 @@ export default function AssessmentPage() {
           }
         }
 
-        // 3. Otherwise: ask the questions (Track and Skills) before starting any test!
+        // 3.5. Fallback: Check backend test history for the latest completed assessment
+        try {
+          const history = await assessmentService.getHistory();
+          if (!ignore && Array.isArray(history) && history.length > 0) {
+            const latestCompleted = history.find((h) => h.status === 'COMPLETED');
+            if (latestCompleted?.assessmentId) {
+              const report = await fetchFinalReport(latestCompleted.assessmentId);
+              if (!ignore && report) {
+                setResult(report);
+                localStorage.setItem(ASSESSMENT_RESULT_KEY, JSON.stringify(report));
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Unable to retrieve previous assessment history:', err);
+        }
+
+        // 4. Otherwise: ask the questions (Track and Skills) before starting any test!
         if (!ignore) {
           setIsConfiguring(true);
           setLoading(false);
@@ -361,6 +402,11 @@ export default function AssessmentPage() {
       setAssessmentState(state);
       sessionStorage.setItem(ASSESSMENT_ID_KEY, state.assessmentId);
       setIsConfiguring(false);
+      try {
+        window.history.replaceState(null, '', window.location.pathname);
+      } catch {
+        // ignore
+      }
 
       if (state.done || state.status === 'COMPLETED') {
         setPreparingReport(true);
@@ -537,7 +583,8 @@ export default function AssessmentPage() {
   const handleRetest = () => {
     stopSpeech();
     sessionStorage.removeItem(ASSESSMENT_ID_KEY);
-    localStorage.removeItem(ASSESSMENT_RESULT_KEY);
+    // Note: Do NOT remove ASSESSMENT_RESULT_KEY from localStorage.
+    // The previous skill graph stays intact until a new assessment is fully completed.
     setAiFeedbackReview(null);
     setAssessmentState(null);
     setResult(null);
@@ -547,7 +594,37 @@ export default function AssessmentPage() {
     setSelectedSkillSlugs(new Set());
     setPreparingReport(false);
     setIsConfiguring(true);
+    try {
+      window.history.replaceState(null, '', window.location.pathname + '?retake=true');
+    } catch {
+      // ignore
+    }
   };
+
+  const handleCancelRetest = () => {
+    try {
+      const saved = localStorage.getItem(ASSESSMENT_RESULT_KEY);
+      if (saved) {
+        setResult(JSON.parse(saved));
+        setIsConfiguring(false);
+        try {
+          window.history.replaceState(null, '', window.location.pathname);
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const hasSavedResult = useMemo(() => {
+    try {
+      return Boolean(localStorage.getItem(ASSESSMENT_RESULT_KEY));
+    } catch {
+      return false;
+    }
+  }, [isConfiguring]);
 
   const isCompleted =
     !isConfiguring &&
@@ -1212,16 +1289,29 @@ export default function AssessmentPage() {
               I am starting from scratch (skip skill selection)
             </button>
 
-            <Button
-              variant="indigo"
-              size="lg"
-              disabled={submitting || loadingConfig}
-              loading={submitting}
-              onClick={() => handleStartTestWithSkills(Array.from(selectedSkillSlugs))}
-              className="shadow-sm"
-            >
-              Start Diagnostic Screening Test <ArrowRight size={16} />
-            </Button>
+            <div className="flex items-center gap-3">
+              {hasSavedResult && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  disabled={submitting}
+                  onClick={handleCancelRetest}
+                  className="shadow-2xs"
+                >
+                  Cancel Retest
+                </Button>
+              )}
+              <Button
+                variant="indigo"
+                size="lg"
+                disabled={submitting || loadingConfig}
+                loading={submitting}
+                onClick={() => handleStartTestWithSkills(Array.from(selectedSkillSlugs))}
+                className="shadow-sm"
+              >
+                Start Diagnostic Screening Test <ArrowRight size={16} />
+              </Button>
+            </div>
           </div>
         </div>
       ) : !isCompleted && (currentQ || aiFeedbackReview) ? (

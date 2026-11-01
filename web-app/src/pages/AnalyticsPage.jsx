@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -7,19 +7,62 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { Flame, TrendingUp, Award, ChartNoAxesColumnIncreasing, ArrowRight, Lock } from 'lucide-react';
+import { assessmentService } from '../services/assessmentService';
 
 export default function AnalyticsPage() {
   const navigate = useNavigate();
 
   // Load real assessment result from storage
-  const assessmentResult = useMemo(() => {
+  const [assessmentResult, setAssessmentResult] = useState(() => {
     try {
       const raw = localStorage.getItem('skillpath_assessment_result');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
-  }, []);
+  });
+
+  // If localStorage is empty, try to restore the latest completed assessment from backend history
+  useEffect(() => {
+    if (assessmentResult) return;
+    let ignore = false;
+
+    async function restoreLatestResult() {
+      try {
+        const history = await assessmentService.getHistory();
+        if (ignore || !Array.isArray(history) || history.length === 0) return;
+        const latestCompleted = history.find((h) => h.status === 'COMPLETED');
+        if (!latestCompleted?.assessmentId) return;
+
+        const report = await assessmentService.getReport(latestCompleted.assessmentId);
+        if (ignore || !report) return;
+
+        const formatted = {
+          ...report,
+          theta: report.finalTheta !== undefined ? report.finalTheta : (report.theta ?? 0),
+          unlockedSkills: report.unlockedSkills || (report.skills || []).filter(
+            (s) => s.state === 'MASTERED' || s.status === 'unlocked' || s.state === 'READY_TO_LEARN'
+          ),
+          responses: report.responses || [],
+        };
+        try {
+          localStorage.setItem('skillpath_assessment_result', JSON.stringify(formatted));
+        } catch {
+          // ignore
+        }
+        if (!ignore) {
+          setAssessmentResult(formatted);
+        }
+      } catch (err) {
+        console.warn('Could not restore latest assessment result from history:', err);
+      }
+    }
+
+    restoreLatestResult();
+    return () => {
+      ignore = true;
+    };
+  }, [assessmentResult]);
 
   const skills = useMemo(() => {
     return assessmentResult?.skills || [];
