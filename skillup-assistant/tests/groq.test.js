@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createGroqService } from '../src/services/groq.service.js';
+import { createGroqService, OCTO_CHAT_SYSTEM_PROMPT } from '../src/services/groq.service.js';
 import { AppError } from '../src/utils/errors.js';
 import { GROQ_TEST_KEY, hangingFetch, jsonResponse, TEST_ENV } from './helpers.js';
 import { loadEnv } from '../src/config/env.js';
@@ -198,6 +198,31 @@ describe('GroqService — Octo Chatbot', () => {
     await expect(service.chat({ message: 'Hello', sessionId: 'conv_empty' })).rejects.toMatchObject({
       code: 'LLM_INVALID_RESPONSE',
       status: 502,
+    });
+  });
+
+  it('includes guardrails restricting answers to studies and the website in system prompt', async () => {
+    expect(OCTO_CHAT_SYSTEM_PROMPT).toContain('STRICT GUARDRAILS & TOPIC RESTRICTIONS');
+    expect(OCTO_CHAT_SYSTEM_PROMPT).toMatch(/studies & technical learning/i);
+    expect(OCTO_CHAT_SYSTEM_PROMPT).toMatch(/octobyte website & platform/i);
+    expect(OCTO_CHAT_SYSTEM_PROMPT).toMatch(/forbidden off-topic subjects/i);
+    expect(OCTO_CHAT_SYSTEM_PROMPT).toMatch(/refusal & redirection protocol/i);
+
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      jsonResponse({
+        choices: [{ message: { role: 'assistant', content: 'Here is what you need to know about the platform!' } }],
+      }),
+    );
+    const config = loadEnv(TEST_ENV);
+    const service = createGroqService(config, fetchMock);
+
+    await service.chat({ message: 'What is octoByte?', sessionId: 'conv_guardrail_test' });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const callBody = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(callBody.messages[0]).toEqual({
+      role: 'system',
+      content: OCTO_CHAT_SYSTEM_PROMPT,
     });
   });
 });
