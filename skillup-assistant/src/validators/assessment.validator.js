@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { AppError } from '../utils/errors.js';
 
-export const AUDIO_ID_PATTERN = /^aud_[a-zA-Z0-9_-]{10,64}$/;
-
 export const assessmentFeedbackRequestSchema = z.object({
   assessmentId: z
     .string({ required_error: 'assessmentId is required' })
@@ -66,7 +64,7 @@ export const assessmentFeedbackRequestSchema = z.object({
     .optional(),
 });
 
-// Validates structured JSON returned by LLM for the voice companion response
+// Validates structured JSON returned by Groq LLM
 export const llmFeedbackSchema = z.object({
   reaction: z.string().trim().min(1).max(300),
   conceptReinforcement: z.string().trim().min(1).max(1000),
@@ -74,30 +72,13 @@ export const llmFeedbackSchema = z.object({
   speechText: z.string().trim().min(1).max(2000),
 });
 
-export const audioAvailableSchema = z.object({
-  available: z.literal(true),
-  contentType: z.literal('audio/mpeg'),
-  url: z.string().min(1),
-});
-
-export const audioUnavailableSchema = z.object({
-  available: z.literal(false),
-  message: z.string().min(1),
-});
-
-export const audioInfoSchema = z.discriminatedUnion('available', [
-  audioAvailableSchema,
-  audioUnavailableSchema,
-]);
-
-// Final API response validation
+// Final API response validation (pure text payload)
 export const voiceFeedbackResponseSchema = z.object({
   success: z.literal(true),
   assessmentId: z.string().min(1),
   questionId: z.string().min(1),
   isCorrect: z.boolean(),
   feedback: llmFeedbackSchema,
-  audio: audioInfoSchema,
 });
 
 export function toValidationError(zodError) {

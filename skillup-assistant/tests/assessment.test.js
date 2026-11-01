@@ -2,9 +2,9 @@ import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildApp,
+  GROQ_TEST_KEY,
   hangingFetch,
   jsonResponse,
-  OPENROUTER_TEST_KEY,
 } from './helpers.js';
 
 const FEEDBACK_ENDPOINT = '/api/assessment/voice-feedback';
@@ -47,7 +47,7 @@ const VALID_INCORRECT_FEEDBACK = {
   speechText: "Oh! Not quite, but no worries, that's okay! Method overloading happens within the same class when methods share a name with different parameters. Here's a fun tip: Overloading is resolved at compile time, while overriding happens at runtime!",
 };
 
-const mockOpenRouterSuccess = (feedback = VALID_CORRECT_FEEDBACK) =>
+const mockGroqSuccess = (feedback = VALID_CORRECT_FEEDBACK) =>
   jsonResponse({
     id: 'gen_123',
     choices: [
@@ -67,7 +67,7 @@ function expectErrorShape(res, status, code) {
     error: { code, message: expect.any(String) },
   });
   const text = JSON.stringify(res.body);
-  expect(text).not.toContain(OPENROUTER_TEST_KEY);
+  expect(text).not.toContain(GROQ_TEST_KEY);
   expect(text).not.toMatch(/\bat .*\.js:\d+/);
 }
 
@@ -98,7 +98,7 @@ describe('POST /api/assessment/voice-feedback — Request Validation', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('rejects requests containing difficultyDescription (old workflow removed)', async () => {
+  it('rejects requests containing difficultyDescription (legacy field removed)', async () => {
     const { app, fetchMock } = buildApp();
     const res = await request(app)
       .post(FEEDBACK_ENDPOINT)
@@ -109,8 +109,8 @@ describe('POST /api/assessment/voice-feedback — Request Validation', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('does not require difficultyDescription and succeeds without it', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess());
+  it('succeeds without difficultyDescription', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => mockGroqSuccess());
     const { app } = buildApp({ fetchImpl: fetchMock });
 
     const res = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_CORRECT_REQUEST);
@@ -166,15 +166,15 @@ describe('POST /api/assessment/voice-feedback — Request Validation', () => {
   });
 });
 
-describe('POST /api/assessment/voice-feedback — Companion Voice Generation', () => {
-  it('generates enthusiastic congratulatory feedback and audio for correct answers', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess(VALID_CORRECT_FEEDBACK));
+describe('POST /api/assessment/voice-feedback — Groq Pure-Text Generation', () => {
+  it('generates text feedback for correct answers with NO audio fields', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => mockGroqSuccess(VALID_CORRECT_FEEDBACK));
     const { app } = buildApp({ fetchImpl: fetchMock });
 
     const res = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_CORRECT_REQUEST);
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({
+    expect(res.body).toEqual({
       success: true,
       assessmentId: 'assessment_123',
       questionId: 'question_45',
@@ -185,31 +185,27 @@ describe('POST /api/assessment/voice-feedback — Companion Voice Generation', (
         bonusTip: VALID_CORRECT_FEEDBACK.bonusTip,
         speechText: VALID_CORRECT_FEEDBACK.speechText,
       },
-      audio: {
-        available: true,
-        contentType: 'audio/mpeg',
-        url: expect.stringMatching(/^\/api\/assessment\/voice-feedback\/audio\/aud_[a-zA-Z0-9]+$/),
-      },
     });
+    expect(res.body.audio).toBeUndefined();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [callUrl, callOptions] = fetchMock.mock.calls[0];
-    expect(callUrl).toBe('https://openrouter.test/v1/chat/completions');
-    expect(callOptions.headers.Authorization).toBe(`Bearer ${OPENROUTER_TEST_KEY}`);
+    expect(callUrl).toBe('https://api.groq.com/openai/v1/chat/completions');
+    expect(callOptions.headers.Authorization).toBe(`Bearer ${GROQ_TEST_KEY}`);
 
     const sentBody = JSON.parse(callOptions.body);
-    expect(sentBody.messages[1].content).toContain('CORRECT (isCorrect: true)');
+    expect(sentBody.messages[1].content).toContain('Answer Result: CORRECT');
     expect(sentBody.messages[1].content).toContain(VALID_CORRECT_REQUEST.topic);
   });
 
-  it('generates encouraging corrective feedback and audio for incorrect answers', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess(VALID_INCORRECT_FEEDBACK));
+  it('generates text feedback for incorrect answers with NO audio fields', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => mockGroqSuccess(VALID_INCORRECT_FEEDBACK));
     const { app } = buildApp({ fetchImpl: fetchMock });
 
     const res = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_INCORRECT_REQUEST);
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({
+    expect(res.body).toEqual({
       success: true,
       assessmentId: 'assessment_123',
       questionId: 'question_45',
@@ -220,15 +216,11 @@ describe('POST /api/assessment/voice-feedback — Companion Voice Generation', (
         bonusTip: VALID_INCORRECT_FEEDBACK.bonusTip,
         speechText: VALID_INCORRECT_FEEDBACK.speechText,
       },
-      audio: {
-        available: true,
-        contentType: 'audio/mpeg',
-        url: expect.stringMatching(/^\/api\/assessment\/voice-feedback\/audio\/aud_[a-zA-Z0-9]+$/),
-      },
     });
+    expect(res.body.audio).toBeUndefined();
 
     const sentBody = JSON.parse(fetchMock.mock.calls[0][1].body);
-    expect(sentBody.messages[1].content).toContain('INCORRECT (isCorrect: false)');
+    expect(sentBody.messages[1].content).toContain('Answer Result: INCORRECT');
     expect(sentBody.messages[1].content).toContain(VALID_INCORRECT_REQUEST.userAnswer);
   });
 
@@ -247,7 +239,7 @@ describe('POST /api/assessment/voice-feedback — Companion Voice Generation', (
     expect(res.body.feedback.reaction).toBe(VALID_CORRECT_FEEDBACK.reaction);
   });
 
-  it('maps OpenRouter 429 to 429', async () => {
+  it('maps Groq 429 to 429 LLM_RATE_LIMITED', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: 'rate limit' }, 429));
     const { app } = buildApp({ fetchImpl: fetchMock });
 
@@ -255,16 +247,16 @@ describe('POST /api/assessment/voice-feedback — Companion Voice Generation', (
     expectErrorShape(res, 429, 'LLM_RATE_LIMITED');
   });
 
-  it('maps OpenRouter 401/403 to 502 without leaking secrets', async () => {
+  it('maps Groq 401/403 to 502 without leaking secrets', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: 'unauthorized' }, 401));
     const { app } = buildApp({ fetchImpl: fetchMock });
 
     const res = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_CORRECT_REQUEST);
     expectErrorShape(res, 502, 'LLM_AUTH_FAILED');
-    expect(JSON.stringify(res.body)).not.toContain(OPENROUTER_TEST_KEY);
+    expect(JSON.stringify(res.body)).not.toContain(GROQ_TEST_KEY);
   });
 
-  it('maps OpenRouter 5xx to 503', async () => {
+  it('maps Groq 5xx to 503', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: 'server error' }, 500));
     const { app } = buildApp({ fetchImpl: fetchMock });
 
@@ -315,126 +307,11 @@ describe('POST /api/assessment/voice-feedback — Companion Voice Generation', (
   });
 });
 
-describe('POST /api/assessment/voice-feedback — Text-to-Speech (TTS) Integration', () => {
-  it('returns text feedback successfully even when TTS provider fails', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (url) => {
-      if (String(url).includes('chat/completions')) {
-        return mockOpenRouterSuccess(VALID_CORRECT_FEEDBACK);
-      }
-      return jsonResponse({ error: 'TTS engine error' }, 500);
-    });
-
-    const { app } = buildApp({
-      fetchImpl: fetchMock,
-      env: { TTS_PROVIDER: 'google-translate' },
-    });
-
-    const res = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_CORRECT_REQUEST);
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.isCorrect).toBe(true);
-    expect(res.body.feedback.reaction).toBe(VALID_CORRECT_FEEDBACK.reaction);
-    expect(res.body.feedback.speechText).toBe(VALID_CORRECT_FEEDBACK.speechText);
-    expect(res.body.audio).toEqual({
-      available: false,
-      message: 'Audio is temporarily unavailable.',
-    });
-  });
-
-  it('marks audio as unavailable when TTS_PROVIDER is set to none', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess(VALID_CORRECT_FEEDBACK));
-    const { app } = buildApp({
-      fetchImpl: fetchMock,
-      env: { TTS_PROVIDER: 'none' },
-    });
-
-    const res = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_CORRECT_REQUEST);
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.audio).toEqual({
-      available: false,
-      message: 'Audio is temporarily unavailable.',
-    });
-  });
-});
-
-describe('GET /api/assessment/voice-feedback/audio/:audioId — Audio Retrieval', () => {
-  it('retrieves the generated audio clip successfully', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess(VALID_CORRECT_FEEDBACK));
-    const { app } = buildApp({ fetchImpl: fetchMock });
-
-    const createRes = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_CORRECT_REQUEST);
-    expect(createRes.status).toBe(200);
-    expect(createRes.body.audio.available).toBe(true);
-
-    const audioUrl = createRes.body.audio.url;
-    const getRes = await request(app).get(audioUrl);
-
-    expect(getRes.status).toBe(200);
-    expect(getRes.headers['content-type']).toBe('audio/mpeg');
-    expect(getRes.headers['cache-control']).toBe('private, max-age=900');
-    expect(getRes.headers['accept-ranges']).toBe('bytes');
-    expect(Number(getRes.headers['content-length'])).toBeGreaterThan(0);
-    expect(getRes.body).toBeInstanceOf(Buffer);
-  });
-
-  it('supports HTTP Range requests for audio streaming', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess(VALID_CORRECT_FEEDBACK));
-    const { app } = buildApp({ fetchImpl: fetchMock });
-
-    const createRes = await request(app).post(FEEDBACK_ENDPOINT).send(VALID_CORRECT_REQUEST);
-    const audioUrl = createRes.body.audio.url;
-
-    const rangeRes = await request(app)
-      .get(audioUrl)
-      .set('Range', 'bytes=0-9');
-
-    expect(rangeRes.status).toBe(206);
-    expect(rangeRes.headers['content-type']).toBe('audio/mpeg');
-    expect(rangeRes.headers['content-range']).toMatch(/^bytes 0-9\/\d+$/);
-    expect(rangeRes.headers['content-length']).toBe('10');
-  });
-
-  it('returns 404 for non-existent audio clips', async () => {
+describe('Deleted Audio Clip Routes', () => {
+  it('returns 404 for removed /api/assessment/voice-feedback/audio/:audioId', async () => {
     const { app } = buildApp();
-    const res = await request(app).get('/api/assessment/voice-feedback/audio/aud_00000000000000000000000000000000');
-
+    const res = await request(app).get('/api/assessment/voice-feedback/audio/aud_12345');
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({
-      success: false,
-      error: { code: 'AUDIO_NOT_FOUND', message: 'Audio clip not found or has expired.' },
-    });
-  });
-
-  it('rejects malicious or invalid audioId patterns', async () => {
-    const { app } = buildApp();
-
-    const pathTraversalRes = await request(app).get('/api/assessment/voice-feedback/audio/../../etc/passwd');
-    expect(pathTraversalRes.status).toBe(404);
-
-    const badFormatRes = await request(app).get('/api/assessment/voice-feedback/audio/invalid!id');
-    expect(badFormatRes.status).toBe(404);
-  });
-
-  it('does not require internal auth key for audio clip playback', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess(VALID_CORRECT_FEEDBACK));
-    const { app } = buildApp({
-      fetchImpl: fetchMock,
-      env: { INTERNAL_API_KEY: 'a-very-long-internal-key-1234' },
-    });
-
-    const createRes = await request(app)
-      .post(FEEDBACK_ENDPOINT)
-      .set('x-internal-api-key', 'a-very-long-internal-key-1234')
-      .send(VALID_CORRECT_REQUEST);
-
-    expect(createRes.status).toBe(200);
-
-    const audioUrl = createRes.body.audio.url;
-    const getRes = await request(app).get(audioUrl);
-    expect(getRes.status).toBe(200);
   });
 });
 
@@ -459,7 +336,7 @@ describe('POST /api/assessment/voice-feedback — Security & Rate Limiting', () 
   });
 
   it('rate limits voice feedback endpoint', async () => {
-    const fetchMock = vi.fn().mockImplementation(() => mockOpenRouterSuccess(VALID_CORRECT_FEEDBACK));
+    const fetchMock = vi.fn().mockImplementation(() => mockGroqSuccess(VALID_CORRECT_FEEDBACK));
     const { app } = buildApp({
       fetchImpl: fetchMock,
       env: { RATE_LIMIT_MAX: '2' },

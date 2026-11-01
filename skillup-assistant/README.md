@@ -1,6 +1,6 @@
 # SkillUp Assistant (Node.js service)
 
-Backend for the **SkillUp Platform Guide** chatbot (Lyzr proxy) and **AI Assessment Voice Feedback** (OpenRouter + TTS).
+Backend for the **SkillUp Platform Guide** chatbot (Lyzr proxy) and **AI Assessment Feedback** (Groq pure-text JSON).
 It receives a visitor's question, invokes your **existing Lyzr agent**, and returns a normalized JSON
 answer that the React app can render.
 
@@ -11,7 +11,7 @@ React  ──►  Spring Boot  ──►  this service (Node/Express)  ──►
 
 The Lyzr API key lives only in this service's environment. Spring Boot and React never see it.
 
-> **Status:** All code, services, and tests are implemented and verified. Vitest test suite passes 100% (**70 passing tests across 6 test suites**).
+> **Status:** All code, services, and tests are implemented and verified. Vitest test suite passes 100% (**60 passing tests across 5 test suites**).
 
 ---
 
@@ -73,10 +73,10 @@ Success (`200`):
 so KB attribution and model name cannot be verified per answer. `model` is `null` for the same reason.
 `suggestions` is always `[]` (Lyzr returns none).
 
-### `POST /api/assessment/voice-feedback` (Interactive AI Voice Companion)
-Generates brief, energetic voice companion feedback for **any** assessment answer (both correct and incorrect).
+### `POST /api/assessment/voice-feedback` (Groq AI Assessment Feedback)
+Generates brief, pedagogical text feedback for **any** assessment answer (both correct and incorrect) via Groq Cloud API.
 React submits the answer to Spring Boot, Spring Boot determines correctness, and Spring Boot calls this API with `isCorrect: true/false`.
-No student confusion or difficulty description is needed.
+The frontend browser converts the returned `speechText` directly to audio using its native female speech synthesis engine.
 
 #### Request:
 ```json
@@ -99,7 +99,7 @@ No student confusion or difficulty description is needed.
 }
 ```
 
-#### Success Response (`200` - Correct Answer):
+#### Success Response (`200`):
 ```json
 {
   "success": true,
@@ -111,50 +111,9 @@ No student confusion or difficulty description is needed.
     "conceptReinforcement": "Method overloading allows methods to share the same name but use different parameters.",
     "bonusTip": "Java resolves overloaded methods at compile time, which is why it's called compile-time polymorphism.",
     "speechText": "Yes! That's absolutely right. Great job! Method overloading allows methods to share the same name but use different parameters. Here's a fun tip: Java resolves overloaded methods at compile time, which is why it's called compile-time polymorphism."
-  },
-  "audio": {
-    "available": true,
-    "contentType": "audio/mpeg",
-    "url": "/api/assessment/voice-feedback/audio/aud_68c92bfca1b34a1eb9e84fc97a7e9301"
   }
 }
 ```
-
-#### Success Response (`200` - Incorrect Answer):
-```json
-{
-  "success": true,
-  "assessmentId": "assessment_123",
-  "questionId": "question_45",
-  "isCorrect": false,
-  "feedback": {
-    "reaction": "Oh! Not quite, but no worries, that's okay!",
-    "conceptReinforcement": "Method overloading happens in the same class when methods share the same name but differ in parameters.",
-    "bonusTip": "Overloading is decided at compile time, whereas overriding is decided at runtime!",
-    "speechText": "Oh! Not quite, but no worries, that's okay! Method overloading happens in the same class when methods share the same name but differ in parameters. Here's a fun tip: Overloading is decided at compile time, whereas overriding is decided at runtime!"
-  },
-  "audio": {
-    "available": true,
-    "contentType": "audio/mpeg",
-    "url": "/api/assessment/voice-feedback/audio/aud_68c92bfca1b34a1eb9e84fc97a7e9301"
-  }
-}
-```
-
-If TTS is temporarily unavailable or fails, structured text feedback is still delivered intact:
-```json
-"audio": {
-  "available": false,
-  "message": "Audio is temporarily unavailable."
-}
-```
-
-### `GET /api/assessment/voice-feedback/audio/:audioId`
-Streams the generated MP3 audio clip for HTML5 `<audio>` playback.
-- Returns `200` with `Content-Type: audio/mpeg` and `Cache-Control: private, max-age=900`.
-- Supports HTTP Range requests (`206 Partial Content`) for seeking and progressive streaming.
-- Expired or unknown clips return `404 AUDIO_NOT_FOUND`.
-- Does not require `x-internal-api-key` header to allow direct playback in React `<audio>` components.
 
 ### Errors
 All errors use `{ "success": false, "error": { "code", "message", "details?" } }`.
@@ -216,6 +175,9 @@ variables are wrong (names only, never values). `.env` is git-ignored; never com
 | `LYZR_AGENT_ID` | yes | – | `6ae2408066278b21e1ccd018` (your SkillUp Platform Guide agent) |
 | `LYZR_API_BASE_URL` | yes | – | `https://agent-prod.studio.lyzr.ai/v3` (https enforced in production) |
 | `LYZR_USER_ID` | no | `skillup-web-visitor` | Lyzr requires a `user_id`; fixed non-personal label, no visitor data is sent |
+| `GROQ_API_KEY` | yes | – | Groq Cloud API key (secret). |
+| `GROQ_MODEL` | no | `openai/gpt-oss-20b` | LLM model for instant assessment feedback. |
+| `GROQ_BASE_URL` | no | `https://api.groq.com/openai/v1` | Groq OpenAI-compatible base URL. |
 | `INTERNAL_API_KEY` | no* | none | Shared secret Spring Boot must send in `x-internal-api-key` (min 16 chars). *Strongly recommended outside localhost. Separate from the Lyzr key. |
 | `PORT` | no | `3002` | |
 | `NODE_ENV` | no | `development` | |

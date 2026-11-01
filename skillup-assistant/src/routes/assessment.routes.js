@@ -13,8 +13,5 @@ export function createAssessmentRouter({ controller, config }) {
     controller.getVoiceFeedback,
   );
 
-  // Audio retrieval endpoint for browser <audio> playback (no API key header required)
-  router.get('/voice-feedback/audio/:audioId', controller.getAudioClip);
-
   return router;
 }

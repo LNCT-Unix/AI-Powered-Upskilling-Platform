@@ -27,17 +27,9 @@ const envSchema = z.object({
 
   INTERNAL_API_KEY: z.string().min(16, 'must be at least 16 characters').optional(),
 
-  OPENROUTER_API_KEY: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG).optional(),
-  OPENROUTER_MODEL: z.string().min(1).default('meta-llama/llama-3.3-70b-instruct'),
-  OPENROUTER_BASE_URL: z.string().url().refine(notPlaceholder, PLACEHOLDER_MSG).default('https://openrouter.ai/api/v1'),
-
-  TTS_PROVIDER: z.enum(['google-translate', 'openai', 'elevenlabs', 'mock', 'none']).default('google-translate'),
-  OPENAI_API_KEY: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG).optional(),
-  OPENAI_TTS_MODEL: z.string().min(1).default('tts-1'),
-  OPENAI_TTS_VOICE: z.string().min(1).default('alloy'),
-  ELEVENLABS_API_KEY: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG).optional(),
-  ELEVENLABS_VOICE_ID: z.string().min(1).default('21m00Tcm4TlvDq8ikWAM'),
-  AUDIO_CACHE_TTL_MS: intWithDefault(10000, 86400000, 900000),
+  GROQ_API_KEY: z.string().min(1).refine(notPlaceholder, PLACEHOLDER_MSG).optional(),
+  GROQ_MODEL: z.string().min(1).default('openai/gpt-oss-20b'),
+  GROQ_BASE_URL: z.string().url().refine(notPlaceholder, PLACEHOLDER_MSG).default('https://api.groq.com/openai/v1'),
 
   REQUEST_TIMEOUT_MS: intWithDefault(1, 120000, 30000),
   MAX_MESSAGE_LENGTH: intWithDefault(1, 20000, 4000),
@@ -65,13 +57,13 @@ export function loadEnv(source = process.env) {
 
   const env = result.data;
   const baseUrl = env.LYZR_API_BASE_URL.replace(/\/+$/, '');
-  const openRouterBaseUrl = env.OPENROUTER_BASE_URL.replace(/\/+$/, '');
+  const groqBaseUrl = env.GROQ_BASE_URL.replace(/\/+$/, '');
 
   if (env.NODE_ENV === 'production' && !baseUrl.startsWith('https://')) {
     throw new ConfigError(['LYZR_API_BASE_URL: must use https in production']);
   }
-  if (env.NODE_ENV === 'production' && !openRouterBaseUrl.startsWith('https://')) {
-    throw new ConfigError(['OPENROUTER_BASE_URL: must use https in production']);
+  if (env.NODE_ENV === 'production' && !groqBaseUrl.startsWith('https://')) {
+    throw new ConfigError(['GROQ_BASE_URL: must use https in production']);
   }
 
   return Object.freeze({
@@ -90,19 +82,10 @@ export function loadEnv(source = process.env) {
       baseUrl,
       userId: env.LYZR_USER_ID,
     }),
-    openRouter: Object.freeze({
-      apiKey: env.OPENROUTER_API_KEY ?? null,
-      model: env.OPENROUTER_MODEL,
-      baseUrl: openRouterBaseUrl,
-    }),
-    tts: Object.freeze({
-      provider: env.TTS_PROVIDER,
-      openaiApiKey: env.OPENAI_API_KEY ?? null,
-      openaiModel: env.OPENAI_TTS_MODEL,
-      openaiVoice: env.OPENAI_TTS_VOICE,
-      elevenlabsApiKey: env.ELEVENLABS_API_KEY ?? null,
-      elevenlabsVoiceId: env.ELEVENLABS_VOICE_ID,
-      cacheTtlMs: env.AUDIO_CACHE_TTL_MS,
+    groq: Object.freeze({
+      apiKey: env.GROQ_API_KEY ?? null,
+      model: env.GROQ_MODEL,
+      baseUrl: groqBaseUrl,
     }),
     internalApiKey: env.INTERNAL_API_KEY ?? null,
     requestTimeoutMs: env.REQUEST_TIMEOUT_MS,

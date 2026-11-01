@@ -19,7 +19,7 @@ describe('loadEnv', () => {
 
   it('rejects untouched .env.example placeholders', () => {
     expect(() => loadEnv({ ...TEST_ENV, LYZR_API_KEY: 'replace_with_your_lyzr_api_key' })).toThrow(ConfigError);
-    expect(() => loadEnv({ ...TEST_ENV, OPENROUTER_API_KEY: 'replace_with_your_openrouter_api_key' })).toThrow(ConfigError);
+    expect(() => loadEnv({ ...TEST_ENV, GROQ_API_KEY: 'replace_with_your_groq_api_key' })).toThrow(ConfigError);
   });
 
   it('never includes secret values in the error', () => {
@@ -35,7 +35,7 @@ describe('loadEnv', () => {
   it('rejects a too-short internal key and non-https Lyzr URL in production', () => {
     expect(() => loadEnv({ ...TEST_ENV, INTERNAL_API_KEY: 'short' })).toThrow(ConfigError);
     expect(() => loadEnv({ ...TEST_ENV, NODE_ENV: 'production', LYZR_API_BASE_URL: 'http://lyzr.test/v3' })).toThrow(ConfigError);
-    expect(() => loadEnv({ ...TEST_ENV, NODE_ENV: 'production', OPENROUTER_BASE_URL: 'http://openrouter.test/v1' })).toThrow(ConfigError);
+    expect(() => loadEnv({ ...TEST_ENV, NODE_ENV: 'production', GROQ_BASE_URL: 'http://api.groq.com/openai/v1' })).toThrow(ConfigError);
   });
 
   it('applies defaults, treats empty strings as unset and normalizes the base URL', () => {
@@ -53,10 +53,9 @@ describe('loadEnv', () => {
     expect(config.internalApiKey).toBeNull();
     expect(config.corsOrigins).toEqual([]);
     expect(config.lyzr.baseUrl).toBe('https://lyzr.test/v3');
-    expect(config.openRouter.baseUrl).toBe('https://openrouter.ai/api/v1');
-    expect(config.openRouter.model).toBe('meta-llama/llama-3.3-70b-instruct');
-    expect(config.openRouter.apiKey).toBeNull();
-    expect(config.tts.provider).toBe('google-translate');
+    expect(config.groq.baseUrl).toBe('https://api.groq.com/openai/v1');
+    expect(config.groq.model).toBe('openai/gpt-oss-20b');
+    expect(config.groq.apiKey).toBeNull();
   });
 
   it('parses a comma-separated list of CORS origins', () => {
