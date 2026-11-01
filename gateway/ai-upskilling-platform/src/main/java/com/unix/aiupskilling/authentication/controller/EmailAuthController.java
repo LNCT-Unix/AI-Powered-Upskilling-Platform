@@ -46,6 +46,7 @@ public class EmailAuthController {
     public ResponseEntity<ApiResponse<EmailVerificationResponse>> confirm(
             @Valid @RequestBody ConfirmEmailRequest request,
             @RequestHeader(value = "X-Client-Platform", required = false) String platformHeader,
+            HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
 
         boolean isMobile = "mobile".equalsIgnoreCase(platformHeader);
@@ -53,6 +54,7 @@ public class EmailAuthController {
         AuthTokens tokens = emailAuthService.confirmEmail(request, platform);
         if (!isMobile) {
             OAuthCookieHelper.setCookie(
+                    httpRequest,
                     httpResponse,
                     OAuthCookieHelper.REFRESH_TOKEN_COOKIE,
                     tokens.getRefreshToken(),
@@ -91,6 +93,7 @@ public class EmailAuthController {
 
         if (!isMobile) {
             OAuthCookieHelper.setCookie(
+                    httpRequest,
                     httpResponse,
                     OAuthCookieHelper.REFRESH_TOKEN_COOKIE,
                     tokens.getRefreshToken(),
