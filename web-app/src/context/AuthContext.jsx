@@ -13,9 +13,15 @@ export function AuthProvider({ children }) {
 
     async function hydrateSession() {
       try {
-        const profileRes = await authService.getCurrentUser();
-        if (mounted && profileRes?.data) {
-          setUser(profileRes.data);
+        const refreshRes = await authService.refreshToken();
+        if (mounted && refreshRes?.data?.user) {
+          setUser(refreshRes.data.user);
+          setTokenState(refreshRes.data.accessToken);
+        } else {
+          const profileRes = await authService.getCurrentUser();
+          if (mounted && profileRes?.data) {
+            setUser(profileRes.data);
+          }
         }
       } catch {
         // Session not active or unauthenticated
