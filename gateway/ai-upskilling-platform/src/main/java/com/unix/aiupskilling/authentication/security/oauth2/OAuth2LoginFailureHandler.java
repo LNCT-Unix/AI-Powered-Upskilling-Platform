@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URI;
 
 @Component
 @RequiredArgsConstructor
@@ -32,20 +33,36 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
         log.warn("OAuth2 authentication failure: code={}, message={}", errorCode, exception.getMessage());
 
         ClientPlatform platform = resolvePlatform(request);
-        String errorUrl = (platform == ClientPlatform.MOBILE)
-                ? authProperties.getFrontend().getMobileErrorUrl()
-                : authProperties.getFrontend().getWebErrorUrl();
+
+        HttpSession session = request.getSession(false);
+        String errorUrl = null;
+        if (platform != ClientPlatform.MOBILE && session != null) {
+            String callbackUrl = (String) session.getAttribute(CustomOAuth2AuthorizationRequestResolver.OAUTH_FRONTEND_CALLBACK_ATTR);
+            if (callbackUrl != null && !callbackUrl.isBlank()) {
+                try {
+                    URI uri = URI.create(callbackUrl);
+                    errorUrl = uri.getScheme() + "://" + uri.getAuthority() + "/auth/error";
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        if (errorUrl == null || errorUrl.isBlank()) {
+            errorUrl = (platform == ClientPlatform.MOBILE)
+                    ? authProperties.getFrontend().getMobileErrorUrl()
+                    : authProperties.getFrontend().getWebErrorUrl();
+        }
 
         String delimiter = errorUrl.contains("?") ? "&" : "?";
         String targetUrl = errorUrl + delimiter + "error=" + errorCode;
 
         OAuthCookieHelper.clearCookie(request, response, OAuthCookieHelper.LINK_INTENT_COOKIE, "/");
 
-        HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
 
+        log.info("Redirecting OAuth2 failure to: {}", targetUrl);
         response.sendRedirect(targetUrl);
     }
 
@@ -58,10 +75,22 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
             return ole.getCode();
         }
         String msg = (ex.getMessage() != null) ? ex.getMessage().toLowerCase() : "";
-        if (msg.contains("access_denied") || msg.contains("consent") || msg.contains("user cancelled")) {
-            return "OAUTH_ACCESS_DENIED";
+        if (msg.contains("account_already_linked")) {
+            return "ACCOUNT_ALREADY_LINKED";
         }
-        return "OAUTH_PROVIDER_ERROR";
+        if (msg.contains("duplicate_email") || msg.contains("email already exists")) {
+            return "DUPLICATE_EMAIL";
+        }
+        if (msg.contains("provider_user_id_conflict")) {
+            return "PROVIDER_CONFLICT";
+        }
+        if (msg.contains("access_denied")) {
+            return "ACCESS_DENIED";
+        }
+        if (msg.contains("invalid_token") || msg.contains("token_rejected")) {
+            return "TOKEN_REJECTED";
+        }
+        return "OAUTH_LOGIN_FAILED";
     }
 
     private ClientPlatform resolvePlatform(HttpServletRequest request) {
@@ -69,7 +98,7 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
         if (client == null) {
             HttpSession session = request.getSession(false);
             if (session != null) {
-                client = (String) session.getAttribute("oauth_client_platform");
+                client = (String) session.getAttribute(CustomOAuth2AuthorizationRequestResolver.OAUTH_CLIENT_PLATFORM_ATTR);
             }
         }
         if ("mobile".equalsIgnoreCase(client)) {

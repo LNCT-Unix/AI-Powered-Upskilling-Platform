@@ -685,7 +685,7 @@ public class AssessmentService {
         try {
             java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
             String jsonBody = mapper.writeValueAsString(payload);
-            String targetUrl = (assistantServiceUrl != null ? assistantServiceUrl.replaceAll("/+$", "") : "http://localhost:3002") + "/api/assessment/voice-feedback";
+            String targetUrl = (assistantServiceUrl != null ? assistantServiceUrl.trim().replaceAll("/+$", "") : "http://localhost:3002") + "/api/assessment/voice-feedback";
 
             java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
                     .uri(java.net.URI.create(targetUrl))
@@ -714,3 +714,4 @@ public class AssessmentService {
         }
     }
 }
+

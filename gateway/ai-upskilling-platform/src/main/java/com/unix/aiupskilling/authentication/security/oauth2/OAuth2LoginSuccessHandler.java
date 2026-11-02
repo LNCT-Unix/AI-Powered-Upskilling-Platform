@@ -36,21 +36,28 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         ClientPlatform platform = resolvePlatform(request);
         String code = authTokenService.createLoginCode(user, platform);
 
-        String callbackUrl = (platform == ClientPlatform.MOBILE)
-                ? authProperties.getFrontend().getMobileCallbackUrl()
-                : authProperties.getFrontend().getWebCallbackUrl();
+        HttpSession session = request.getSession(false);
+        String callbackUrl = null;
+        if (platform != ClientPlatform.MOBILE && session != null) {
+            callbackUrl = (String) session.getAttribute(CustomOAuth2AuthorizationRequestResolver.OAUTH_FRONTEND_CALLBACK_ATTR);
+        }
+
+        if (callbackUrl == null || callbackUrl.isBlank()) {
+            callbackUrl = (platform == ClientPlatform.MOBILE)
+                    ? authProperties.getFrontend().getMobileCallbackUrl()
+                    : authProperties.getFrontend().getWebCallbackUrl();
+        }
 
         String delimiter = callbackUrl.contains("?") ? "&" : "?";
         String targetUrl = callbackUrl + delimiter + "code=" + code;
 
         OAuthCookieHelper.clearCookie(request, response, OAuthCookieHelper.LINK_INTENT_COOKIE, "/");
 
-        HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
 
-        log.info("OAuth2 login successful for userId={}. Redirecting to target frontend.", user.getId());
+        log.info("OAuth2 login successful for userId={}. Redirecting to target frontend: {}", user.getId(), targetUrl);
         response.sendRedirect(targetUrl);
     }
 
@@ -59,7 +66,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         if (client == null) {
             HttpSession session = request.getSession(false);
             if (session != null) {
-                client = (String) session.getAttribute("oauth_client_platform");
+                client = (String) session.getAttribute(CustomOAuth2AuthorizationRequestResolver.OAUTH_CLIENT_PLATFORM_ATTR);
             }
         }
         if ("mobile".equalsIgnoreCase(client)) {

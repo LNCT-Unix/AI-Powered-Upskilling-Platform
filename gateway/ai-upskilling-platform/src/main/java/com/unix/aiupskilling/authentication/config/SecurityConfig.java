@@ -65,7 +65,7 @@ public class SecurityConfig {
         if (clientRepo != null) {
             http.oauth2Login(oauth -> {
                 oauth.authorizationEndpoint(authEndpoint ->
-                        authEndpoint.authorizationRequestResolver(new CustomOAuth2AuthorizationRequestResolver(clientRepo))
+                        authEndpoint.authorizationRequestResolver(new CustomOAuth2AuthorizationRequestResolver(clientRepo, authProperties))
                 );
                 oauth.userInfoEndpoint(userInfo -> {
                     userInfo.oidcUserService(googleOidcUserService);

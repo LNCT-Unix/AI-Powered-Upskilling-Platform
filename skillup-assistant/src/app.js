@@ -16,7 +16,7 @@ export function createApp({ config, groqService, feedbackService }) {
   const app = express();
 
   app.set('trust proxy', config.trustProxy);
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(
     cors({
       origin:
@@ -25,7 +25,7 @@ export function createApp({ config, groqService, feedbackService }) {
           : config.corsOrigins.length > 0
             ? config.corsOrigins
             : false,
-      methods: ['GET', 'POST'],
+      methods: ['GET', 'POST', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'x-internal-api-key'],
     }),
   );
@@ -48,3 +48,4 @@ export function createApp({ config, groqService, feedbackService }) {
 
   return app;
 }
+
