@@ -183,9 +183,33 @@ export default function OctoMascotAnimation({ className = '' }) {
           right: 15%;
         }
 
+        @media (max-width: 768px) {
+          .octo-scene { max-width: 480px; }
+          .octo-tile, .octo-chip { transform: scale(0.88); }
+          .octo-t-chart { right: 0%; }
+          .octo-c-test { right: 0%; }
+        }
         @media (max-width: 640px) {
-          .octo-tile, .octo-chip { transform: scale(0.9); }
+          .octo-scene { max-width: 400px; }
           .octo-t-cap, .octo-c-road { display: none; }
+          .octo-tile { width: 46px; height: 46px; border-radius: 14px; }
+          .octo-chip { padding: 8px 12px; border-radius: 13px; }
+          .octo-chip b { font-size: 0.76rem; }
+          .octo-chip small { font-size: 0.68rem; }
+          .octo-c-test { right: 2%; bottom: 3%; }
+          .octo-t-code { top: 4%; left: 4%; }
+          .octo-t-chart { top: 38%; right: 2%; }
+        }
+        @media (max-width: 480px) {
+          .octo-scene { max-width: 320px; }
+          .octo-chip { display: none; }
+          .octo-tile { width: 40px; height: 40px; border-radius: 12px; }
+          .octo-t-code { top: 6%; left: 6%; }
+          .octo-t-chart { top: 40%; right: 4%; }
+        }
+        @media (max-width: 360px) {
+          .octo-scene { max-width: 270px; }
+          .octo-tile { width: 34px; height: 34px; border-radius: 10px; }
         }
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after {

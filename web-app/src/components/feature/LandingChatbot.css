@@ -105,3 +105,67 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ─── Responsive Media Queries for Chatbot ────────────────────── */
+
+/* Tablet & Mobile Screens (<= 640px) */
+@media (max-width: 640px) {
+  .octo-chat-modal {
+    width: calc(100vw - 20px) !important;
+    max-width: none !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    height: calc(100dvh - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    border-radius: 20px !important;
+  }
+
+  .octo-chat-modal.is-expanded {
+    width: calc(100vw - 20px) !important;
+    max-width: none !important;
+    height: calc(100dvh - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+  }
+}
+
+/* Compact Mobile Screens (<= 480px) */
+@media (max-width: 480px) {
+  .octo-chat-modal {
+    width: calc(100vw - 16px) !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    height: calc(100dvh - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 18px !important;
+  }
+
+  /* Prevent auto-zoom on iOS Safari when focusing input */
+  .octo-chat-modal input[type="text"] {
+    font-size: 16px !important;
+  }
+
+  .octo-chat-launcher {
+    width: 52px !important;
+    height: 52px !important;
+    padding: 8px !important;
+  }
+}
+
+/* Extra small mobile screens (<= 360px) */
+@media (max-width: 360px) {
+  .octo-chat-modal {
+    width: calc(100vw - 12px) !important;
+    right: 6px !important;
+    bottom: 6px !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* Mobile Landscape orientation */
+@media (max-height: 520px) and (orientation: landscape) {
+  .octo-chat-modal {
+    height: calc(100dvh - 12px) !important;
+    max-height: 96vh !important;
+    bottom: 6px !important;
+  }
+}

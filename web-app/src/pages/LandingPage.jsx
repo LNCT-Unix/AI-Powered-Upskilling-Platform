@@ -1,9 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ArrowRight, CheckCircle2, LogOut, MessageSquare, Sparkles, BrainCircuit, Network, GraduationCap, GitPullRequest, Briefcase } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import Logo from '../components/ui/Logo';
 import OctoMascotAnimation from '../components/ui/OctoMascotAnimation';
-import { ASSIGNED_QUESTIONS } from '../data/chatbotQuestions';
 import { useAuth } from '../hooks/useAuth';
 import './LandingPage.css';
 
@@ -86,7 +85,7 @@ export default function LandingPage() {
     <div className="min-h-screen text-slate-900" style={{ background: '#F7F3E8', fontFamily: 'Inter, sans-serif' }}>
       {/* ── Navbar ──────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-[#F7F3E8]/90 backdrop-blur-md border-b border-[#E8E0CC]/80">
-        <div className="flex items-center justify-between px-6 sm:px-10 py-3.5 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between px-4 sm:px-8 lg:px-10 py-3 sm:py-3.5 max-w-7xl mx-auto">
           <Logo />
 
           <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
@@ -97,7 +96,7 @@ export default function LandingPage() {
             <a href="#projects" className="hover:text-slate-900 transition">Lab &amp; Career</a>
           </nav>
 
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-2.5">
                 <Link
@@ -148,15 +147,15 @@ export default function LandingPage() {
 
         {/* Mobile dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[#E8E0CC] bg-[#FFFDF7] px-6 py-4 shadow-xl space-y-3">
-            <nav className="flex flex-col gap-2.5 text-sm font-semibold text-slate-700">
-              <a href="#top" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Home</a>
-              <a href="#how" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">How it works</a>
-              <a href="#graph" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Skill graph</a>
-              <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Platform features</a>
-              <a href="#projects" onClick={() => setMobileMenuOpen(false)} className="py-1.5 hover:text-[#7C5CFA]">Project Lab &amp; Career</a>
+          <div className="md:hidden border-t border-[#E8E0CC] bg-[#FFFDF7] px-4 sm:px-8 py-4 shadow-xl space-y-3 animate-fade-in">
+            <nav className="flex flex-col gap-1.5 text-sm font-semibold text-slate-700">
+              <a href="#top" onClick={() => setMobileMenuOpen(false)} className="py-2 px-3 rounded-xl hover:bg-slate-100 hover:text-[#7C5CFA] transition">Home</a>
+              <a href="#how" onClick={() => setMobileMenuOpen(false)} className="py-2 px-3 rounded-xl hover:bg-slate-100 hover:text-[#7C5CFA] transition">How it works</a>
+              <a href="#graph" onClick={() => setMobileMenuOpen(false)} className="py-2 px-3 rounded-xl hover:bg-slate-100 hover:text-[#7C5CFA] transition">Skill graph</a>
+              <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-2 px-3 rounded-xl hover:bg-slate-100 hover:text-[#7C5CFA] transition">Platform features</a>
+              <a href="#projects" onClick={() => setMobileMenuOpen(false)} className="py-2 px-3 rounded-xl hover:bg-slate-100 hover:text-[#7C5CFA] transition">Project Lab &amp; Career</a>
             </nav>
-            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+            <div className="pt-3 border-t border-[#E8E0CC]/70 flex flex-col gap-2">
               {user ? (
                 <>
                   <Link
@@ -182,12 +181,14 @@ export default function LandingPage() {
                 <>
                   <Link
                     to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="w-full text-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="w-full text-center rounded-full bg-[#7C5CFA] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#6244E8]"
                   >
                     Get Started &rarr;
@@ -200,37 +201,37 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────── */}
-      <main id="top" className="relative overflow-hidden pt-6">
+      <main id="top" className="relative overflow-hidden pt-4 sm:pt-6">
         {/* Heading block */}
-        <div className="text-center pt-8 pb-4 px-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tight">
-            Stop Guessing. Start Building. <br />
+        <div className="text-center pt-6 sm:pt-8 pb-3 sm:pb-4 px-3 sm:px-4 max-w-4xl mx-auto">
+          <h1 className="text-[1.85rem] leading-[1.18] sm:text-5xl lg:text-6xl font-black text-slate-900 sm:leading-tight tracking-tight">
+            Stop Guessing. Start Building. <br className="hidden sm:inline" />
             Level Up with <span className="text-[#7C5CFA]">octoByte</span>.
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed px-1 sm:px-0">
             Stop guessing what to learn. Take a short quiz that adapts to your level, get a personalised step-by-step learning plan, and build real projects that show employers you’re job-ready.
           </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-6 sm:mt-7 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
             <button
               onClick={() => navigate(user ? '/assessment' : '/signup')}
-              className="inline-flex items-center gap-2 rounded-full bg-[#7C5CFA] px-7 py-3.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-lg shadow-[#7C5CFA]/25 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[#7C5CFA] px-6 sm:px-7 py-3 sm:py-3.5 text-sm font-bold text-white hover:bg-[#6244E8] transition shadow-lg shadow-[#7C5CFA]/25 cursor-pointer"
             >
               {user ? 'Start Diagnostic Test' : 'Start for free'} <span className="arr">&rarr;</span>
             </button>
             <a
               href="#how"
-              className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-6 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-white border border-slate-200 px-6 py-3 sm:py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer"
             >
               See how it works
             </a>
           </div>
-          <div className="mt-4 text-xs text-slate-500 font-medium">
+          <div className="mt-3.5 sm:mt-4 text-xs text-slate-500 font-medium px-2 leading-relaxed">
             Free for learners &middot; 56 Backend skills across 9 core clusters &middot; Takes ~4 minutes
           </div>
         </div>
 
         {/* Mascot Animation in Center of Hero */}
-        <div className="relative mx-auto max-w-3xl px-4 py-6 flex justify-center items-center">
+        <div className="relative mx-auto max-w-3xl px-2 sm:px-4 py-3 sm:py-6 flex justify-center items-center overflow-hidden sm:overflow-visible">
           <OctoMascotAnimation />
         </div>
 

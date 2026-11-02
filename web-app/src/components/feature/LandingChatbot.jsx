@@ -328,7 +328,7 @@ export default function LandingChatbot({ initialOpen = false }) {
             aria-expanded={isOpen}
             aria-label="Open octoByte AI Assistant"
             title="Ask octoByte AI"
-            className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border border-[#E8E0CC] shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer p-2.5"
+            className="octo-chat-launcher flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border border-[#E8E0CC] shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer p-2.5"
           >
             <img
               src="/octobyte-logo.png"
@@ -342,8 +342,8 @@ export default function LandingChatbot({ initialOpen = false }) {
         {isOpen && (
           <section
             aria-label="octoByte AI Chat Dialog"
-            className={`flex flex-col bg-[#FFFDF7] border border-[#E8E0CC] rounded-3xl octo-chatbot-shadow overflow-hidden transition-all duration-300 ${isExpanded
-              ? 'w-[94vw] max-w-[640px] h-[85vh] max-h-[760px]'
+            className={`octo-chat-modal flex flex-col bg-[#FFFDF7] border border-[#E8E0CC] rounded-3xl octo-chatbot-shadow overflow-hidden transition-all duration-300 ${isExpanded
+              ? 'is-expanded w-[94vw] max-w-[640px] h-[85vh] max-h-[760px]'
               : 'w-[94vw] max-w-[430px] h-[82vh] max-h-[620px]'
               } fixed bottom-4 right-3 sm:bottom-6 sm:right-6`}
           >
