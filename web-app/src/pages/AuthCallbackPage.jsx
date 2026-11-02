@@ -12,8 +12,10 @@ export default function AuthCallbackPage() {
   const { handleOAuthCallback } = useAuth();
   const exchangeAttempted = useRef(false);
 
-  const code = searchParams.get('code');
-  const errorParam = searchParams.get('error');
+  // Extract from query string or URL hash fragment
+  const hashParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.hash.replace(/^#/, '')) : new URLSearchParams();
+  const code = searchParams.get('code') || hashParams.get('code');
+  const errorParam = searchParams.get('error') || hashParams.get('error');
 
   const [status, setStatus] = useState(() => {
     if (errorParam || !code) return 'error';
@@ -28,11 +30,13 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     if (errorParam) {
+      console.warn('OAuth callback returned error:', errorParam);
       navigate(`/auth/error?error=${encodeURIComponent(errorParam)}`, { replace: true });
       return;
     }
 
     if (!code) {
+      console.warn('OAuth callback missing code parameter');
       navigate('/auth/error?error=MISSING_CODE', { replace: true });
       return;
     }
@@ -43,6 +47,7 @@ export default function AuthCallbackPage() {
 
     async function performExchange() {
       try {
+        console.info('Exchanging OAuth single-use code with backend...');
         const res = await handleOAuthCallback(code);
 
         if (res.success) {
@@ -55,6 +60,7 @@ export default function AuthCallbackPage() {
           setErrorMessage(res.error || 'Failed to exchange login code');
         }
       } catch (err) {
+        console.error('OAuth code exchange failed:', err);
         setStatus('error');
         setErrorMessage(err.message || 'An unexpected error occurred during code exchange');
       }

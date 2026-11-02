@@ -6,13 +6,21 @@ export const authService = {
   // 1. Initiate OAuth Redirects (In-App Browser on Mobile, Standard Redirect on Web)
   async loginWithGoogle() {
     const isMobile = isNativeMobile();
-    const query = isMobile ? '?client=mobile' : '';
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const params = new URLSearchParams();
+    if (isMobile) params.set('client', 'mobile');
+    if (currentOrigin && !isMobile) params.set('redirect_uri', `${currentOrigin}/auth/callback`);
+    const query = params.toString() ? `?${params.toString()}` : '';
     await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/google${query}`);
   },
 
   async loginWithGitHub() {
     const isMobile = isNativeMobile();
-    const query = isMobile ? '?client=mobile' : '';
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const params = new URLSearchParams();
+    if (isMobile) params.set('client', 'mobile');
+    if (currentOrigin && !isMobile) params.set('redirect_uri', `${currentOrigin}/auth/callback`);
+    const query = params.toString() ? `?${params.toString()}` : '';
     await openOAuthProvider(`${getApiBaseUrl()}/oauth2/authorization/github${query}`);
   },
 

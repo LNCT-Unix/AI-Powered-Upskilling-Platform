@@ -83,6 +83,6 @@ VITE_USE_MOCK_AUTH=false
 - **Forgot Password:** `POST /api/auth/forgot-password` (Body: `{ email }`)
 - **Verify Reset OTP:** `POST /api/auth/verify-reset-otp` (Body: `{ email, otp }`)
 - **Reset Password:** `POST /api/auth/reset-password` (Body: `{ email, resetToken, newPassword }`)
-- **OAuth Google:** Redirects to `http://localhost:8080/oauth2/authorization/google`
-- **OAuth GitHub:** Redirects to `http://localhost:8080/oauth2/authorization/github`
+- **OAuth Google:** Redirects to `https://msg-admission-opens-offerings.trycloudflare.com/oauth2/authorization/google`
+- **OAuth GitHub:** Redirects to `https://msg-admission-opens-offerings.trycloudflare.com/oauth2/authorization/github`
 - **OAuth Callback:** Handled automatically at `/auth/callback` via `POST /api/auth/oauth2/exchange`

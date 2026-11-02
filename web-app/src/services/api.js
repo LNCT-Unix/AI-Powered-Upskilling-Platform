@@ -62,7 +62,7 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
     // If running on native mobile and initial endpoint failed (e.g. USB plugged out or Wi-Fi switch),
     // try the alternative endpoint (switching between Wi-Fi LAN IP and localhost)
     if (isMobile && !isRetry) {
-      const altUrl = baseUrl.includes('localhost') ? 'http://10.71.104.22:8080' : 'http://localhost:8080';
+      const altUrl = baseUrl.includes('localhost') ? (import.meta.env.VITE_MOBILE_API_BASE_URL || 'http://10.71.104.22:8080') : 'http://localhost:8080';
       try {
         response = await fetch(`${altUrl}${endpoint}`, config);
         activeMobileUrl = altUrl; // Remember working endpoint
@@ -108,7 +108,7 @@ export async function apiClient(endpoint, options = {}, isRetry = false) {
             });
           } catch {
             if (isMobile) {
-              const altUrl = baseUrl.includes('localhost') ? 'http://10.71.104.22:8080' : 'http://localhost:8080';
+              const altUrl = baseUrl.includes('localhost') ? (import.meta.env.VITE_MOBILE_API_BASE_URL || 'http://10.71.104.22:8080') : 'http://localhost:8080';
               refreshRes = await fetch(`${altUrl}/api/auth/refresh`, {
                 method: 'POST',
                 headers: refreshHeaders,
